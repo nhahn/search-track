@@ -10,7 +10,7 @@ app.config ($stateProvider, $urlRouterProvider) ->
     .state('searches', {
       url: '/'
       templateUrl: '/dist/templates/tabPage/searches.html'
-      controller: ($scope, $state) ->
+      controller: ($scope, $state, $http) ->
         updateFn = (apply) ->
           page_info = PageInfo.db().get()
           # {query: [record, record,..], ...}
@@ -27,17 +27,6 @@ app.config ($stateProvider, $urlRouterProvider) ->
                 record.hash = hash
               return uri.toString()
             ]
-          $.ajax
-            type: "POST",
-            url: 'http://127.0.0.1:5000/',
-            async:false,
-            #data: {'groups': JSON.stringify([['html1', 'html2'], ['html3', 'html4']])},
-            data: {'groups': JSON.stringify(grouped)},
-            success: (results) ->
-              console.log 'onSuccess'
-              grouped = JSON.parse results
-
-          console.log 'onComplete'
           if !apply
             $scope.$apply () ->
               $scope.pages = _.pick grouped, (val, key, obj) ->
@@ -45,6 +34,20 @@ app.config ($stateProvider, $urlRouterProvider) ->
           else
             $scope.pages = _.pick grouped, (val, key, obj) ->
               key.length > 2
+          req =
+            method: "POST",
+            url: 'http://127.0.0.1:5000/',
+            #data: {'groups': JSON.stringify([['html1', 'html2'], ['html3', 'html4']])},
+            data: JSON.stringify(grouped),
+            headers: {'Content-Type': 'application/json'},
+          onSuccess = (results) ->
+            console.log 'onSuccess'
+            grouped = results
+          onComplete = () ->
+            console.log 'onComplete'
+            $scope.pages = _.pick grouped, (val, key, obj) ->
+              key.length > 2
+          $http(req).success(onSuccess).finally(onComplete)
         updateFn(true)
         # SearchInfo.updateFunction(updateFn)
         PageInfo.updateFunction(updateFn)          

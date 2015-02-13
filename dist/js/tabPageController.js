@@ -11,10 +11,10 @@ app.config(function($stateProvider, $urlRouterProvider) {
   $stateProvider.state('searches', {
     url: '/',
     templateUrl: '/dist/templates/tabPage/searches.html',
-    controller: function($scope, $state) {
+    controller: function($scope, $state, $http) {
       var updateFn;
       updateFn = function(apply) {
-        var grouped, page_info;
+        var grouped, onComplete, onSuccess, page_info, req;
         page_info = PageInfo.db().get();
         grouped = _.groupBy(page_info, function(record) {
           return record.query;
@@ -33,30 +33,36 @@ app.config(function($stateProvider, $urlRouterProvider) {
             })
           ];
         }));
-        $.ajax({
-          type: "POST",
-          url: 'http://127.0.0.1:5000/',
-          async: false,
-          data: {
-            'groups': JSON.stringify(grouped)
-          },
-          success: function(results) {
-            console.log('onSuccess');
-            return grouped = JSON.parse(results);
-          }
-        });
-        console.log('onComplete');
         if (!apply) {
-          return $scope.$apply(function() {
+          $scope.$apply(function() {
             return $scope.pages = _.pick(grouped, function(val, key, obj) {
               return key.length > 2;
             });
           });
         } else {
-          return $scope.pages = _.pick(grouped, function(val, key, obj) {
+          $scope.pages = _.pick(grouped, function(val, key, obj) {
             return key.length > 2;
           });
         }
+        req = {
+          method: "POST",
+          url: 'http://127.0.0.1:5000/',
+          data: JSON.stringify(grouped),
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        };
+        onSuccess = function(results) {
+          console.log('onSuccess');
+          return grouped = results;
+        };
+        onComplete = function() {
+          console.log('onComplete');
+          return $scope.pages = _.pick(grouped, function(val, key, obj) {
+            return key.length > 2;
+          });
+        };
+        return $http(req).success(onSuccess)["finally"](onComplete);
       };
       updateFn(true);
       return PageInfo.updateFunction(updateFn);
