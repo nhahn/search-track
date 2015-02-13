@@ -99,7 +99,8 @@ chrome.webNavigation.onDOMContentLoaded.addListener(function(details) {
           console.log('_d');
           console.log(results);
           insert_obj = {
-            html: results[0]
+            html: results[0],
+            title: tab.title
           };
           pages.update(insert_obj);
           return console.log(PageInfo.db());

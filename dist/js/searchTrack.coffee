@@ -49,7 +49,7 @@ chrome.webNavigation.onDOMContentLoaded.addListener((details) ->
         chrome.tabs.executeScript details.tabId, {code: 'window.document.documentElement.innerHTML'}, (results) ->
           console.log '_d'
           console.log results
-          insert_obj = {html: results[0]}
+          insert_obj = {html: results[0], title: tab.title}
           pages.update(insert_obj)
           console.log PageInfo.db()
 )
