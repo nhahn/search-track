@@ -12,7 +12,7 @@ app.config ($stateProvider, $urlRouterProvider) ->
       templateUrl: '/dist/templates/tabPage/searches.html'
       controller: ($scope, $state, $http) ->
         updateFn = (apply) ->
-          page_info = PageInfo.db().get()
+          page_info = PageInfo.db({referrer: {isNull: false}}).get()
           # {query: [record, record,..], ...}
           grouped = _.groupBy page_info, (record) ->
             record.query

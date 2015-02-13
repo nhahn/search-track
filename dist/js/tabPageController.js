@@ -15,7 +15,11 @@ app.config(function($stateProvider, $urlRouterProvider) {
       var updateFn;
       updateFn = function(apply) {
         var grouped, onComplete, onSuccess, page_info, req;
-        page_info = PageInfo.db().get();
+        page_info = PageInfo.db({
+          referrer: {
+            isNull: false
+          }
+        }).get();
         grouped = _.groupBy(page_info, function(record) {
           return record.query;
         });
