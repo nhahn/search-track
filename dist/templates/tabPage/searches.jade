@@ -5,8 +5,8 @@
       accordion-group(ng-repeat="(url, records) in url_group")
         accordion-heading
           | {{url}}
-          br
-          | {{records[0].tfidf}}
+          pre
+            | {{records[0].tfidf}}
           .pull-right
             | {{ records.length }}
           i.pull-right.glyphicon(ng-class="{'glyphicon-chevron-down': status.open, 'glyphicon-chevron-right': !status.open}")
