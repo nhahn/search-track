@@ -3,7 +3,6 @@
 # in the local storage in the "queries" variable
 ###
 searchTrack = {}
-searchTrack.addPageRelation = (url, query, tabId) ->
 
 searchTrack.removeTab = (searches, tabId) ->
   tabs = searches.first().tabs
@@ -15,7 +14,7 @@ searchTrack.addTab = (searches, tabId) ->
   tabs = searches.first().tabs
   tabs.push(tabId) if tabs.indexOf(tabId) < 0
   searches.update({tabs: tabs, date: Date.now()})
-    
+
 chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
   if changeInfo.url?
     matches = changeInfo.url.match(/www\.google\.com\/.*q=(.*?)($|&)/)

@@ -30,3 +30,6 @@ bower_components
 #vim
 .*.swp
 .*.swo
+
+#npm
+node_modules/
