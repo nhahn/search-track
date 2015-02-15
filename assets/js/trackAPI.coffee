@@ -75,17 +75,18 @@ window.PageInfo = (() ->
       chrome.storage.local.set {'pages': {db: this, updateId: updateID}}
     onUpdate: (before, changes) ->
       after = this
-      # should check if html changes instead
-      if after.html? and not after.keywords? and after.query.length > 2
+      if changes.vector? and after.vector? and after.query.length > 2
         # SearchInfo.db {tabs: {has: after.tab}} is unreliable
         tabs = PageInfo.db({query: after.query}).get()
-        tabs = _.filter tabs, (tab) -> tab.html?
-        htmls = _.map tabs, (tab) -> tab.html
+        tabs = _.filter tabs, (tab) -> tab.vector?
+        vectors = _.map tabs, (tab) -> tab.vector
+        if vectors.length < 2
+          return
           
         $.ajax(
           type: 'POST',
           url: 'http://127.0.0.1:5000/searchInfo',
-          data: { 'data': JSON.stringify( {'htmls': htmls} ) }
+          data: { 'data': JSON.stringify( {'vectors': vectors} ) }
         ).success( (results) ->
           results = JSON.parse results
           tfidfs = results['tfidfs']

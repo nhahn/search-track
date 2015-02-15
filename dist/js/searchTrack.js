@@ -91,12 +91,28 @@ chrome.webNavigation.onDOMContentLoaded.addListener(function(details) {
         return chrome.tabs.executeScript(details.tabId, {
           code: 'window.document.documentElement.innerHTML'
         }, function(results) {
-          var insert_obj;
-          insert_obj = {
-            html: results[0],
-            title: tab.title
-          };
-          return pages.update(insert_obj, true);
+          var html;
+          html = results[0];
+          if ((html != null) && html.length > 10) {
+            return $.ajax({
+              type: 'POST',
+              url: 'http://127.0.0.1:5000/tokenize',
+              data: {
+                'data': JSON.stringify({
+                  'html': html
+                })
+              }
+            }).success(function(results) {
+              var insert_obj, vector;
+              results = JSON.parse(results);
+              vector = results['vector'];
+              insert_obj = {
+                vector: vector,
+                title: tab.title
+              };
+              return pages.update(insert_obj, true);
+            });
+          }
         });
       }
     });

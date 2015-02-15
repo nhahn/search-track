@@ -98,24 +98,27 @@ window.PageInfo = (function() {
       });
     },
     onUpdate: function(before, changes) {
-      var after, htmls, tabs;
+      var after, tabs, vectors;
       after = this;
-      if ((after.html != null) && (after.keywords == null) && after.query.length > 2) {
+      if ((changes.vector != null) && (after.vector != null) && after.query.length > 2) {
         tabs = PageInfo.db({
           query: after.query
         }).get();
         tabs = _.filter(tabs, function(tab) {
-          return tab.html != null;
+          return tab.vector != null;
         });
-        htmls = _.map(tabs, function(tab) {
-          return tab.html;
+        vectors = _.map(tabs, function(tab) {
+          return tab.vector;
         });
+        if (vectors.length < 2) {
+          return;
+        }
         return $.ajax({
           type: 'POST',
           url: 'http://127.0.0.1:5000/searchInfo',
           data: {
             'data': JSON.stringify({
-              'htmls': htmls
+              'vectors': vectors
             })
           }
         }).success(function(results) {

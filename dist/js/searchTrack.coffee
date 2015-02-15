@@ -43,8 +43,18 @@ chrome.webNavigation.onDOMContentLoaded.addListener((details) ->
       pages = PageInfo.db({tab: details.tabId}).order("date desc")
       if pages.first()
         chrome.tabs.executeScript details.tabId, {code: 'window.document.documentElement.innerHTML'}, (results) ->
-          insert_obj = {html: results[0], title: tab.title}
-          pages.update(insert_obj, true)
+          html = results[0]
+          if html? and html.length > 10
+            $.ajax(
+              type: 'POST',
+              url: 'http://127.0.0.1:5000/tokenize',
+              data: { 'data': JSON.stringify( {'html': html} ) }
+            ).success( (results) ->
+              results = JSON.parse results
+              vector = results['vector']
+              insert_obj = {vector: vector, title: tab.title}
+              pages.update(insert_obj, true)
+            )
 )
   
 chrome.webNavigation.onCommitted.addListener((details) ->
