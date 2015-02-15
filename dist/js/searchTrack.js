@@ -96,7 +96,7 @@ chrome.webNavigation.onDOMContentLoaded.addListener(function(details) {
             html: results[0],
             title: tab.title
           };
-          return pages.update(insert_obj);
+          return pages.update(insert_obj, true);
         });
       }
     });
@@ -128,7 +128,7 @@ chrome.webNavigation.onCommitted.addListener(function(details) {
           return pages.update({
             visits: pages.first().visits + 1,
             date: Date.now()
-          });
+          }, false);
         }
       }
     } else {
@@ -144,7 +144,7 @@ chrome.webNavigation.onCommitted.addListener(function(details) {
                 url: details.url,
                 title: tab.title
               };
-              return pages.update(insert_obj);
+              return pages.update(insert_obj, false);
             }
           });
         } else {

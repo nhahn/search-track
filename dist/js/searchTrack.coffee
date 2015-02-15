@@ -44,7 +44,7 @@ chrome.webNavigation.onDOMContentLoaded.addListener((details) ->
       if pages.first()
         chrome.tabs.executeScript details.tabId, {code: 'window.document.documentElement.innerHTML'}, (results) ->
           insert_obj = {html: results[0], title: tab.title}
-          pages.update(insert_obj)
+          pages.update(insert_obj, true)
 )
   
 chrome.webNavigation.onCommitted.addListener((details) ->
@@ -60,7 +60,7 @@ chrome.webNavigation.onCommitted.addListener((details) ->
       if searchInfo.first()
         pages = PageInfo.db({tab: details.tabId},{query: searchInfo.first().name},{url: details.url})
         if pages.first()
-          pages.update({visits: pages.first().visits + 1, date: Date.now()})
+          pages.update({visits: pages.first().visits + 1, date: Date.now()}, false)
     else
       if searchInfo.first()
         if details.transitionQualifiers.indexOf("client_redirect") > -1
@@ -68,7 +68,7 @@ chrome.webNavigation.onCommitted.addListener((details) ->
             pages = PageInfo.db({tab: details.tabId}).order("date desc")
             if pages.first()
               insert_obj = {url: details.url, title: tab.title}
-              pages.update(insert_obj)
+              pages.update(insert_obj, false)
         else
           chrome.tabs.get details.tabId, (tab) ->
             insert_obj = {url: details.url, query: searchInfo.first().name, tab: details.tabId, date: Date.now(), referrer: null, visits: 1, title: tab.title}

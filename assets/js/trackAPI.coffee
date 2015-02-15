@@ -74,18 +74,14 @@ window.PageInfo = (() ->
     onDBChange: () ->
       chrome.storage.local.set {'pages': {db: this, updateId: updateID}}
     onUpdate: (before, changes) ->
-      if this.html? and not this.keywords?
-        searchInfo = SearchInfo.db {tabs: {has: this.tab}}
-        if not searchInfo.first()
-          console.log 'searchinfo not found'
-          return
-        tabs = searchInfo.first().tabs
-        tabs = _.map tabs, (tabId) -> PageInfo.db({tab: tabId}).first()
+      after = this
+      # should check if html changes instead
+      if after.html? and not after.keywords? and after.query.length > 2
+        # SearchInfo.db {tabs: {has: after.tab}} is unreliable
+        tabs = PageInfo.db({query: after.query}).get()
         tabs = _.filter tabs, (tab) -> tab.html?
-        tabs.push this
         htmls = _.map tabs, (tab) -> tab.html
           
-        after = this
         $.ajax(
           type: 'POST',
           url: 'http://127.0.0.1:5000/searchInfo',

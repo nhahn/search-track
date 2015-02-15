@@ -98,31 +98,18 @@ window.PageInfo = (function() {
       });
     },
     onUpdate: function(before, changes) {
-      var after, htmls, searchInfo, tabs;
-      if ((this.html != null) && (this.keywords == null)) {
-        searchInfo = SearchInfo.db({
-          tabs: {
-            has: this.tab
-          }
-        });
-        if (!searchInfo.first()) {
-          console.log('searchinfo not found');
-          return;
-        }
-        tabs = searchInfo.first().tabs;
-        tabs = _.map(tabs, function(tabId) {
-          return PageInfo.db({
-            tab: tabId
-          }).first();
-        });
+      var after, htmls, tabs;
+      after = this;
+      if ((after.html != null) && (after.keywords == null) && after.query.length > 2) {
+        tabs = PageInfo.db({
+          query: after.query
+        }).get();
         tabs = _.filter(tabs, function(tab) {
           return tab.html != null;
         });
-        tabs.push(this);
         htmls = _.map(tabs, function(tab) {
           return tab.html;
         });
-        after = this;
         return $.ajax({
           type: 'POST',
           url: 'http://127.0.0.1:5000/searchInfo',
@@ -132,7 +119,7 @@ window.PageInfo = (function() {
             })
           }
         }).success(function(results) {
-          var lda, lda_vector, tfidfs;
+          var lda, lda_vector, searchInfo, tfidfs;
           results = JSON.parse(results);
           tfidfs = results['tfidfs'];
           lda = results['lda'];
