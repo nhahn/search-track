@@ -85,18 +85,22 @@ window.PageInfo = (() ->
         tabs.push this
         htmls = _.map tabs, (tab) -> tab.html
           
+        after = this
         $.ajax(
           type: 'POST',
           url: 'http://127.0.0.1:5000/searchInfo',
           data: { 'data': JSON.stringify( {'htmls': htmls} ) }
         ).success( (results) ->
           results = JSON.parse results
-          results = results['tfidfs']
-          _.map( _.zip(tabs, results), (tab_result) -> 
-            tab = tab_result[0]
-            result = tab_result[1]
+          tfidfs = results['tfidfs']
+          lda = results['lda']
+          searchInfo = SearchInfo.db {name: after.query}
+          searchInfo.update {lda: lda}
+          _.map( _.zip(tabs, tfidfs), (tab_tfidf) -> 
+            tab = tab_tfidf[0]
+            tfidf = tab_tfidf[1]
             _tab = PageInfo.db {tab: tab.tab}
-            _tab.update {keywords: result}
+            _tab.update {keywords: tfidf}
           )
         )
 
