@@ -37,18 +37,12 @@ chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
         searchTrack.addTab(searchInfo, tabId)
 
 chrome.webNavigation.onDOMContentLoaded.addListener((details) ->
-  console.log '_a'
   searchInfo = SearchInfo.db({tabs: {has: details.tabId}})
-  console.log details
   if searchInfo.first()
-    console.log '_b'
     chrome.tabs.get details.tabId, (tab) ->
       pages = PageInfo.db({tab: details.tabId}).order("date desc")
       if pages.first()
-        console.log '_c'
         chrome.tabs.executeScript details.tabId, {code: 'window.document.documentElement.innerHTML'}, (results) ->
-          console.log '_d'
-          console.log results
           insert_obj = {html: results[0], title: tab.title}
           pages.update(insert_obj)
 )
@@ -56,34 +50,26 @@ chrome.webNavigation.onDOMContentLoaded.addListener((details) ->
 chrome.webNavigation.onCommitted.addListener((details) ->
   #see what searches have been performed in this tab before
   searchInfo = SearchInfo.db({tabs: {has: details.tabId}})
-  console.log details
   #We typed in a URL of some type -- need to remove this from tracking
   if details.transitionQualifiers.indexOf("from_address_bar") > -1
     if searchInfo.first()
       searchTrack.removeTab(searchInfo, details.tabId)
-      console.log 'a'
   else if details.transitionType == "link" or details.transitionType == "form_submit"
     #This is a navigation attempt we are doing
     if details.transitionQualifiers.indexOf("forward_back") > -1
       if searchInfo.first()
         pages = PageInfo.db({tab: details.tabId},{query: searchInfo.first().name},{url: details.url})
-        console.log 'b'
         if pages.first()
           pages.update({visits: pages.first().visits + 1, date: Date.now()})
-          console.log 'c'
     else
-      console.log 'd'
       if searchInfo.first()
-        console.log 'e'
         if details.transitionQualifiers.indexOf("client_redirect") > -1
-          console.log 'e1'
           chrome.tabs.get details.tabId, (tab) ->
             pages = PageInfo.db({tab: details.tabId}).order("date desc")
             if pages.first()
               insert_obj = {url: details.url, title: tab.title}
               pages.update(insert_obj)
         else
-          console.log 'e2'
           chrome.tabs.get details.tabId, (tab) ->
             insert_obj = {url: details.url, query: searchInfo.first().name, tab: details.tabId, date: Date.now(), referrer: null, visits: 1, title: tab.title}
             pages = PageInfo.db({tab: details.tabId}).order("date desc")
@@ -93,17 +79,14 @@ chrome.webNavigation.onCommitted.addListener((details) ->
             #Insert what we found
             PageInfo.db.insert(insert_obj)
   else if details.transitionType == "auto_bookmark" or details.transitionType == "typed" or details.transitionType == "keyword"
-    console.log 'f'
     #Lets identify if this URL is part of our search already
     pages = PageInfo.db({tab: details.tabId}, {url: details.url})
     #Remove this from this list -- we've started to do something else on this tab
     if pages.first()
-      console.log 'g'
       #we've gone back or somethings -- we need to restore this
       search = SearchInfo.db({name: pages.first().query})
       searchTrack.addTab(search, details.tabId)
     else if searchInfo.first()
-      console.log 'h'
       searchTrack.removeTab(searchInfo, details.tabId)
 )
 

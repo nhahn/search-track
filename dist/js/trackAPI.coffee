@@ -77,7 +77,7 @@ window.PageInfo = (() ->
       if this.html? and not this.keywords?
         searchInfo = SearchInfo.db {tabs: {has: this.tab}}
         if not searchInfo.first()
-          alert 'no search Info:' + this.tab + this.query
+          console.log 'searchinfo not found'
           return
         tabs = searchInfo.first().tabs
         tabs = _.map tabs, (tabId) -> PageInfo.db({tab: tabId}).first()
@@ -95,6 +95,7 @@ window.PageInfo = (() ->
           tfidfs = results['tfidfs']
           lda = results['lda']
           lda_vector = results['lda_vector']
+          # workaround for bug: SearchInfo.db {tabs: {has: after.tab}} != SearchInfo.db {name: after.query}
           searchInfo = SearchInfo.db {name: after.query}
           searchInfo.update {lda: lda, lda_vector: lda_vector}
           _.map( _.zip(tabs, tfidfs), (tab_tfidf) -> 

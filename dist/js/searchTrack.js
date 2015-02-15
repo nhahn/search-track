@@ -76,28 +76,22 @@ chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
 
 chrome.webNavigation.onDOMContentLoaded.addListener(function(details) {
   var searchInfo;
-  console.log('_a');
   searchInfo = SearchInfo.db({
     tabs: {
       has: details.tabId
     }
   });
-  console.log(details);
   if (searchInfo.first()) {
-    console.log('_b');
     return chrome.tabs.get(details.tabId, function(tab) {
       var pages;
       pages = PageInfo.db({
         tab: details.tabId
       }).order("date desc");
       if (pages.first()) {
-        console.log('_c');
         return chrome.tabs.executeScript(details.tabId, {
           code: 'window.document.documentElement.innerHTML'
         }, function(results) {
           var insert_obj;
-          console.log('_d');
-          console.log(results);
           insert_obj = {
             html: results[0],
             title: tab.title
@@ -116,11 +110,9 @@ chrome.webNavigation.onCommitted.addListener(function(details) {
       has: details.tabId
     }
   });
-  console.log(details);
   if (details.transitionQualifiers.indexOf("from_address_bar") > -1) {
     if (searchInfo.first()) {
-      searchTrack.removeTab(searchInfo, details.tabId);
-      return console.log('a');
+      return searchTrack.removeTab(searchInfo, details.tabId);
     }
   } else if (details.transitionType === "link" || details.transitionType === "form_submit") {
     if (details.transitionQualifiers.indexOf("forward_back") > -1) {
@@ -132,21 +124,16 @@ chrome.webNavigation.onCommitted.addListener(function(details) {
         }, {
           url: details.url
         });
-        console.log('b');
         if (pages.first()) {
-          pages.update({
+          return pages.update({
             visits: pages.first().visits + 1,
             date: Date.now()
           });
-          return console.log('c');
         }
       }
     } else {
-      console.log('d');
       if (searchInfo.first()) {
-        console.log('e');
         if (details.transitionQualifiers.indexOf("client_redirect") > -1) {
-          console.log('e1');
           return chrome.tabs.get(details.tabId, function(tab) {
             var insert_obj;
             pages = PageInfo.db({
@@ -161,7 +148,6 @@ chrome.webNavigation.onCommitted.addListener(function(details) {
             }
           });
         } else {
-          console.log('e2');
           return chrome.tabs.get(details.tabId, function(tab) {
             var insert_obj;
             insert_obj = {
@@ -185,20 +171,17 @@ chrome.webNavigation.onCommitted.addListener(function(details) {
       }
     }
   } else if (details.transitionType === "auto_bookmark" || details.transitionType === "typed" || details.transitionType === "keyword") {
-    console.log('f');
     pages = PageInfo.db({
       tab: details.tabId
     }, {
       url: details.url
     });
     if (pages.first()) {
-      console.log('g');
       search = SearchInfo.db({
         name: pages.first().query
       });
       return searchTrack.addTab(search, details.tabId);
     } else if (searchInfo.first()) {
-      console.log('h');
       return searchTrack.removeTab(searchInfo, details.tabId);
     }
   }

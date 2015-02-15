@@ -106,7 +106,7 @@ window.PageInfo = (function() {
           }
         });
         if (!searchInfo.first()) {
-          alert('no search Info:' + this.tab + this.query);
+          console.log('searchinfo not found');
           return;
         }
         tabs = searchInfo.first().tabs;
