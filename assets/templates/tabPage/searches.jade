@@ -6,7 +6,7 @@
         accordion-heading
           | {{url}}
           pre
-            | {{records[0].tfidf}}
+            | {{records[0].keywords}}
           .pull-right
             | {{ records.length }}
           i.pull-right.glyphicon(ng-class="{'glyphicon-chevron-down': status.open, 'glyphicon-chevron-right': !status.open}")

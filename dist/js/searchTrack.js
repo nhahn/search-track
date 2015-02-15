@@ -102,8 +102,7 @@ chrome.webNavigation.onDOMContentLoaded.addListener(function(details) {
             html: results[0],
             title: tab.title
           };
-          pages.update(insert_obj);
-          return console.log(PageInfo.db());
+          return pages.update(insert_obj);
         });
       }
     });

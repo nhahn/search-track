@@ -51,7 +51,6 @@ chrome.webNavigation.onDOMContentLoaded.addListener((details) ->
           console.log results
           insert_obj = {html: results[0], title: tab.title}
           pages.update(insert_obj)
-          console.log PageInfo.db()
 )
   
 chrome.webNavigation.onCommitted.addListener((details) ->

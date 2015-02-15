@@ -73,6 +73,33 @@ window.PageInfo = (() ->
     template: {}
     onDBChange: () ->
       chrome.storage.local.set {'pages': {db: this, updateId: updateID}}
+    onUpdate: (before, changes) ->
+      if this.html? and not this.keywords?
+        searchInfo = SearchInfo.db {tabs: {has: this.tab}}
+        if not searchInfo.first()
+          alert 'no search Info:' + this.tab + this.query
+          return
+        tabs = searchInfo.first().tabs
+        tabs = _.map tabs, (tabId) -> PageInfo.db({tab: tabId}).first()
+        tabs = _.filter tabs, (tab) -> tab.html?
+        tabs.push this
+        htmls = _.map tabs, (tab) -> tab.html
+          
+        $.ajax(
+          type: 'POST',
+          url: 'http://127.0.0.1:5000/searchInfo',
+          data: { 'data': JSON.stringify( {'htmls': htmls} ) }
+        ).success( (results) ->
+          results = JSON.parse results
+          results = results['tfidfs']
+          _.map( _.zip(tabs, results), (tab_result) -> 
+            tab = tab_result[0]
+            result = tab_result[1]
+            _tab = PageInfo.db {tab: tab.tab}
+            _tab.update {keywords: result}
+          )
+        )
+
   
   #Grab the info from localStorage and lets update it
   chrome.storage.onChanged.addListener (changes, areaName) ->

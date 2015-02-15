@@ -14,7 +14,7 @@ app.config(function($stateProvider, $urlRouterProvider) {
     controller: function($scope, $state, $http) {
       var updateFn;
       updateFn = function(apply) {
-        var grouped, onComplete, onSuccess, page_info, req;
+        var grouped, page_info;
         page_info = PageInfo.db({
           referrer: {
             isNull: false
@@ -38,35 +38,16 @@ app.config(function($stateProvider, $urlRouterProvider) {
           ];
         }));
         if (!apply) {
-          $scope.$apply(function() {
+          return $scope.$apply(function() {
             return $scope.pages = _.pick(grouped, function(val, key, obj) {
               return key.length > 2;
             });
           });
         } else {
-          $scope.pages = _.pick(grouped, function(val, key, obj) {
-            return key.length > 2;
-          });
-        }
-        req = {
-          method: "POST",
-          url: 'http://127.0.0.1:5000/',
-          data: JSON.stringify(grouped),
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        };
-        onSuccess = function(results) {
-          console.log('onSuccess');
-          return grouped = results;
-        };
-        onComplete = function() {
-          console.log('onComplete');
           return $scope.pages = _.pick(grouped, function(val, key, obj) {
             return key.length > 2;
           });
-        };
-        return $http(req).success(onSuccess)["finally"](onComplete);
+        }
       };
       updateFn(true);
       return PageInfo.updateFunction(updateFn);

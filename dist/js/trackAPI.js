@@ -96,6 +96,56 @@ window.PageInfo = (function() {
           updateId: updateID
         }
       });
+    },
+    onUpdate: function(before, changes) {
+      var htmls, searchInfo, tabs;
+      if ((this.html != null) && (this.keywords == null)) {
+        searchInfo = SearchInfo.db({
+          tabs: {
+            has: this.tab
+          }
+        });
+        if (!searchInfo.first()) {
+          alert('no search Info:' + this.tab + this.query);
+          return;
+        }
+        tabs = searchInfo.first().tabs;
+        tabs = _.map(tabs, function(tabId) {
+          return PageInfo.db({
+            tab: tabId
+          }).first();
+        });
+        tabs = _.filter(tabs, function(tab) {
+          return tab.html != null;
+        });
+        tabs.push(this);
+        htmls = _.map(tabs, function(tab) {
+          return tab.html;
+        });
+        return $.ajax({
+          type: 'POST',
+          url: 'http://127.0.0.1:5000/searchInfo',
+          data: {
+            'data': JSON.stringify({
+              'htmls': htmls
+            })
+          }
+        }).success(function(results) {
+          results = JSON.parse(results);
+          results = results['tfidfs'];
+          return _.map(_.zip(tabs, results), function(tab_result) {
+            var result, tab, _tab;
+            tab = tab_result[0];
+            result = tab_result[1];
+            _tab = PageInfo.db({
+              tab: tab.tab
+            });
+            return _tab.update({
+              keywords: result
+            });
+          });
+        });
+      }
     }
   };
   chrome.storage.onChanged.addListener(function(changes, areaName) {
