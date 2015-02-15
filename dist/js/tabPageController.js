@@ -37,6 +37,16 @@ app.config(function($stateProvider, $urlRouterProvider) {
             })
           ];
         }));
+        grouped = _.object(_.map(grouped, function(val, key) {
+          return [
+            key, {
+              records: val,
+              lda: SearchInfo.db({
+                name: key
+              }).first().lda
+            }
+          ];
+        }));
         if (!apply) {
           return $scope.$apply(function() {
             return $scope.pages = _.pick(grouped, function(val, key, obj) {

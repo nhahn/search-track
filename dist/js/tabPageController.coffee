@@ -27,6 +27,10 @@ app.config ($stateProvider, $urlRouterProvider) ->
                 record.hash = hash
               return uri.toString()
             ]
+
+          grouped = _.object _.map grouped, (val, key) ->
+            [key, {records: val, lda: SearchInfo.db({name: key}).first().lda}]
+
           if !apply
             $scope.$apply () ->
               $scope.pages = _.pick grouped, (val, key, obj) ->

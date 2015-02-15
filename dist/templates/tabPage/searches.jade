@@ -1,8 +1,12 @@
-.panel.panel-default(ng-repeat="(query, url_group) in pages")
+.panel.panel-default(ng-repeat="(query, data) in pages")
   .panel-heading {{query}}
   .panel-body
+    h5
+      | LDA Topics
+    pre
+      | {{data.lda}}
     accordion
-      accordion-group(ng-repeat="(url, records) in url_group")
+      accordion-group(ng-repeat="(url, records) in data.records")
         accordion-heading
           | {{url}}
           pre

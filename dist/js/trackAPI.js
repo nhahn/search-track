@@ -98,7 +98,7 @@ window.PageInfo = (function() {
       });
     },
     onUpdate: function(before, changes) {
-      var htmls, searchInfo, tabs;
+      var after, htmls, searchInfo, tabs;
       if ((this.html != null) && (this.keywords == null)) {
         searchInfo = SearchInfo.db({
           tabs: {
@@ -122,6 +122,7 @@ window.PageInfo = (function() {
         htmls = _.map(tabs, function(tab) {
           return tab.html;
         });
+        after = this;
         return $.ajax({
           type: 'POST',
           url: 'http://127.0.0.1:5000/searchInfo',
@@ -131,17 +132,25 @@ window.PageInfo = (function() {
             })
           }
         }).success(function(results) {
+          var lda, tfidfs;
           results = JSON.parse(results);
-          results = results['tfidfs'];
-          return _.map(_.zip(tabs, results), function(tab_result) {
-            var result, tab, _tab;
-            tab = tab_result[0];
-            result = tab_result[1];
+          tfidfs = results['tfidfs'];
+          lda = results['lda'];
+          searchInfo = SearchInfo.db({
+            name: after.query
+          });
+          searchInfo.update({
+            lda: lda
+          });
+          return _.map(_.zip(tabs, tfidfs), function(tab_tfidf) {
+            var tab, tfidf, _tab;
+            tab = tab_tfidf[0];
+            tfidf = tab_tfidf[1];
             _tab = PageInfo.db({
               tab: tab.tab
             });
             return _tab.update({
-              keywords: result
+              keywords: tfidf
             });
           });
         });
