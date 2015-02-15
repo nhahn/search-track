@@ -94,8 +94,9 @@ window.PageInfo = (() ->
           results = JSON.parse results
           tfidfs = results['tfidfs']
           lda = results['lda']
+          lda_vector = results['lda_vector']
           searchInfo = SearchInfo.db {name: after.query}
-          searchInfo.update {lda: lda}
+          searchInfo.update {lda: lda, lda_vector: lda_vector}
           _.map( _.zip(tabs, tfidfs), (tab_tfidf) -> 
             tab = tab_tfidf[0]
             tfidf = tab_tfidf[1]

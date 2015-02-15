@@ -132,15 +132,17 @@ window.PageInfo = (function() {
             })
           }
         }).success(function(results) {
-          var lda, tfidfs;
+          var lda, lda_vector, tfidfs;
           results = JSON.parse(results);
           tfidfs = results['tfidfs'];
           lda = results['lda'];
+          lda_vector = results['lda_vector'];
           searchInfo = SearchInfo.db({
             name: after.query
           });
           searchInfo.update({
-            lda: lda
+            lda: lda,
+            lda_vector: lda_vector
           });
           return _.map(_.zip(tabs, tfidfs), function(tab_tfidf) {
             var tab, tfidf, _tab;
