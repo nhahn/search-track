@@ -36,9 +36,14 @@ searchTrack.addTab = function(searches, tabId) {
 chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
   var matches, query, searchInfo;
   if (changeInfo.url != null) {
+    console.log('onUpdate: ' + changeInfo.url);
     matches = changeInfo.url.match(/www\.google\.com\/.*q=(.*?)($|&)/);
     if (matches !== null) {
       query = decodeURIComponent(matches[1].replace(/\+/g, ' '));
+      console.log('onUpdate query: ' + query);
+      if (query === "") {
+        return;
+      }
       searchInfo = SearchInfo.db({
         tabs: {
           has: tabId
@@ -52,7 +57,9 @@ chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
           name: query
         }
       ]);
+      console.log('onUpdate query is: ' + query);
       if (!searchInfo.first()) {
+        console.log('creating for: ' + changeInfo.url);
         SearchInfo.db.insert({
           tabs: [tabId],
           date: Date.now(),
@@ -68,6 +75,7 @@ chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
           title: tab.title
         });
       } else {
+        console.log('add tab for: ' + changeInfo.url);
         return searchTrack.addTab(searchInfo, tabId);
       }
     }
@@ -76,6 +84,7 @@ chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
 
 chrome.webNavigation.onDOMContentLoaded.addListener(function(details) {
   var searchInfo;
+  console.log('onLoaded: ' + details);
   searchInfo = SearchInfo.db({
     tabs: {
       has: details.tabId
@@ -121,6 +130,7 @@ chrome.webNavigation.onDOMContentLoaded.addListener(function(details) {
 
 chrome.webNavigation.onCommitted.addListener(function(details) {
   var pages, search, searchInfo;
+  console.log('onCommitted: ' + details.tabId + ": " + details.transitionType + ", " + details.transitionQualifiers);
   searchInfo = SearchInfo.db({
     tabs: {
       has: details.tabId
@@ -160,28 +170,9 @@ chrome.webNavigation.onCommitted.addListener(function(details) {
                 url: details.url,
                 title: tab.title
               };
-              return pages.update(insert_obj, false);
+              pages.update(insert_obj, false);
+              return console.log('UPDATE');
             }
-          });
-        } else {
-          return chrome.tabs.get(details.tabId, function(tab) {
-            var insert_obj;
-            insert_obj = {
-              url: details.url,
-              query: searchInfo.first().name,
-              tab: details.tabId,
-              date: Date.now(),
-              referrer: null,
-              visits: 1,
-              title: tab.title
-            };
-            pages = PageInfo.db({
-              tab: details.tabId
-            }).order("date desc");
-            if (pages.first()) {
-              insert_obj.referrer = pages.first().___id;
-            }
-            return PageInfo.db.insert(insert_obj);
           });
         }
       }
@@ -205,6 +196,7 @@ chrome.webNavigation.onCommitted.addListener(function(details) {
 
 chrome.webNavigation.onCreatedNavigationTarget.addListener(function(details) {
   var searchInfo;
+  console.log('onNav: ' + details.sourceTabId + ' -> ' + details.tabId);
   searchInfo = SearchInfo.db({
     tabs: {
       has: details.sourceTabId
@@ -228,7 +220,8 @@ chrome.webNavigation.onCreatedNavigationTarget.addListener(function(details) {
       if (pages.first()) {
         insert_obj.referrer = pages.first().___id;
       }
-      return PageInfo.db.insert(insert_obj);
+      PageInfo.db.insert(insert_obj);
+      return searchTrack.addTab(searchInfo, details.tabId);
     });
   }
 });

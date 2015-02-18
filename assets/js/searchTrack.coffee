@@ -16,12 +16,18 @@ searchTrack.addTab = (searches, tabId) ->
   tabs.push(tabId) if tabs.indexOf(tabId) < 0
   searches.update({tabs: tabs, date: Date.now()})
     
+
+# SearchInfo Creation
 chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
   if changeInfo.url?
+    console.log 'onUpdate: ' + changeInfo.url
     matches = changeInfo.url.match(/www\.google\.com\/.*q=(.*?)($|&)/)
     #We have found a new search -- we need to track this
     if matches != null
       query = decodeURIComponent(matches[1].replace(/\+/g, ' '))
+      console.log 'onUpdate query: '+ query
+      if query == ""
+        return
 
       #Remove any existing references to this particular tabId
       searchInfo = SearchInfo.db({tabs: {has: tabId}})
@@ -29,14 +35,19 @@ chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
 
       #Have we had this query before?
       searchInfo = SearchInfo.db([{name: query}])
+
+      console.log 'onUpdate query is: ' + query
       if !searchInfo.first()
         #First time finding this
+        console.log 'creating for: ' + changeInfo.url
         SearchInfo.db.insert({tabs: [tabId], date: Date.now(), name: query})
         PageInfo.db.insert({url: changeInfo.url, query: query, tab: tabId, date: Date.now(), referrer: null, visits: 1, title: tab.title})
       else
+        console.log 'add tab for: ' + changeInfo.url
         searchTrack.addTab(searchInfo, tabId)
 
 chrome.webNavigation.onDOMContentLoaded.addListener((details) ->
+  console.log 'onLoaded: ' + details
   searchInfo = SearchInfo.db({tabs: {has: details.tabId}})
   if searchInfo.first()
     chrome.tabs.get details.tabId, (tab) ->
@@ -57,7 +68,9 @@ chrome.webNavigation.onDOMContentLoaded.addListener((details) ->
             )
 )
   
+# Not sure what this does
 chrome.webNavigation.onCommitted.addListener((details) ->
+  console.log 'onCommitted: ' + details.tabId + ": " + details.transitionType + ", " + details.transitionQualifiers
   #see what searches have been performed in this tab before
   searchInfo = SearchInfo.db({tabs: {has: details.tabId}})
   #We typed in a URL of some type -- need to remove this from tracking
@@ -79,15 +92,7 @@ chrome.webNavigation.onCommitted.addListener((details) ->
             if pages.first()
               insert_obj = {url: details.url, title: tab.title}
               pages.update(insert_obj, false)
-        else
-          chrome.tabs.get details.tabId, (tab) ->
-            insert_obj = {url: details.url, query: searchInfo.first().name, tab: details.tabId, date: Date.now(), referrer: null, visits: 1, title: tab.title}
-            pages = PageInfo.db({tab: details.tabId}).order("date desc")
-            #Try to track down an associated page by tab and window info (order them by the soonest one first)
-            if pages.first()
-              insert_obj.referrer = pages.first().___id
-            #Insert what we found
-            PageInfo.db.insert(insert_obj)
+              console.log 'UPDATE'
   else if details.transitionType == "auto_bookmark" or details.transitionType == "typed" or details.transitionType == "keyword"
     #Lets identify if this URL is part of our search already
     pages = PageInfo.db({tab: details.tabId}, {url: details.url})
@@ -102,6 +107,7 @@ chrome.webNavigation.onCommitted.addListener((details) ->
 
 #Track the creation of tabs from links -- aka new tab / window from link
 chrome.webNavigation.onCreatedNavigationTarget.addListener((details) ->
+  console.log 'onNav: ' + details.sourceTabId + ' -> ' + details.tabId
   #see what searches have been performed in this tab before
   searchInfo = SearchInfo.db({tabs: {has: details.sourceTabId}})
   if searchInfo.first()
@@ -113,6 +119,7 @@ chrome.webNavigation.onCreatedNavigationTarget.addListener((details) ->
         insert_obj.referrer = pages.first().___id
       #Insert what we found
       PageInfo.db.insert(insert_obj)
+      searchTrack.addTab(searchInfo, details.tabId)
 )
   
 #TODO remove tab if detected to be a change
