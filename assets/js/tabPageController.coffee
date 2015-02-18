@@ -91,11 +91,171 @@ app.config ($stateProvider, $urlRouterProvider) ->
         $scope.$watch 'query', (newVal, oldVal) ->
           updateFn()
       })
+    .state('graph', {
+      url: '/graph'
+      templateUrl: '/dist/templates/tabPage/graph.html'
+      controller: ($scope, $state) ->
+        #Get our list of queries
+        updateFn = () ->
+          queries = SearchInfo.db({name: {'!is': ''}, lda_vector: {isNull: false}}).get()
+          console.log queries
+
+          graph = {nodes: [], links: []}
+          i = 0
+          _.each queries, (query) ->
+            graph.nodes.push {name: query.name, group: i++, info: query, size: PageInfo.db({query: query.name}).get().length}
+
+          dot = (v1, v2) ->
+            v = _.map _.zip(v1, v2), (xy) -> xy[0] * xy[1]
+            v = _.reduce v, (x, y) -> x + y
+            v
+
+          mag = (v) ->
+            v = _.map v, (x) -> x*x
+            out = _.reduce v, (x, y) -> x + y
+            Math.sqrt(out)
+            
+          cosine = (v1, v2) ->
+            dot(v1, v2) / (mag(v1) * mag(v2))
+
+          _.each graph.nodes, (node1) ->
+            _.each graph.nodes, (node2) ->
+              if node2.group > node1.group
+                similarity = cosine(node1.info.lda_vector, node2.info.lda_vector)
+                graph.links.push {source: node1.group, target: node2.group, value: similarity}
+
+          console.log 'blah0'
+          console.log graph
+          console.log 'blah1'
+          width = 1280
+          height = 800
+          color = d3.scale.category20()
+
+          console.log 'blah2'
+          force = d3.layout.force()
+              .charge(1000)
+              .friction(0.01)
+              .linkDistance (l) -> Math.pow(1.0 - l.value, 1) * 500
+              .size([width, height])
+
+          svg = d3.select("#graph").append("svg")
+              .attr("width", width)
+              .attr("height", height)
+
+          node = svg.selectAll(".node")
+          link = svg.selectAll(".link")
+          text = svg.selectAll("text.label")
+          pin = svg.selectAll(".pin")
+
+          force.nodes(graph.nodes)
+              .links(graph.links)
+              .on("tick", () ->
+                link.attr("x1", (d) -> d.source.x)
+                    .attr("y1", (d) -> d.source.y)
+                    .attr("x2", (d) -> d.target.x)
+                    .attr("y2", (d) -> d.target.y)
+
+                node.attr("cx", (d) -> d.x )
+                    .attr("cy", (d) -> d.y )
+
+                text.attr("transform", (d) ->
+                  "translate(" + (d.x + (2.5*d.size) + 5) + "," + (d.y + 3) + ")"
+                )
+                pin.attr("transform", (d) ->
+                  "translate(" + (d.x-2) + "," + (d.y-2) + ")"
+                )
+                .attr("width", (d) ->
+                  if d.fixed and not d.dragging
+                    return 4
+                  return 0
+                )
+                .attr("height", (d) ->
+                  if d.fixed and not d.dragging
+                    return 4
+                  return 0
+                )
+            )
+
+          wasDragging = false
+          drag = force.drag()
+            .on("drag", (d) ->
+              console.log 'onDrag'
+              wasDragging = true
+              d.dragging = true
+              if (!d3.event.sourceEvent.shiftKey)
+                d3.select(this).classed("fixed", d.fixed = true)
+            )
+            .on("dragend", (d) ->
+              console.log 'onDragEnd'
+              d.dragging = false
+              if (wasDragging and d3.event.sourceEvent.shiftKey)
+                d3.select(this).classed("fixed", d.fixed = false)
+              wasDragging = false
+            )
+
+          render = () ->
+
+            console.log 'render'
+            console.log graph.nodes
+            console.log 'render'
+
+            link = link.data(graph.links)
+            link.enter().append("line")
+                .attr("class", "link")
+                .style("stroke-width", (d) -> 
+                  if d.value > 0.2
+                    Math.pow(d.value, 2) * 3 
+                  else
+                    0
+                )
+
+            node = node.data(graph.nodes)
+            node.enter().append("circle")
+                .attr("class", "node")
+                .attr("r", (d) -> 2.5 * d.size)
+                .style("fill", (d) -> color(d.group) )
+                .call(drag)
+                .on('click', (d) ->
+                  console.log 'onClick'
+                  if (d3.event.defaultPrevented)
+                    console.log 'onClick no'
+                    return
+       
+                  if (!d3.event.shiftKey)
+                    was_selected = d.selected
+                    node.classed("selected", (p) -> p.selected =  p.previouslySelected = false)
+                    d3.select(this).classed("selected", d.selected = !was_selected)
+                  else
+                    was_selected = d.selected
+                    d3.select(this).classed("selected", d.selected = !d.previouslySelected)
+                    d3.select(this).classed("selected", d.selected = !was_selected)
+                )
+
+            text = text.data(graph.nodes)
+            text.enter().append("text")
+                  .attr("class", "label")
+                  .attr("fill", (d) -> color(d.group))
+                  .attr('stroke', 'lightgray')
+                  .attr('stroke-width', 0.5)
+                  .text((d) -> d.name)
+
+            pin = pin.data(graph.nodes)
+            pin.enter().append("rect")
+                .attr("x", 0)
+                .attr("y", 0)
+                .attr("class", "pin")
+                .style("fill", 'black')
+                .call(drag)
+
+          render()
+          force.start()
+          
+        updateFn()
+      })
     .state('settings', {
       url: '/settings'
       templateUrl: '/dist/templates/tabPage/settings.html'
       controller: ($scope, $state, $modal) ->
-        
         $scope.openDeleteModal = () ->
           modalInstance = $modal.open {
             templateUrl: 'deleteContent.html',

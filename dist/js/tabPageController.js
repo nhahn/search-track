@@ -126,6 +126,186 @@ app.config(function($stateProvider, $urlRouterProvider) {
         return updateFn();
       });
     }
+  }).state('graph', {
+    url: '/graph',
+    templateUrl: '/dist/templates/tabPage/graph.html',
+    controller: function($scope, $state) {
+      var updateFn;
+      updateFn = function() {
+        var color, cosine, dot, drag, force, graph, height, i, link, mag, node, pin, queries, render, svg, text, wasDragging, width;
+        queries = SearchInfo.db({
+          name: {
+            '!is': ''
+          },
+          lda_vector: {
+            isNull: false
+          }
+        }).get();
+        console.log(queries);
+        graph = {
+          nodes: [],
+          links: []
+        };
+        i = 0;
+        _.each(queries, function(query) {
+          return graph.nodes.push({
+            name: query.name,
+            group: i++,
+            info: query,
+            size: PageInfo.db({
+              query: query.name
+            }).get().length
+          });
+        });
+        dot = function(v1, v2) {
+          var v;
+          v = _.map(_.zip(v1, v2), function(xy) {
+            return xy[0] * xy[1];
+          });
+          v = _.reduce(v, function(x, y) {
+            return x + y;
+          });
+          return v;
+        };
+        mag = function(v) {
+          var out;
+          v = _.map(v, function(x) {
+            return x * x;
+          });
+          out = _.reduce(v, function(x, y) {
+            return x + y;
+          });
+          return Math.sqrt(out);
+        };
+        cosine = function(v1, v2) {
+          return dot(v1, v2) / (mag(v1) * mag(v2));
+        };
+        _.each(graph.nodes, function(node1) {
+          return _.each(graph.nodes, function(node2) {
+            var similarity;
+            if (node2.group > node1.group) {
+              similarity = cosine(node1.info.lda_vector, node2.info.lda_vector);
+              return graph.links.push({
+                source: node1.group,
+                target: node2.group,
+                value: similarity
+              });
+            }
+          });
+        });
+        console.log('blah0');
+        console.log(graph);
+        console.log('blah1');
+        width = 1280;
+        height = 800;
+        color = d3.scale.category20();
+        console.log('blah2');
+        force = d3.layout.force().charge(1000).friction(0.01).linkDistance(function(l) {
+          return Math.pow(1.0 - l.value, 1) * 500;
+        }).size([width, height]);
+        svg = d3.select("#graph").append("svg").attr("width", width).attr("height", height);
+        node = svg.selectAll(".node");
+        link = svg.selectAll(".link");
+        text = svg.selectAll("text.label");
+        pin = svg.selectAll(".pin");
+        force.nodes(graph.nodes).links(graph.links).on("tick", function() {
+          link.attr("x1", function(d) {
+            return d.source.x;
+          }).attr("y1", function(d) {
+            return d.source.y;
+          }).attr("x2", function(d) {
+            return d.target.x;
+          }).attr("y2", function(d) {
+            return d.target.y;
+          });
+          node.attr("cx", function(d) {
+            return d.x;
+          }).attr("cy", function(d) {
+            return d.y;
+          });
+          text.attr("transform", function(d) {
+            return "translate(" + (d.x + (2.5 * d.size) + 5) + "," + (d.y + 3) + ")";
+          });
+          return pin.attr("transform", function(d) {
+            return "translate(" + (d.x - 2) + "," + (d.y - 2) + ")";
+          }).attr("width", function(d) {
+            if (d.fixed && !d.dragging) {
+              return 4;
+            }
+            return 0;
+          }).attr("height", function(d) {
+            if (d.fixed && !d.dragging) {
+              return 4;
+            }
+            return 0;
+          });
+        });
+        wasDragging = false;
+        drag = force.drag().on("drag", function(d) {
+          console.log('onDrag');
+          wasDragging = true;
+          d.dragging = true;
+          if (!d3.event.sourceEvent.shiftKey) {
+            return d3.select(this).classed("fixed", d.fixed = true);
+          }
+        }).on("dragend", function(d) {
+          console.log('onDragEnd');
+          d.dragging = false;
+          if (wasDragging && d3.event.sourceEvent.shiftKey) {
+            d3.select(this).classed("fixed", d.fixed = false);
+          }
+          return wasDragging = false;
+        });
+        render = function() {
+          console.log('render');
+          console.log(graph.nodes);
+          console.log('render');
+          link = link.data(graph.links);
+          link.enter().append("line").attr("class", "link").style("stroke-width", function(d) {
+            if (d.value > 0.2) {
+              return Math.pow(d.value, 2) * 3;
+            } else {
+              return 0;
+            }
+          });
+          node = node.data(graph.nodes);
+          node.enter().append("circle").attr("class", "node").attr("r", function(d) {
+            return 2.5 * d.size;
+          }).style("fill", function(d) {
+            return color(d.group);
+          }).call(drag).on('click', function(d) {
+            var was_selected;
+            console.log('onClick');
+            if (d3.event.defaultPrevented) {
+              console.log('onClick no');
+              return;
+            }
+            if (!d3.event.shiftKey) {
+              was_selected = d.selected;
+              node.classed("selected", function(p) {
+                return p.selected = p.previouslySelected = false;
+              });
+              return d3.select(this).classed("selected", d.selected = !was_selected);
+            } else {
+              was_selected = d.selected;
+              d3.select(this).classed("selected", d.selected = !d.previouslySelected);
+              return d3.select(this).classed("selected", d.selected = !was_selected);
+            }
+          });
+          text = text.data(graph.nodes);
+          text.enter().append("text").attr("class", "label").attr("fill", function(d) {
+            return color(d.group);
+          }).attr('stroke', 'lightgray').attr('stroke-width', 0.5).text(function(d) {
+            return d.name;
+          });
+          pin = pin.data(graph.nodes);
+          return pin.enter().append("rect").attr("x", 0).attr("y", 0).attr("class", "pin").style("fill", 'black').call(drag);
+        };
+        render();
+        return force.start();
+      };
+      return updateFn();
+    }
   }).state('settings', {
     url: '/settings',
     templateUrl: '/dist/templates/tabPage/settings.html',
