@@ -124,14 +124,10 @@ app.config ($stateProvider, $urlRouterProvider) ->
                 similarity = cosine(node1.info.lda_vector, node2.info.lda_vector)
                 graph.links.push {source: node1.group, target: node2.group, value: similarity}
 
-          console.log 'blah0'
-          console.log graph
-          console.log 'blah1'
           width = 1280
           height = 800
           color = d3.scale.category20()
 
-          console.log 'blah2'
           force = d3.layout.force()
               .charge(1000)
               .friction(0.01)
@@ -139,8 +135,68 @@ app.config ($stateProvider, $urlRouterProvider) ->
               .size([width, height])
 
           svg = d3.select("#graph").append("svg")
-              .attr("width", width)
+
+          pointInPolygon = (point, path) ->
+            # ray-casting algorithm based on
+            # http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
+            
+            x = point.x
+            y = point.y
+            
+            inside = false
+            i = 0
+            j = path.length - 1
+            while (i < path.length)
+              xi = path[i].x
+              yi = path[i].y
+              xj = path[j].x
+              yj = path[j].y
+              
+              intersect = ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)
+              if (intersect)
+                inside = !inside
+              j = i++
+            
+            return inside
+
+          inPoly = false
+          lineData = []
+          mousedown = () ->
+            if (d3.event.shiftKey)
+              console.log 'mouse down'
+              inPoly = true
+          mousemove = () ->
+            if not inPoly
+              return
+            xy = d3.mouse(this)
+            lineData.push {x: xy[0], y: xy[1]}
+            force.start()
+          mouseup = () ->
+            console.log 'mouse up'
+            inPoly = false
+            node.each((d) ->
+              console.log d
+              d3.select(this).classed("selected", d.selected = pointInPolygon({x: d.x, y: d.y}, lineData))
+            )
+            lineData = []
+            force.start()
+
+          svg.attr("width", width)
               .attr("height", height)
+              .on('mousedown', mousedown)
+              .on('mousemove', mousemove)
+              .on('mouseup', mouseup)
+
+
+          lineFunction = d3.svg.line()
+                        .x((d) -> d.x )
+                        .y((d) -> d.y )
+                        .interpolate("basis-closed")
+
+          polygon = svg.append('path')
+                .attr('stroke', 'lightblue')
+                .attr('stroke-width', 3)
+                .attr('fill', 'rgba(0,0,0,0.1)')
 
           node = svg.selectAll(".node")
           link = svg.selectAll(".link")
@@ -174,6 +230,7 @@ app.config ($stateProvider, $urlRouterProvider) ->
                     return 4
                   return 0
                 )
+                polygon.attr('d', lineFunction(lineData))
             )
 
           wasDragging = false

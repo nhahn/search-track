@@ -132,7 +132,7 @@ app.config(function($stateProvider, $urlRouterProvider) {
     controller: function($scope, $state) {
       var updateFn;
       updateFn = function() {
-        var color, cosine, dot, drag, force, graph, height, i, link, mag, node, pin, queries, render, svg, text, wasDragging, width;
+        var color, cosine, dot, drag, force, graph, height, i, inPoly, lineData, lineFunction, link, mag, mousedown, mousemove, mouseup, node, pin, pointInPolygon, polygon, queries, render, svg, text, wasDragging, width;
         queries = SearchInfo.db({
           name: {
             '!is': ''
@@ -193,17 +193,73 @@ app.config(function($stateProvider, $urlRouterProvider) {
             }
           });
         });
-        console.log('blah0');
-        console.log(graph);
-        console.log('blah1');
         width = 1280;
         height = 800;
         color = d3.scale.category20();
-        console.log('blah2');
         force = d3.layout.force().charge(1000).friction(0.01).linkDistance(function(l) {
           return Math.pow(1.0 - l.value, 1) * 500;
         }).size([width, height]);
-        svg = d3.select("#graph").append("svg").attr("width", width).attr("height", height);
+        svg = d3.select("#graph").append("svg");
+        pointInPolygon = function(point, path) {
+          var inside, intersect, j, x, xi, xj, y, yi, yj;
+          x = point.x;
+          y = point.y;
+          inside = false;
+          i = 0;
+          j = path.length - 1;
+          while (i < path.length) {
+            xi = path[i].x;
+            yi = path[i].y;
+            xj = path[j].x;
+            yj = path[j].y;
+            intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+            if (intersect) {
+              inside = !inside;
+            }
+            j = i++;
+          }
+          return inside;
+        };
+        inPoly = false;
+        lineData = [];
+        mousedown = function() {
+          if (d3.event.shiftKey) {
+            console.log('mouse down');
+            return inPoly = true;
+          }
+        };
+        mousemove = function() {
+          var xy;
+          if (!inPoly) {
+            return;
+          }
+          xy = d3.mouse(this);
+          lineData.push({
+            x: xy[0],
+            y: xy[1]
+          });
+          return force.start();
+        };
+        mouseup = function() {
+          console.log('mouse up');
+          inPoly = false;
+          node.each(function(d) {
+            console.log(d);
+            return d3.select(this).classed("selected", d.selected = pointInPolygon({
+              x: d.x,
+              y: d.y
+            }, lineData));
+          });
+          lineData = [];
+          return force.start();
+        };
+        svg.attr("width", width).attr("height", height).on('mousedown', mousedown).on('mousemove', mousemove).on('mouseup', mouseup);
+        lineFunction = d3.svg.line().x(function(d) {
+          return d.x;
+        }).y(function(d) {
+          return d.y;
+        }).interpolate("basis-closed");
+        polygon = svg.append('path').attr('stroke', 'lightblue').attr('stroke-width', 3).attr('fill', 'rgba(0,0,0,0.1)');
         node = svg.selectAll(".node");
         link = svg.selectAll(".link");
         text = svg.selectAll("text.label");
@@ -226,7 +282,7 @@ app.config(function($stateProvider, $urlRouterProvider) {
           text.attr("transform", function(d) {
             return "translate(" + (d.x + (2.5 * d.size) + 5) + "," + (d.y + 3) + ")";
           });
-          return pin.attr("transform", function(d) {
+          pin.attr("transform", function(d) {
             return "translate(" + (d.x - 2) + "," + (d.y - 2) + ")";
           }).attr("width", function(d) {
             if (d.fixed && !d.dragging) {
@@ -239,6 +295,7 @@ app.config(function($stateProvider, $urlRouterProvider) {
             }
             return 0;
           });
+          return polygon.attr('d', lineFunction(lineData));
         });
         wasDragging = false;
         drag = force.drag().on("drag", function(d) {
