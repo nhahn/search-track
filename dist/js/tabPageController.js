@@ -132,7 +132,7 @@ app.config(function($stateProvider, $urlRouterProvider) {
     controller: function($scope, $state) {
       var updateFn;
       updateFn = function() {
-        var color, cosine, dot, drag, force, graph, height, i, inPoly, lineData, lineFunction, link, mag, mousedown, mousemove, mouseup, node, pin, pointInPolygon, polygon, queries, render, svg, text, wasDragging, width;
+        var color, cosine, current_scale, current_translate, dot, drag, fixPoint, force, graph, height, i, inPoly, lineData, lineFunction, link, mag, mousedown, mousemove, mouseup, node, pin, pointInPolygon, polygon, queries, real_svg, render, svg, text, wasDragging, width, zoom;
         queries = SearchInfo.db({
           name: {
             '!is': ''
@@ -199,9 +199,28 @@ app.config(function($stateProvider, $urlRouterProvider) {
         force = d3.layout.force().charge(1000).friction(0.01).linkDistance(function(l) {
           return Math.pow(1.0 - l.value, 1) * 500;
         }).size([width, height]);
-        svg = d3.select("#graph").append("svg");
+        real_svg = d3.select("#graph").append("svg");
+        svg = real_svg.append("g");
+        current_scale = 1;
+        current_translate = [0, 0];
+        zoom = d3.behavior.zoom().scaleExtent([0.1, 10]).on("zoom", function() {
+          console.log('onZoom');
+          console.log(d3.event.translate);
+          console.log(d3.event.scale);
+          svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+          current_scale = d3.event.scale;
+          return current_translate = d3.event.translate;
+        }).center(null);
+        real_svg.call(zoom).on('mousedown.zoom', null);
+        fixPoint = function(point) {
+          return {
+            x: (point.x * current_scale) + current_translate[0],
+            y: (point.y * current_scale) + current_translate[1]
+          };
+        };
         pointInPolygon = function(point, path) {
           var inside, intersect, j, x, xi, xj, y, yi, yj;
+          point = fixPoint(point);
           x = point.x;
           y = point.y;
           inside = false;
@@ -244,7 +263,6 @@ app.config(function($stateProvider, $urlRouterProvider) {
           console.log('mouse up');
           inPoly = false;
           node.each(function(d) {
-            console.log(d);
             return d3.select(this).classed("selected", d.selected = pointInPolygon({
               x: d.x,
               y: d.y
@@ -253,13 +271,13 @@ app.config(function($stateProvider, $urlRouterProvider) {
           lineData = [];
           return force.start();
         };
-        svg.attr("width", width).attr("height", height).on('mousedown', mousedown).on('mousemove', mousemove).on('mouseup', mouseup);
+        real_svg.attr("width", width).attr("height", height).on('mousedown', mousedown).on('mousemove', mousemove).on('mouseup', mouseup);
         lineFunction = d3.svg.line().x(function(d) {
           return d.x;
         }).y(function(d) {
           return d.y;
         }).interpolate("basis-closed");
-        polygon = svg.append('path').attr('stroke', 'lightblue').attr('stroke-width', 3).attr('fill', 'rgba(0,0,0,0.1)');
+        polygon = real_svg.append('path').attr('stroke', 'lightblue').attr('stroke-width', 3).attr('fill', 'rgba(0,0,0,0.1)');
         node = svg.selectAll(".node");
         link = svg.selectAll(".link");
         text = svg.selectAll("text.label");

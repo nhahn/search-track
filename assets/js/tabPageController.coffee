@@ -134,12 +134,31 @@ app.config ($stateProvider, $urlRouterProvider) ->
               .linkDistance (l) -> Math.pow(1.0 - l.value, 1) * 500
               .size([width, height])
 
-          svg = d3.select("#graph").append("svg")
+          real_svg = d3.select("#graph").append("svg")
+          svg = real_svg.append("g")
+          current_scale = 1
+          current_translate = [0, 0]
+          zoom = d3.behavior.zoom()
+                  .scaleExtent([0.1, 10])
+                  .on("zoom", () ->
+                    console.log 'onZoom'
+                    console.log d3.event.translate
+                    console.log d3.event.scale
+                    svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")")
+                    current_scale = d3.event.scale
+                    current_translate = d3.event.translate
+                  ).center(null)
+          real_svg.call(zoom).on('mousedown.zoom',null)
+
+          fixPoint = (point) ->
+            {x: (point.x * current_scale) + current_translate[0], y: (point.y * current_scale) + current_translate[1]}
 
           pointInPolygon = (point, path) ->
             # ray-casting algorithm based on
             # http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
             
+            point = fixPoint(point)
+
             x = point.x
             y = point.y
             
@@ -175,13 +194,12 @@ app.config ($stateProvider, $urlRouterProvider) ->
             console.log 'mouse up'
             inPoly = false
             node.each((d) ->
-              console.log d
               d3.select(this).classed("selected", d.selected = pointInPolygon({x: d.x, y: d.y}, lineData))
             )
             lineData = []
             force.start()
 
-          svg.attr("width", width)
+          real_svg.attr("width", width)
               .attr("height", height)
               .on('mousedown', mousedown)
               .on('mousemove', mousemove)
@@ -193,7 +211,7 @@ app.config ($stateProvider, $urlRouterProvider) ->
                         .y((d) -> d.y )
                         .interpolate("basis-closed")
 
-          polygon = svg.append('path')
+          polygon = real_svg.append('path')
                 .attr('stroke', 'lightblue')
                 .attr('stroke-width', 3)
                 .attr('fill', 'rgba(0,0,0,0.1)')
