@@ -131,11 +131,11 @@ app.config(function($stateProvider, $urlRouterProvider) {
     url: '/graph',
     templateUrl: '/dist/templates/tabPage/graph.html',
     controller: function($scope, $state) {
-      var color, current_scale, current_translate, drag, fixPoint, force, graph, height, inPoly, lineData, lineFunction, link, mousedown, mousemove, mouseup, node, pin, pointInPolygon, polygon, real_svg, render, svg, text, updateFn, wasDragging, width, zoom;
+      var color, current_scale, current_translate, drag, fixPoint, force, graph, height, inPoly, lineData, lineFunction, link, mousedown, mousemove, mouseup, node, pin, pointInPolygon, polygon, real_svg, render, svg, text, tick, updateFn, wasDragging, width, zoom;
       width = 1280;
       height = 800;
       color = d3.scale.category20();
-      force = d3.layout.force().charge(1000).friction(0.01).linkDistance(function(l) {
+      force = d3.layout.force().charge(-400).linkDistance(function(l) {
         return Math.pow(1.0 - l.value, 1) * 500;
       }).size([width, height]);
       real_svg = d3.select("#graph").append("svg");
@@ -143,12 +143,25 @@ app.config(function($stateProvider, $urlRouterProvider) {
       current_scale = 1;
       current_translate = [0, 0];
       zoom = d3.behavior.zoom().scaleExtent([0.1, 10]).on("zoom", function() {
-        console.log('onZoom');
-        console.log(d3.event.translate);
-        console.log(d3.event.scale);
         svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
         current_scale = d3.event.scale;
-        return current_translate = d3.event.translate;
+        current_translate = d3.event.translate;
+        $('text.label').css('font-size', 1.25 * (1 / current_scale) + 'em');
+        $('.node').css('stroke-width', 3 * (1 / current_scale) + 'px');
+        text.attr('stroke-width', function(d) {
+          return 0.5 * (1 / current_scale);
+        });
+        node.attr('r', function(d) {
+          return 2.5 * d.size * (1 / current_scale);
+        });
+        link.style("stroke-width", function(d) {
+          if (d.value > 0.2) {
+            return Math.pow(d.value, 2) * 3 * (1 / current_scale);
+          } else {
+            return 0;
+          }
+        });
+        return tick();
       }).center(null);
       real_svg.call(zoom).on('mousedown.zoom', null);
       fixPoint = function(point) {
@@ -197,7 +210,7 @@ app.config(function($stateProvider, $urlRouterProvider) {
           x: xy[0],
           y: xy[1]
         });
-        return force.start();
+        return tick();
       };
       mouseup = function() {
         console.log('mouse up');
@@ -209,7 +222,7 @@ app.config(function($stateProvider, $urlRouterProvider) {
           }, lineData));
         });
         lineData = [];
-        force.start();
+        tick();
         return d3.select("body").style("cursor", "default");
       };
       real_svg.attr("width", width).attr("height", height).on('mousedown', mousedown).on('mousemove', mousemove).on('mouseup', mouseup);
@@ -223,7 +236,10 @@ app.config(function($stateProvider, $urlRouterProvider) {
       link = svg.selectAll(".link");
       text = svg.selectAll("text.label");
       pin = svg.selectAll(".pin");
-      force.on("tick", function() {
+      tick = function() {
+        text.attr("transform", function(d) {
+          return "translate(" + (d.x + ((2.5 * d.size + 5) * (1 / current_scale))) + "," + (d.y + (3 * (1 / current_scale))) + ")";
+        });
         link.attr("x1", function(d) {
           return d.source.x;
         }).attr("y1", function(d) {
@@ -238,27 +254,24 @@ app.config(function($stateProvider, $urlRouterProvider) {
         }).attr("cy", function(d) {
           return d.y;
         });
-        text.attr("transform", function(d) {
-          return "translate(" + (d.x + (2.5 * d.size) + 5) + "," + (d.y + 3) + ")";
-        });
         pin.attr("transform", function(d) {
-          return "translate(" + (d.x - 2) + "," + (d.y - 2) + ")";
+          return "translate(" + (d.x - (2 / current_scale)) + "," + (d.y - (2 / current_scale)) + ")";
         }).attr("width", function(d) {
           if (d.fixed && !d.dragging) {
-            return 4;
+            return 4 * (1 / current_scale);
           }
           return 0;
         }).attr("height", function(d) {
           if (d.fixed && !d.dragging) {
-            return 4;
+            return 4 * (1 / current_scale);
           }
           return 0;
         });
         return polygon.attr('d', lineFunction(lineData));
-      });
+      };
+      force.on("tick", tick);
       wasDragging = false;
       drag = force.drag().on("drag", function(d) {
-        console.log('onDrag');
         wasDragging = true;
         d.dragging = true;
         if (!d3.event.sourceEvent.shiftKey) {
@@ -383,7 +396,6 @@ app.config(function($stateProvider, $urlRouterProvider) {
         pin = pin.data(graph.nodes);
         return pin.enter().append("rect").attr("x", 0).attr("y", 0).attr("class", "pin").style("fill", 'black').call(drag);
       };
-      force.start();
       updateFn = function() {
         render();
         return force.start();

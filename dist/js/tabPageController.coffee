@@ -102,8 +102,7 @@ app.config ($stateProvider, $urlRouterProvider) ->
         color = d3.scale.category20()
 
         force = d3.layout.force()
-            .charge(1000)
-            .friction(0.01)
+            .charge(-400)
             .linkDistance (l) -> Math.pow(1.0 - l.value, 1) * 500
             .size([width, height])
 
@@ -114,12 +113,20 @@ app.config ($stateProvider, $urlRouterProvider) ->
         zoom = d3.behavior.zoom()
                 .scaleExtent([0.1, 10])
                 .on("zoom", () ->
-                  console.log 'onZoom'
-                  console.log d3.event.translate
-                  console.log d3.event.scale
                   svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")")
                   current_scale = d3.event.scale
                   current_translate = d3.event.translate
+                  $('text.label').css('font-size', 1.25*(1/current_scale) + 'em')
+                  $('.node').css('stroke-width', 3*(1/current_scale) + 'px')
+                  text.attr('stroke-width', (d) -> 0.5 * (1/current_scale))
+                  node.attr('r', (d) -> 2.5 * d.size * (1/current_scale))
+                  link.style("stroke-width", (d) -> 
+                    if d.value > 0.2
+                      Math.pow(d.value, 2) * 3 * (1/current_scale)
+                    else
+                      0
+                  )
+                  tick()
                 ).center(null)
         real_svg.call(zoom).on('mousedown.zoom',null)
 
@@ -163,7 +170,7 @@ app.config ($stateProvider, $urlRouterProvider) ->
             return
           xy = d3.mouse(this)
           lineData.push {x: xy[0], y: xy[1]}
-          force.start()
+          tick()
         mouseup = () ->
           console.log 'mouse up'
           inPoly = false
@@ -171,7 +178,7 @@ app.config ($stateProvider, $urlRouterProvider) ->
             d3.select(this).classed("selected", d.selected = pointInPolygon({x: d.x, y: d.y}, lineData))
           )
           lineData = []
-          force.start()
+          tick()
           d3.select("body").style("cursor", "default")
 
         real_svg.attr("width", width)
@@ -196,7 +203,11 @@ app.config ($stateProvider, $urlRouterProvider) ->
         text = svg.selectAll("text.label")
         pin = svg.selectAll(".pin")
 
-        force.on("tick", () ->
+        tick = () ->
+              text.attr("transform", (d) ->
+                "translate(" + (d.x + ((2.5*d.size+5)*(1/current_scale))) + "," + (d.y + (3*(1/current_scale))) + ")"
+              )
+
               link.attr("x1", (d) -> d.source.x)
                   .attr("y1", (d) -> d.source.y)
                   .attr("x2", (d) -> d.target.x)
@@ -205,29 +216,25 @@ app.config ($stateProvider, $urlRouterProvider) ->
               node.attr("cx", (d) -> d.x )
                   .attr("cy", (d) -> d.y )
 
-              text.attr("transform", (d) ->
-                "translate(" + (d.x + (2.5*d.size) + 5) + "," + (d.y + 3) + ")"
-              )
               pin.attr("transform", (d) ->
-                "translate(" + (d.x-2) + "," + (d.y-2) + ")"
+                "translate(" + (d.x-(2/current_scale)) + "," + (d.y-(2/current_scale)) + ")"
               )
               .attr("width", (d) ->
                 if d.fixed and not d.dragging
-                  return 4
+                  return 4 * (1/current_scale)
                 return 0
               )
               .attr("height", (d) ->
                 if d.fixed and not d.dragging
-                  return 4
+                  return 4 * (1/current_scale)
                 return 0
               )
               polygon.attr('d', lineFunction(lineData))
-          )
+        force.on("tick", tick)
 
         wasDragging = false
         drag = force.drag()
           .on("drag", (d) ->
-            console.log 'onDrag'
             wasDragging = true
             d.dragging = true
             if (!d3.event.sourceEvent.shiftKey)
@@ -326,8 +333,6 @@ app.config ($stateProvider, $urlRouterProvider) ->
               .style("fill", 'black')
               .call(drag)
 
-        force.start()
-          
         updateFn = () ->
           render()
           force.start()
