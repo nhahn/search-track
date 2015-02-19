@@ -237,7 +237,7 @@ app.config ($stateProvider, $urlRouterProvider) ->
                   .attr("fill", (d) -> color(d.group))
                   .attr('stroke', 'lightgray')
                   .attr('stroke-width', 0.5)
-                  .text((d) -> d.name)
+                  .text((d) -> d.name + " (" + d.size + ")")
 
             pin = pin.data(graph.nodes)
             pin.enter().append("rect")

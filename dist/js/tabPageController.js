@@ -296,7 +296,7 @@ app.config(function($stateProvider, $urlRouterProvider) {
           text.enter().append("text").attr("class", "label").attr("fill", function(d) {
             return color(d.group);
           }).attr('stroke', 'lightgray').attr('stroke-width', 0.5).text(function(d) {
-            return d.name;
+            return d.name + " (" + d.size + ")";
           });
           pin = pin.data(graph.nodes);
           return pin.enter().append("rect").attr("x", 0).attr("y", 0).attr("class", "pin").style("fill", 'black').call(drag);

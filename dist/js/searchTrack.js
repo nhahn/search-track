@@ -117,7 +117,8 @@ chrome.webNavigation.onDOMContentLoaded.addListener(function(details) {
               vector = results['vector'];
               insert_obj = {
                 vector: vector,
-                title: tab.title
+                title: tab.title,
+                url: details.url
               };
               return pages.update(insert_obj, true);
             });

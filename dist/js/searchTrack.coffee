@@ -63,7 +63,7 @@ chrome.webNavigation.onDOMContentLoaded.addListener((details) ->
             ).success( (results) ->
               results = JSON.parse results
               vector = results['vector']
-              insert_obj = {vector: vector, title: tab.title}
+              insert_obj = {vector: vector, title: tab.title, url: details.url}
               pages.update(insert_obj, true)
             )
 )
