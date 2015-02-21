@@ -115,7 +115,7 @@ window.PageInfo = (function() {
         }
         return $.ajax({
           type: 'POST',
-          url: 'http://127.0.0.1:5000/searchInfo',
+          url: 'http://104.131.7.171/searchInfo',
           data: {
             'data': JSON.stringify({
               'vectors': vectors

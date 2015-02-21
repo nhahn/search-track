@@ -58,14 +58,17 @@ chrome.webNavigation.onDOMContentLoaded.addListener((details) ->
           if html? and html.length > 10
             $.ajax(
               type: 'POST',
-              url: 'http://127.0.0.1:5000/tokenize',
+              url: 'http://104.131.7.171/tokenize',
               data: { 'data': JSON.stringify( {'html': html} ) }
             ).success( (results) ->
+              console.log 'tokenized'
               results = JSON.parse results
               vector = results['vector']
               insert_obj = {vector: vector, title: tab.title, url: details.url}
               pages.update(insert_obj, true)
-            )
+            ).fail (a, t, e) ->
+              console.log 'fail tokenize'
+              console.log t
 )
   
 # Not sure what this does

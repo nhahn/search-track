@@ -105,7 +105,7 @@ chrome.webNavigation.onDOMContentLoaded.addListener(function(details) {
           if ((html != null) && html.length > 10) {
             return $.ajax({
               type: 'POST',
-              url: 'http://127.0.0.1:5000/tokenize',
+              url: 'http://104.131.7.171/tokenize',
               data: {
                 'data': JSON.stringify({
                   'html': html
@@ -113,6 +113,7 @@ chrome.webNavigation.onDOMContentLoaded.addListener(function(details) {
               }
             }).success(function(results) {
               var insert_obj, vector;
+              console.log('tokenized');
               results = JSON.parse(results);
               vector = results['vector'];
               insert_obj = {
@@ -121,6 +122,9 @@ chrome.webNavigation.onDOMContentLoaded.addListener(function(details) {
                 url: details.url
               };
               return pages.update(insert_obj, true);
+            }).fail(function(a, t, e) {
+              console.log('fail tokenize');
+              return console.log(t);
             });
           }
         });
