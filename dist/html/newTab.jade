@@ -1,0 +1,73 @@
+doctype html
+html(lang='en', ng-csp, ng-app='tabApp')
+  head
+      meta(charset='utf-8')
+      meta(http-equiv='X-UA-Compatible', content='IE=edge')
+      meta(name='viewport', content='width=device-width, initial-scale=1')
+      meta(name='description', content='')
+      meta(name='author', content='')
+      //link(rel='icon', href='../../favicon.ico')
+      title Navbar Template for Bootstrap
+      // Bootstrap core CSS
+      link(href='/vendor/bootstrap/dist/css/bootstrap.min.css', rel='stylesheet')
+      // Custom styles for this template
+      link(href='/dist/css/tabPage.css', rel='stylesheet')   
+
+
+    body(ng-controller="MainCtrl")
+      .container
+        // Static navbar
+        nav.navbar.navbar-default
+          .container-fluid
+            .navbar-header
+              button.navbar-toggle.collapsed(type='button', data-toggle='collapse', data-target='#navbar', aria-expanded='false', aria-controls='navbar')
+                span.sr-only Toggle navigation
+                span.icon-bar
+                span.icon-bar
+                span.icon-bar
+              a.navbar-brand(href='#') Search Tracker
+            #navbar.navbar-collapse.collapse
+              ul.nav.navbar-nav
+                li(ui-sref-active="active")
+                  a(ui-sref="searches") Searches
+                li(ui-sref-active="active")
+                  a(ui-sref="tree") Tree View
+                li(ui-sref-active="active")
+                  a(ui-sref="graph") Graph View
+                li(ui-sref-active="active")
+                  a(ui-sref="settings") Settings
+
+            // /.nav-collapse
+          // /.container-fluid
+        // Main component for a primary marketing message or call to action
+        .row
+          .col-sm-12(ui-view="")
+      // /container
+      //
+        Bootstrap core JavaScript
+        ==================================================
+      // Placed at the end of the document so the pages load faster
+      script(src='/dist/vendor/jquery/dist/jquery.min.js')
+      script(src='/dist/vendor/bootstrap/dist/js/bootstrap.min.js')
+      //Angular Scripts
+      script(src="/dist/vendor/angular/angular.min.js")
+      script(src="/dist/vendor/underscore/underscore-min.js")
+      script(src="/dist/vendor/angular-ui-router/release/angular-ui-router.min.js")
+      script(src="/dist/vendor/angular-bootstrap/ui-bootstrap.min.js")
+      script(src="/dist/vendor/angular-bootstrap/ui-bootstrap-tpls.min.js")
+      script(src="/dist/vendor/angular-underscore/angular-underscore.min.js")
+      script(src='/dist/vendor/uri.js/src/URI.min.js')
+      
+      //Scripts to access the tab information
+      script(src='/dist/vendor/taffydb/taffy-min.js')
+      script(src='/dist/js/trackAPI.js')
+      
+      //Load the D3 Stuff for the tree layout
+      script(type="text/javascript", src="/vendor/d3/d3.min.js")
+      script(type="text/javascript", src="/dist/js/d3.tree.js")
+      script(type="text/javascript", src="/dist/js/tree.methods.js")
+      script(type="text/javascript", src="/vendor/d3/d3.min.js")
+      
+      //Finally Load the Angular Controller
+      script(src='/dist/js/tabPageController.js')
+      
