@@ -15,7 +15,13 @@ searchTrack.addTab = (searches, tabId) ->
   tabs = searches.first().tabs
   tabs.push(tabId) if tabs.indexOf(tabId) < 0
   searches.update({tabs: tabs, date: Date.now()})
-    
+
+extractGoogleRedirectURL = (url) ->
+  matches = url.match(/www\.google\.com\/.*url=(.*?)($|&)/)
+  if matches == null
+    return url
+  url = decodeURIComponent(matches[1].replace(/\+/g, ' '))
+  return url
 
 # SearchInfo Creation
 chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
@@ -46,13 +52,17 @@ chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
         console.log 'add tab for: ' + changeInfo.url
         searchTrack.addTab(searchInfo, tabId)
 
-chrome.webNavigation.onDOMContentLoaded.addListener((details) ->
-  console.log 'onLoaded: ' + details
+chrome.webNavigation.onCompleted.addListener((details) ->
+  console.log 'onCompleted: ' + details.url
+  details.url = extractGoogleRedirectURL details.url
   searchInfo = SearchInfo.db({tabs: {has: details.tabId}})
   if searchInfo.first()
     chrome.tabs.get details.tabId, (tab) ->
       pages = PageInfo.db({tab: details.tabId}).order("date desc")
-      if pages.first()
+      console.log tab.url
+      console.log details.url
+      if pages.first() and tab.url == details.url
+        console.log "TOK"
         chrome.tabs.executeScript details.tabId, {code: 'window.document.documentElement.innerHTML'}, (results) ->
           html = results[0]
           if html? and html.length > 10
@@ -70,10 +80,17 @@ chrome.webNavigation.onDOMContentLoaded.addListener((details) ->
               console.log 'fail tokenize'
               console.log t
 )
+
+chrome.webNavigation.onDOMContentLoaded.addListener((details) ->
+  console.log 'onLoaded: ' + details.url
+  details.url = extractGoogleRedirectURL details.url
+)
   
 # Not sure what this does
 chrome.webNavigation.onCommitted.addListener((details) ->
-  console.log 'onCommitted: ' + details.tabId + ": " + details.transitionType + ", " + details.transitionQualifiers
+  console.log 'onCommitted: ' + details.url
+  details.url = extractGoogleRedirectURL details.url
+  #console.log 'onCommitted: ' + details.tabId + ": " + details.transitionType + ", " + details.transitionQualifiers
   #see what searches have been performed in this tab before
   searchInfo = SearchInfo.db({tabs: {has: details.tabId}})
   #We typed in a URL of some type -- need to remove this from tracking
@@ -111,6 +128,7 @@ chrome.webNavigation.onCommitted.addListener((details) ->
 #Track the creation of tabs from links -- aka new tab / window from link
 chrome.webNavigation.onCreatedNavigationTarget.addListener((details) ->
   console.log 'onNav: ' + details.sourceTabId + ' -> ' + details.tabId
+  details.url = extractGoogleRedirectURL details.url
   #see what searches have been performed in this tab before
   searchInfo = SearchInfo.db({tabs: {has: details.sourceTabId}})
   if searchInfo.first()

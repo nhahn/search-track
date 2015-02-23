@@ -400,8 +400,7 @@ app.config(function($stateProvider, $urlRouterProvider) {
         render();
         return force.start();
       };
-      updateFn();
-      return SearchInfo.updateFunction(updateFn);
+      return updateFn();
     }
   }).state('settings', {
     url: '/settings',

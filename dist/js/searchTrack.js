@@ -3,7 +3,7 @@
  * This file keeps track of the Google searches a person performs in the background. It saves them
  * in the local storage in the "queries" variable
  */
-var searchTrack;
+var extractGoogleRedirectURL, searchTrack;
 
 searchTrack = {};
 
@@ -31,6 +31,16 @@ searchTrack.addTab = function(searches, tabId) {
     tabs: tabs,
     date: Date.now()
   });
+};
+
+extractGoogleRedirectURL = function(url) {
+  var matches;
+  matches = url.match(/www\.google\.com\/.*url=(.*?)($|&)/);
+  if (matches === null) {
+    return url;
+  }
+  url = decodeURIComponent(matches[1].replace(/\+/g, ' '));
+  return url;
 };
 
 chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
@@ -82,9 +92,10 @@ chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
   }
 });
 
-chrome.webNavigation.onDOMContentLoaded.addListener(function(details) {
+chrome.webNavigation.onCompleted.addListener(function(details) {
   var searchInfo;
-  console.log('onLoaded: ' + details);
+  console.log('onCompleted: ' + details.url);
+  details.url = extractGoogleRedirectURL(details.url);
   searchInfo = SearchInfo.db({
     tabs: {
       has: details.tabId
@@ -96,7 +107,10 @@ chrome.webNavigation.onDOMContentLoaded.addListener(function(details) {
       pages = PageInfo.db({
         tab: details.tabId
       }).order("date desc");
-      if (pages.first()) {
+      console.log(tab.url);
+      console.log(details.url);
+      if (pages.first() && tab.url === details.url) {
+        console.log("TOK");
         return chrome.tabs.executeScript(details.tabId, {
           code: 'window.document.documentElement.innerHTML'
         }, function(results) {
@@ -133,9 +147,15 @@ chrome.webNavigation.onDOMContentLoaded.addListener(function(details) {
   }
 });
 
+chrome.webNavigation.onDOMContentLoaded.addListener(function(details) {
+  console.log('onLoaded: ' + details.url);
+  return details.url = extractGoogleRedirectURL(details.url);
+});
+
 chrome.webNavigation.onCommitted.addListener(function(details) {
   var pages, search, searchInfo;
-  console.log('onCommitted: ' + details.tabId + ": " + details.transitionType + ", " + details.transitionQualifiers);
+  console.log('onCommitted: ' + details.url);
+  details.url = extractGoogleRedirectURL(details.url);
   searchInfo = SearchInfo.db({
     tabs: {
       has: details.tabId
@@ -202,6 +222,7 @@ chrome.webNavigation.onCommitted.addListener(function(details) {
 chrome.webNavigation.onCreatedNavigationTarget.addListener(function(details) {
   var searchInfo;
   console.log('onNav: ' + details.sourceTabId + ' -> ' + details.tabId);
+  details.url = extractGoogleRedirectURL(details.url);
   searchInfo = SearchInfo.db({
     tabs: {
       has: details.sourceTabId

@@ -337,7 +337,7 @@ app.config ($stateProvider, $urlRouterProvider) ->
           render()
           force.start()
         updateFn()
-        SearchInfo.updateFunction(updateFn)
+    #SearchInfo.updateFunction(updateFn)
       })
     .state('settings', {
       url: '/settings'
