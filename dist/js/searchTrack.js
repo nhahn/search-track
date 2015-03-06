@@ -3,31 +3,31 @@
  * This file keeps track of the Google searches a person performs in the background. It saves them
  * in the local storage in the "queries" variable
  */
-var extractGoogleRedirectURL, searchTrack;
+var createOrUpdateSearchInfo, extractGoogleRedirectURL, getContentAndTokenize, searchTrack;
 
 searchTrack = {};
 
 searchTrack.addPageRelation = function(url, query, tabId) {};
 
-searchTrack.removeTab = function(searches, tabId) {
+searchTrack.removeTab = function(searchInfo, ___id) {
   var idx, tabs;
-  tabs = searches.first().tabs;
-  idx = tabs.indexOf(tabId);
+  tabs = searchInfo.tabs;
+  idx = tabs.indexOf(___id);
   if (idx > -1) {
     tabs.splice(idx, 1);
   }
-  return searches.update({
+  return SearchInfo.db(searchInfo).update({
     tabs: tabs
   });
 };
 
-searchTrack.addTab = function(searches, tabId) {
+searchTrack.addTab = function(searchInfo, ___id) {
   var tabs;
-  tabs = searches.first().tabs;
-  if (tabs.indexOf(tabId) < 0) {
-    tabs.push(tabId);
+  tabs = searchInfo.tabs;
+  if (tabs.indexOf(___id) < 0) {
+    tabs.push(___id);
   }
-  return searches.update({
+  return SearchInfo.db(searchInfo).update({
     tabs: tabs,
     date: Date.now()
   });
@@ -43,213 +43,152 @@ extractGoogleRedirectURL = function(url) {
   return url;
 };
 
-chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
-  var matches, query, searchInfo;
-  if (changeInfo.url != null) {
-    console.log('onUpdate: ' + changeInfo.url);
-    matches = changeInfo.url.match(/www\.google\.com\/.*q=(.*?)($|&)/);
-    if (matches !== null) {
-      query = decodeURIComponent(matches[1].replace(/\+/g, ' '));
-      console.log('onUpdate query: ' + query);
-      if (query === "") {
-        return;
-      }
-      searchInfo = SearchInfo.db({
-        tabs: {
-          has: tabId
-        }
-      });
-      if (searchInfo.first()) {
-        searchTrack.removeTab(searchInfo, tabId);
-      }
-      searchInfo = SearchInfo.db([
-        {
-          name: query
-        }
-      ]);
-      console.log('onUpdate query is: ' + query);
-      if (!searchInfo.first()) {
-        console.log('creating for: ' + changeInfo.url);
-        SearchInfo.db.insert({
-          tabs: [tabId],
-          date: Date.now(),
-          name: query
-        });
-        return PageInfo.db.insert({
-          url: changeInfo.url,
-          query: query,
-          tab: tabId,
-          date: Date.now(),
-          referrer: null,
-          visits: 1,
-          title: tab.title
-        });
-      } else {
-        console.log('add tab for: ' + changeInfo.url);
-        return searchTrack.addTab(searchInfo, tabId);
-      }
+createOrUpdateSearchInfo = function(tabId, tab, query) {
+  var data, pageInfo, searchInfo;
+  searchInfo = SearchInfo.db([
+    {
+      name: query
     }
-  }
-});
-
-chrome.webNavigation.onCompleted.addListener(function(details) {
-  var searchInfo;
-  console.log('onCompleted: ' + details.url);
-  details.url = extractGoogleRedirectURL(details.url);
-  searchInfo = SearchInfo.db({
-    tabs: {
-      has: details.tabId
-    }
-  });
-  if (searchInfo.first()) {
-    return chrome.tabs.get(details.tabId, function(tab) {
-      var pages;
-      pages = PageInfo.db({
-        tab: details.tabId
-      }).order("date desc");
-      console.log(tab.url);
-      console.log(details.url);
-      if (pages.first() && tab.url === details.url) {
-        console.log("TOK");
-        return chrome.tabs.executeScript(details.tabId, {
-          code: 'window.document.documentElement.innerHTML'
-        }, function(results) {
-          var html;
-          html = results[0];
-          if ((html != null) && html.length > 10) {
-            return $.ajax({
-              type: 'POST',
-              url: 'http://104.131.7.171/tokenize',
-              data: {
-                'data': JSON.stringify({
-                  'html': html
-                })
-              }
-            }).success(function(results) {
-              var insert_obj, vector;
-              console.log('tokenized');
-              results = JSON.parse(results);
-              vector = results['vector'];
-              insert_obj = {
-                vector: vector,
-                title: tab.title,
-                url: details.url
-              };
-              return pages.update(insert_obj, true);
-            }).fail(function(a, t, e) {
-              console.log('fail tokenize');
-              return console.log(t);
-            });
-          }
-        });
-      }
+  ]).order("date desc").first();
+  if (!searchInfo) {
+    console.log('creating for: ' + tab.url);
+    data = {
+      url: tab.url,
+      query: query,
+      tab: tabId,
+      date: Date.now(),
+      referrer: null,
+      visits: 1,
+      title: tab.title
+    };
+    PageInfo.db.insert(data);
+    pageInfo = PageInfo.db(data).order("date desc").first();
+    return SearchInfo.db.insert({
+      tabs: [pageInfo.___id],
+      date: Date.now(),
+      name: query
     });
-  }
-});
-
-chrome.webNavigation.onDOMContentLoaded.addListener(function(details) {
-  console.log('onLoaded: ' + details.url);
-  return details.url = extractGoogleRedirectURL(details.url);
-});
-
-chrome.webNavigation.onCommitted.addListener(function(details) {
-  var pages, search, searchInfo;
-  console.log('onCommitted: ' + details.url);
-  details.url = extractGoogleRedirectURL(details.url);
-  searchInfo = SearchInfo.db({
-    tabs: {
-      has: details.tabId
-    }
-  });
-  if (details.transitionQualifiers.indexOf("from_address_bar") > -1) {
-    if (searchInfo.first()) {
-      return searchTrack.removeTab(searchInfo, details.tabId);
-    }
-  } else if (details.transitionType === "link" || details.transitionType === "form_submit") {
-    if (details.transitionQualifiers.indexOf("forward_back") > -1) {
-      if (searchInfo.first()) {
-        pages = PageInfo.db({
-          tab: details.tabId
-        }, {
-          query: searchInfo.first().name
-        }, {
-          url: details.url
-        });
-        if (pages.first()) {
-          return pages.update({
-            visits: pages.first().visits + 1,
-            date: Date.now()
-          }, false);
-        }
-      }
-    } else {
-      if (searchInfo.first()) {
-        if (details.transitionQualifiers.indexOf("client_redirect") > -1) {
-          return chrome.tabs.get(details.tabId, function(tab) {
-            var insert_obj;
-            pages = PageInfo.db({
-              tab: details.tabId
-            }).order("date desc");
-            if (pages.first()) {
-              insert_obj = {
-                url: details.url,
-                title: tab.title
-              };
-              pages.update(insert_obj, false);
-              return console.log('UPDATE');
-            }
-          });
-        }
-      }
-    }
-  } else if (details.transitionType === "auto_bookmark" || details.transitionType === "typed" || details.transitionType === "keyword") {
-    pages = PageInfo.db({
-      tab: details.tabId
-    }, {
-      url: details.url
-    });
-    if (pages.first()) {
-      search = SearchInfo.db({
-        name: pages.first().query
-      });
-      return searchTrack.addTab(search, details.tabId);
-    } else if (searchInfo.first()) {
-      return searchTrack.removeTab(searchInfo, details.tabId);
-    }
-  }
-});
-
-chrome.webNavigation.onCreatedNavigationTarget.addListener(function(details) {
-  var searchInfo;
-  console.log('onNav: ' + details.sourceTabId + ' -> ' + details.tabId);
-  details.url = extractGoogleRedirectURL(details.url);
-  searchInfo = SearchInfo.db({
-    tabs: {
-      has: details.sourceTabId
-    }
-  });
-  if (searchInfo.first()) {
-    return chrome.tabs.get(details.tabId, function(tab) {
-      var insert_obj, pages;
-      insert_obj = {
-        url: details.url,
-        query: searchInfo.first().name,
-        tab: details.tabId,
+  } else {
+    pageInfo = PageInfo.db({
+      url: tab.url,
+      query: query
+    }).order("date desc").first();
+    if (!pageInfo) {
+      data = {
+        url: tab.url,
+        query: query,
+        tab: tabId,
         date: Date.now(),
         referrer: null,
         visits: 1,
         title: tab.title
       };
-      pages = PageInfo.db({
-        tab: details.sourceTabId
-      }).order("date desc");
-      if (pages.first()) {
-        insert_obj.referrer = pages.first().___id;
-      }
-      PageInfo.db.insert(insert_obj);
-      return searchTrack.addTab(searchInfo, details.tabId);
-    });
+      PageInfo.db.insert(data);
+      pageInfo = PageInfo.db(data).order("date desc").first();
+      console.log('add tab for: ');
+      console.log(pageInfo);
+      console.log('to: ');
+      console.log(searchInfo);
+      searchTrack.addTab(searchInfo, pageInfo.___id);
+      console.log('result: ');
+      return console.log(searchInfo);
+    }
   }
+};
+
+getContentAndTokenize = function(tabId, tab, pageInfo) {
+  console.log("TOK:");
+  console.log(tab.url);
+  return chrome.tabs.executeScript(tabId, {
+    code: 'window.document.documentElement.innerHTML'
+  }, function(results) {
+    var html;
+    html = results[0];
+    if ((html != null) && html.length > 10) {
+      return $.ajax({
+        type: 'POST',
+        url: 'http://104.131.7.171/tokenize',
+        data: {
+          'data': JSON.stringify({
+            'html': html
+          })
+        }
+      }).success(function(results) {
+        var insert_obj, vector;
+        console.log('tokenized');
+        results = JSON.parse(results);
+        vector = results['vector'];
+        insert_obj = {
+          vector: vector,
+          title: tab.title,
+          url: tab.url
+        };
+        return PageInfo.db(pageInfo).update(insert_obj, true);
+      }).fail(function(a, t, e) {
+        console.log('fail tokenize');
+        return console.log(t);
+      });
+    }
+  });
+};
+
+chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
+  var matches, pageInfo, query;
+  if (changeInfo.status !== 'complete') {
+    return;
+  }
+  console.log('onUpdated ' + tabId);
+  console.log(changeInfo);
+  matches = tab.url.match(/www\.google\.com\/.*q=(.*?)($|&)/);
+  if (matches !== null) {
+    query = decodeURIComponent(matches[1].replace(/\+/g, ' '));
+    if (query !== "") {
+      return createOrUpdateSearchInfo(tabId, tab, query);
+    }
+  } else {
+    pageInfo = PageInfo.db({
+      tab: tabId
+    }).order("date desc").first();
+    if (pageInfo) {
+      return getContentAndTokenize(tabId, tab, pageInfo);
+    }
+  }
+});
+
+chrome.webNavigation.onCompleted.addListener(function(details) {
+  if (details.frameId !== 0) {
+    return;
+  }
+  console.log('onCompleted:');
+  console.log(details);
+  return console.log(details.url);
+});
+
+chrome.webNavigation.onCreatedNavigationTarget.addListener(function(details) {
+  console.log('onNav: ' + details.sourceTabId + ' -> ' + details.tabId);
+  details.url = extractGoogleRedirectURL(details.url);
+  return chrome.tabs.get(details.sourceTabId, function(sourceTab) {
+    var pageInfo, searchInfo;
+    pageInfo = PageInfo.db({
+      url: sourceTab.url
+    }).order("date desc").first();
+    searchInfo = SearchInfo.db({
+      tabs: {
+        has: pageInfo.___id
+      }
+    }).order("date desc").first();
+    if (searchInfo) {
+      PageInfo.db.insert({
+        tab: details.tabId,
+        query: searchInfo.name
+      });
+      pageInfo = PageInfo.db({
+        tab: details.tabId,
+        query: searchInfo.name
+      }).order("date desc").first();
+      return searchTrack.addTab(searchInfo, pageInfo.___id);
+    }
+  });
 });
 
 //# sourceMappingURL=searchTrack.js.map
