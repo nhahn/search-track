@@ -40,10 +40,7 @@ app.config(function($stateProvider, $urlRouterProvider) {
         grouped = _.object(_.map(grouped, function(val, key) {
           return [
             key, {
-              records: val,
-              lda: SearchInfo.db({
-                name: key
-              }).first().lda
+              records: val
             }
           ];
         }));
@@ -290,7 +287,7 @@ app.config(function($stateProvider, $urlRouterProvider) {
         links: []
       };
       render = function() {
-        var cosine, dot, i, mag, queries;
+        var cosine, dot, getLDAVector, i, mag, queries, scale, stack;
         i = 0;
         graph = {
           nodes: [],
@@ -299,22 +296,9 @@ app.config(function($stateProvider, $urlRouterProvider) {
         queries = SearchInfo.db({
           name: {
             '!is': ''
-          },
-          lda_vector: {
-            isNull: false
           }
         }).get();
         console.log(queries);
-        _.each(queries, function(query) {
-          return graph.nodes.push({
-            name: query.name,
-            group: i++,
-            info: query,
-            size: PageInfo.db({
-              query: query.name
-            }).get().length
-          });
-        });
         dot = function(v1, v2) {
           var v;
           v = _.map(_.zip(v1, v2), function(xy) {
@@ -338,11 +322,70 @@ app.config(function($stateProvider, $urlRouterProvider) {
         cosine = function(v1, v2) {
           return dot(v1, v2) / (mag(v1) * mag(v2));
         };
+        scale = function(v, factor) {
+          return _.map(v, function(s) {
+            return s * factor;
+          });
+        };
+        stack = function(v1, v2) {
+          var v;
+          return v = _.map(_.zip(v1, v2), function(xy) {
+            return xy[0] + xy[1];
+          });
+        };
+        getLDAVector = function(query) {
+          var pages, total, vector, vectors;
+          console.log('getLDAVector(query)');
+          pages = _.map(query.tabs, function(___id) {
+            return PageInfo.db({
+              ___id: ___id
+            }).first();
+          });
+          console.log(pages);
+          pages = _.filter(pages, function(page) {
+            return !page.isSERP;
+          });
+          console.log(pages);
+          pages = _.filter(pages, function(page) {
+            return page.size != null;
+          });
+          console.log(pages);
+          pages = _.filter(pages, function(page) {
+            return page.topic_vector != null;
+          });
+          console.log(pages);
+          total = _.reduce(_.map(pages, function(page) {
+            return page.size;
+          }), function(x, y) {
+            return x + y;
+          });
+          console.log(total);
+          vectors = _.map(pages, function(page) {
+            return scale(page.topic_vector, page.size / total);
+          });
+          console.log(vectors);
+          vector = _.reduce(vectors, stack);
+          console.log(vector);
+          return vector;
+        };
+        _.each(queries, function(query) {
+          var lda_vector;
+          lda_vector = getLDAVector(query);
+          return graph.nodes.push({
+            name: query.name,
+            group: i++,
+            lda_vector: lda_vector,
+            size: PageInfo.db({
+              query: query.name,
+              isSERP: false
+            }).get().length
+          });
+        });
         _.each(graph.nodes, function(node1) {
           return _.each(graph.nodes, function(node2) {
             var similarity;
             if (node2.group > node1.group) {
-              similarity = cosine(node1.info.lda_vector, node2.info.lda_vector);
+              similarity = cosine(node1.lda_vector, node2.lda_vector);
               return graph.links.push({
                 source: node1.group,
                 target: node2.group,

@@ -29,7 +29,7 @@ createOrUpdateSearchInfo = (tabId, tab, query) ->
   if !searchInfo
     #First time finding this
     console.log 'creating for: ' + tab.url
-    data = {url: tab.url, query: query, tab: tabId, date: Date.now(), referrer: null, visits: 1, title: tab.title}
+    data = {isSERP: true, url: tab.url, query: query, tab: tabId, date: Date.now(), referrer: null, visits: 1, title: tab.title}
     PageInfo.db.insert(data)
     pageInfo = PageInfo.db(data).order("date desc").first()
     SearchInfo.db.insert({tabs: [pageInfo.___id], date: Date.now(), name: query})
@@ -37,7 +37,7 @@ createOrUpdateSearchInfo = (tabId, tab, query) ->
     pageInfo = PageInfo.db({url: tab.url, query: query}).order("date desc").first()
     # dont add dup search page
     if !pageInfo
-      data = {url: tab.url, query: query, tab: tabId, date: Date.now(), referrer: null, visits: 1, title: tab.title}
+      data = {isSERP: true, url: tab.url, query: query, tab: tabId, date: Date.now(), referrer: null, visits: 1, title: tab.title}
       PageInfo.db.insert(data)
       pageInfo = PageInfo.db(data).order("date desc").first()
       console.log 'add tab for: '
@@ -56,21 +56,22 @@ getContentAndTokenize = (tabId, tab, pageInfo) ->
     if html? and html.length > 10
       $.ajax(
         type: 'POST',
-        url: 'http://104.131.7.171/tokenize',
+        url: 'http://104.131.7.171/lda',
         data: { 'data': JSON.stringify( {'html': html} ) }
       ).success( (results) ->
-        console.log 'tokenized'
+        console.log 'lda'
         results = JSON.parse results
         vector = results['vector']
-        insert_obj = {vector: vector, title: tab.title, url: tab.url}
-        PageInfo.db(pageInfo).update(insert_obj, true)
+        update_obj = {title: tab.title, url: tab.url, vector: results['vector'], topics: results['topics'], topic_vector: results['topic_vector'], size: results['size']}
+        PageInfo.db(pageInfo).update(update_obj, true)
       ).fail (a, t, e) ->
         console.log 'fail tokenize'
         console.log t
 
 
 chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
-  # TODO think about multiple completes from server-side redirections
+  # TODO what if the page keeps loading while the user is reading it?
+  # if SearchInfo is created after some link is clicked, the page is not tracked
   if changeInfo.status != 'complete'
     return
 
@@ -78,6 +79,7 @@ chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
   console.log changeInfo
 
   matches = tab.url.match(/www\.google\.com\/.*q=(.*?)($|&)/)
+
   if matches != null
     query = decodeURIComponent(matches[1].replace(/\+/g, ' '))
     if query != ""
@@ -86,8 +88,13 @@ chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
   else
     pageInfo = PageInfo.db({tab: tabId}).order("date desc").first()
     if pageInfo
-      # TODO check for dup here
-      getContentAndTokenize(tabId, tab, pageInfo)
+      # check for dup here
+      searchInfo = SearchInfo.db({tabs: {has: pageInfo.___id}}).order("date desc").first()
+      dup_pageInfo = PageInfo.db({title: tab.title, url: tab.url, query: searchInfo.name}).first()
+      if dup_pageInfo
+        PageInfo.db(pageInfo).remove()
+      else
+        getContentAndTokenize(tabId, tab, pageInfo)
 
 chrome.webNavigation.onCompleted.addListener (details) ->
   # subframe navigation
@@ -106,8 +113,8 @@ chrome.webNavigation.onCreatedNavigationTarget.addListener (details) ->
     pageInfo = PageInfo.db({url: sourceTab.url}).order("date desc").first()
     searchInfo = SearchInfo.db({tabs: {has: pageInfo.___id}}).order("date desc").first()
     if searchInfo
-      PageInfo.db.insert({tab: details.tabId, query: searchInfo.name})
-      # TODO add referrer here
+      # add referrer here
+      PageInfo.db.insert({isSERP: false, tab: details.tabId, query: searchInfo.name, referrer: pageInfo.___id})
       pageInfo = PageInfo.db({tab: details.tabId, query: searchInfo.name}).order("date desc").first()
       searchTrack.addTab(searchInfo, pageInfo.___id)
 

@@ -96,57 +96,6 @@ window.PageInfo = (function() {
           updateId: updateID
         }
       });
-    },
-    onUpdate: function(before, changes) {
-      var after, tabs, vectors;
-      after = this;
-      if ((changes.vector != null) && (after.vector != null) && after.query.length > 2) {
-        tabs = PageInfo.db({
-          query: after.query
-        }).get();
-        tabs = _.filter(tabs, function(tab) {
-          return tab.vector != null;
-        });
-        vectors = _.map(tabs, function(tab) {
-          return tab.vector;
-        });
-        if (vectors.length < 2) {
-          return;
-        }
-        return $.ajax({
-          type: 'POST',
-          url: 'http://104.131.7.171/searchInfo',
-          data: {
-            'data': JSON.stringify({
-              'vectors': vectors
-            })
-          }
-        }).success(function(results) {
-          var lda, lda_vector, searchInfo, tfidfs;
-          results = JSON.parse(results);
-          tfidfs = results['tfidfs'];
-          lda = results['lda'];
-          lda_vector = results['lda_vector'];
-          searchInfo = SearchInfo.db({
-            name: after.query
-          });
-          searchInfo.update({
-            lda: lda,
-            lda_vector: lda_vector
-          });
-          return _.map(_.zip(tabs, tfidfs), function(tab_tfidf) {
-            var tab, tfidf, _tab;
-            tab = tab_tfidf[0];
-            tfidf = tab_tfidf[1];
-            _tab = PageInfo.db({
-              tab: tab.tab
-            });
-            return _tab.update({
-              keywords: tfidf
-            });
-          });
-        });
-      }
     }
   };
   chrome.storage.onChanged.addListener(function(changes, areaName) {

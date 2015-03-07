@@ -73,37 +73,7 @@ window.PageInfo = (() ->
     template: {}
     onDBChange: () ->
       chrome.storage.local.set {'pages': {db: this, updateId: updateID}}
-    onUpdate: (before, changes) ->
-      after = this
-      if changes.vector? and after.vector? and after.query.length > 2
-        # SearchInfo.db {tabs: {has: after.tab}} is unreliable
-        tabs = PageInfo.db({query: after.query}).get()
-        tabs = _.filter tabs, (tab) -> tab.vector?
-        vectors = _.map tabs, (tab) -> tab.vector
-        if vectors.length < 2
-          return
-          
-        $.ajax(
-          type: 'POST',
-          url: 'http://104.131.7.171/searchInfo',
-          data: { 'data': JSON.stringify( {'vectors': vectors} ) }
-        ).success( (results) ->
-          results = JSON.parse results
-          tfidfs = results['tfidfs']
-          lda = results['lda']
-          lda_vector = results['lda_vector']
-          # workaround for bug: SearchInfo.db {tabs: {has: after.tab}} != SearchInfo.db {name: after.query}
-          searchInfo = SearchInfo.db {name: after.query}
-          searchInfo.update {lda: lda, lda_vector: lda_vector}
-          _.map( _.zip(tabs, tfidfs), (tab_tfidf) -> 
-            tab = tab_tfidf[0]
-            tfidf = tab_tfidf[1]
-            _tab = PageInfo.db {tab: tab.tab}
-            _tab.update {keywords: tfidf}
-          )
-        )
 
-  
   #Grab the info from localStorage and lets update it
   chrome.storage.onChanged.addListener (changes, areaName) ->
     if changes.pages?

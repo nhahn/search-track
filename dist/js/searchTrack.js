@@ -53,6 +53,7 @@ createOrUpdateSearchInfo = function(tabId, tab, query) {
   if (!searchInfo) {
     console.log('creating for: ' + tab.url);
     data = {
+      isSERP: true,
       url: tab.url,
       query: query,
       tab: tabId,
@@ -75,6 +76,7 @@ createOrUpdateSearchInfo = function(tabId, tab, query) {
     }).order("date desc").first();
     if (!pageInfo) {
       data = {
+        isSERP: true,
         url: tab.url,
         query: query,
         tab: tabId,
@@ -107,23 +109,26 @@ getContentAndTokenize = function(tabId, tab, pageInfo) {
     if ((html != null) && html.length > 10) {
       return $.ajax({
         type: 'POST',
-        url: 'http://104.131.7.171/tokenize',
+        url: 'http://104.131.7.171/lda',
         data: {
           'data': JSON.stringify({
             'html': html
           })
         }
       }).success(function(results) {
-        var insert_obj, vector;
-        console.log('tokenized');
+        var update_obj, vector;
+        console.log('lda');
         results = JSON.parse(results);
         vector = results['vector'];
-        insert_obj = {
-          vector: vector,
+        update_obj = {
           title: tab.title,
-          url: tab.url
+          url: tab.url,
+          vector: results['vector'],
+          topics: results['topics'],
+          topic_vector: results['topic_vector'],
+          size: results['size']
         };
-        return PageInfo.db(pageInfo).update(insert_obj, true);
+        return PageInfo.db(pageInfo).update(update_obj, true);
       }).fail(function(a, t, e) {
         console.log('fail tokenize');
         return console.log(t);
@@ -133,7 +138,7 @@ getContentAndTokenize = function(tabId, tab, pageInfo) {
 };
 
 chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
-  var matches, pageInfo, query;
+  var dup_pageInfo, matches, pageInfo, query, searchInfo;
   if (changeInfo.status !== 'complete') {
     return;
   }
@@ -150,7 +155,21 @@ chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
       tab: tabId
     }).order("date desc").first();
     if (pageInfo) {
-      return getContentAndTokenize(tabId, tab, pageInfo);
+      searchInfo = SearchInfo.db({
+        tabs: {
+          has: pageInfo.___id
+        }
+      }).order("date desc").first();
+      dup_pageInfo = PageInfo.db({
+        title: tab.title,
+        url: tab.url,
+        query: searchInfo.name
+      }).first();
+      if (dup_pageInfo) {
+        return PageInfo.db(pageInfo).remove();
+      } else {
+        return getContentAndTokenize(tabId, tab, pageInfo);
+      }
     }
   }
 });
@@ -179,8 +198,10 @@ chrome.webNavigation.onCreatedNavigationTarget.addListener(function(details) {
     }).order("date desc").first();
     if (searchInfo) {
       PageInfo.db.insert({
+        isSERP: false,
         tab: details.tabId,
-        query: searchInfo.name
+        query: searchInfo.name,
+        referrer: pageInfo.___id
       });
       pageInfo = PageInfo.db({
         tab: details.tabId,

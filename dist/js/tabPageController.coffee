@@ -29,7 +29,7 @@ app.config ($stateProvider, $urlRouterProvider) ->
             ]
 
           grouped = _.object _.map grouped, (val, key) ->
-            [key, {records: val, lda: SearchInfo.db({name: key}).first().lda}]
+            [key, {records: val}]
 
           if !apply
             $scope.$apply () ->
@@ -252,11 +252,8 @@ app.config ($stateProvider, $urlRouterProvider) ->
         render = () ->
           i = 0
           graph = {nodes: [], links: []}
-          queries = SearchInfo.db({name: {'!is': ''}, lda_vector: {isNull: false}}).get()
+          queries = SearchInfo.db({name: {'!is': ''}}).get()
           console.log queries
-          _.each queries, (query) ->
-            graph.nodes.push {name: query.name, group: i++, info: query, size: PageInfo.db({query: query.name}).get().length}
-
           dot = (v1, v2) ->
             v = _.map _.zip(v1, v2), (xy) -> xy[0] * xy[1]
             v = _.reduce v, (x, y) -> x + y
@@ -270,10 +267,41 @@ app.config ($stateProvider, $urlRouterProvider) ->
           cosine = (v1, v2) ->
             dot(v1, v2) / (mag(v1) * mag(v2))
 
+          scale = (v, factor) ->
+            _.map v, (s) -> s*factor
+
+          stack = (v1, v2) ->
+            v = _.map _.zip(v1, v2), (xy) -> xy[0] + xy[1]
+
+
+          getLDAVector = (query) ->
+            console.log 'getLDAVector(query)'
+            pages = _.map query.tabs, (___id) -> PageInfo.db({___id: ___id}).first()
+            console.log pages
+            pages = _.filter pages, (page) -> not page.isSERP
+            console.log pages
+            pages = _.filter pages, (page) -> page.size?
+            console.log pages
+            pages = _.filter pages, (page) -> page.topic_vector?
+            console.log pages
+
+            total = _.reduce _.map(pages, (page) -> page.size), (x,y)->x+y
+            console.log total
+            vectors = _.map pages, (page) -> scale(page.topic_vector, page.size/total)
+            console.log vectors
+            vector = _.reduce vectors, stack
+            console.log vector
+            vector
+
+          _.each queries, (query) ->
+            lda_vector = getLDAVector(query)
+            graph.nodes.push {name: query.name, group: i++, lda_vector: lda_vector, size: PageInfo.db({query: query.name, isSERP: false}).get().length}
+
+
           _.each graph.nodes, (node1) ->
             _.each graph.nodes, (node2) ->
               if node2.group > node1.group
-                similarity = cosine(node1.info.lda_vector, node2.info.lda_vector)
+                similarity = cosine(node1.lda_vector, node2.lda_vector)
                 graph.links.push {source: node1.group, target: node2.group, value: similarity}
 
 
