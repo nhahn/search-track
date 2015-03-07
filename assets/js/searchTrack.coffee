@@ -56,13 +56,13 @@ getContentAndTokenize = (tabId, tab, pageInfo) ->
     if html? and html.length > 10
       $.ajax(
         type: 'POST',
-        url: 'http://104.131.7.171/tokenize',
+        url: 'http://104.131.7.171/lda',
         data: { 'data': JSON.stringify( {'html': html} ) }
       ).success( (results) ->
-        console.log 'tokenized'
+        console.log 'lda'
         results = JSON.parse results
         vector = results['vector']
-        update_obj = {vector: vector, title: tab.title, url: tab.url}
+        update_obj = {title: tab.title, url: tab.url, vector: results['vector'], topics: results['topics'], topic_vector: results['topic_vector'], size: results['size']}
         PageInfo.db(pageInfo).update(update_obj, true)
       ).fail (a, t, e) ->
         console.log 'fail tokenize'
