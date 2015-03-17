@@ -354,6 +354,9 @@ app.config(function($stateProvider, $urlRouterProvider) {
             return page.topic_vector != null;
           });
           console.log(pages);
+          if (pages.length === 0) {
+            return null;
+          }
           total = _.reduce(_.map(pages, function(page) {
             return page.size;
           }), function(x, y) {
@@ -371,15 +374,17 @@ app.config(function($stateProvider, $urlRouterProvider) {
         _.each(queries, function(query) {
           var lda_vector;
           lda_vector = getLDAVector(query);
-          return graph.nodes.push({
-            name: query.name,
-            group: i++,
-            lda_vector: lda_vector,
-            size: PageInfo.db({
-              query: query.name,
-              isSERP: false
-            }).get().length
-          });
+          if (lda_vector !== null) {
+            return graph.nodes.push({
+              name: query.name,
+              group: i++,
+              lda_vector: lda_vector,
+              size: PageInfo.db({
+                query: query.name,
+                isSERP: false
+              }).get().length
+            });
+          }
         });
         _.each(graph.nodes, function(node1) {
           return _.each(graph.nodes, function(node2) {

@@ -285,6 +285,9 @@ app.config ($stateProvider, $urlRouterProvider) ->
             pages = _.filter pages, (page) -> page.topic_vector?
             console.log pages
 
+            if pages.length == 0
+                return null
+
             total = _.reduce _.map(pages, (page) -> page.size), (x,y)->x+y
             console.log total
             vectors = _.map pages, (page) -> scale(page.topic_vector, page.size/total)
@@ -295,7 +298,8 @@ app.config ($stateProvider, $urlRouterProvider) ->
 
           _.each queries, (query) ->
             lda_vector = getLDAVector(query)
-            graph.nodes.push {name: query.name, group: i++, lda_vector: lda_vector, size: PageInfo.db({query: query.name, isSERP: false}).get().length}
+            if lda_vector != null
+              graph.nodes.push {name: query.name, group: i++, lda_vector: lda_vector, size: PageInfo.db({query: query.name, isSERP: false}).get().length}
 
 
           _.each graph.nodes, (node1) ->
