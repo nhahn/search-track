@@ -1,15 +1,21 @@
-.panel.panel-default(ng-repeat="(query, url_group) in pages")
-  .panel-heading {{query}}
+.panel.panel-default(ng-repeat="(query, data) in pages")
+  .panel-heading {{'Query: ' + query}}
   .panel-body
     accordion
-      accordion-group(ng-repeat="(url, records) in url_group")
-        accordion-heading
-          | {{url}}
+      accordion-group(ng-repeat="(url, records) in data.records")
+        accordion-heading(style='word-wrap: break-word; width: 100%; white-space: -webkit-pre-wrap; word-break: break-all; white-space: normal;')
+          span(style='color: #320095; font-weight: normal;')
+            | {{records[0].title}} 
+          br
+          span(style='color: #095319; font-weight: lighter;')
+            | {{url}}
           .pull-right
             | {{ records.length }}
           i.pull-right.glyphicon(ng-class="{'glyphicon-chevron-down': status.open, 'glyphicon-chevron-right': !status.open}")
         .list-group
+          pre.lda(style='display: none;')
           .list-group-item(ng-repeat="record in records") 
-            {{record.tfidf}}
-            br
             a(href="{{record.url}}") {{record.url}}
+          .list-group-item
+            pre
+              | {{records[0].topics}}

@@ -73,7 +73,7 @@ window.PageInfo = (() ->
     template: {}
     onDBChange: () ->
       chrome.storage.local.set {'pages': {db: this, updateId: updateID}}
-  
+
   #Grab the info from localStorage and lets update it
   chrome.storage.onChanged.addListener (changes, areaName) ->
     if changes.pages?
