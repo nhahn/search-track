@@ -5,122 +5,116 @@
 searchTrack = {}
 searchTrack.addPageRelation = (url, query, tabId) ->
 
-searchTrack.removeTab = (searches, tabId) ->
-  tabs = searches.first().tabs
-  idx = tabs.indexOf(tabId)
+searchTrack.removeTab = (searchInfo, ___id) ->
+  tabs = searchInfo.tabs
+  idx = tabs.indexOf(___id)
   tabs.splice(idx, 1) if idx > -1
-  searches.update({tabs: tabs})
+  SearchInfo.db(searchInfo).update({tabs: tabs})
   
-searchTrack.addTab = (searches, tabId) ->
-  tabs = searches.first().tabs
-  tabs.push(tabId) if tabs.indexOf(tabId) < 0
-  searches.update({tabs: tabs, date: Date.now()})
-    
+searchTrack.addTab = (searchInfo, ___id) ->
+  tabs = searchInfo.tabs
+  tabs.push(___id) if tabs.indexOf(___id) < 0
+  SearchInfo.db(searchInfo).update({tabs: tabs, date: Date.now()})
+
+extractGoogleRedirectURL = (url) ->
+  matches = url.match(/www\.google\.com\/.*url=(.*?)($|&)/)
+  if matches == null
+    return url
+  url = decodeURIComponent(matches[1].replace(/\+/g, ' '))
+  return url
+
+
+createOrUpdateSearchInfo = (tabId, tab, query) ->
+  searchInfo = SearchInfo.db([{name: query}]).order("date desc").first()
+  if !searchInfo
+    #First time finding this
+    console.log 'creating for: ' + tab.url
+    data = {isSERP: true, url: tab.url, query: query, tab: tabId, date: Date.now(), referrer: null, visits: 1, title: tab.title}
+    PageInfo.db.insert(data)
+    pageInfo = PageInfo.db(data).order("date desc").first()
+    SearchInfo.db.insert({tabs: [pageInfo.___id], date: Date.now(), name: query})
+  else
+    pageInfo = PageInfo.db({url: tab.url, query: query}).order("date desc").first()
+    # dont add dup search page
+    if !pageInfo
+      data = {isSERP: true, url: tab.url, query: query, tab: tabId, date: Date.now(), referrer: null, visits: 1, title: tab.title}
+      PageInfo.db.insert(data)
+      pageInfo = PageInfo.db(data).order("date desc").first()
+      console.log 'add tab for: '
+      console.log pageInfo
+      console.log 'to: '
+      console.log searchInfo
+      searchTrack.addTab(searchInfo, pageInfo.___id)
+      console.log 'result: '
+      console.log searchInfo
+
+getContentAndTokenize = (tabId, tab, pageInfo) ->
+  console.log "TOK:"
+  console.log tab.url
+  chrome.tabs.executeScript tabId, {code: 'window.document.documentElement.innerHTML'}, (results) ->
+    html = results[0]
+    if html? and html.length > 10
+      $.ajax(
+        type: 'POST',
+        url: 'http://104.131.7.171/lda',
+        data: { 'data': JSON.stringify( {'html': html} ) }
+      ).success( (results) ->
+        console.log 'lda'
+        results = JSON.parse results
+        vector = results['vector']
+        update_obj = {title: tab.title, url: tab.url, vector: results['vector'], topics: results['topics'], topic_vector: results['topic_vector'], size: results['size']}
+        PageInfo.db(pageInfo).update(update_obj, true)
+      ).fail (a, t, e) ->
+        console.log 'fail tokenize'
+        console.log t
+
+
 chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
-  if changeInfo.url?
-    matches = changeInfo.url.match(/www\.google\.com\/.*q=(.*?)($|&)/)
-    #We have found a new search -- we need to track this
-    if matches != null
-      query = decodeURIComponent(matches[1].replace(/\+/g, ' '))
+  # TODO what if the page keeps loading while the user is reading it?
+  # if SearchInfo is created after some link is clicked, the page is not tracked
+  if changeInfo.status != 'complete'
+    return
 
-      #Remove any existing references to this particular tabId
-      searchInfo = SearchInfo.db({tabs: {has: tabId}})
-      searchTrack.removeTab(searchInfo, tabId) if searchInfo.first()
+  console.log 'onUpdated ' + tabId
+  console.log changeInfo
 
-      #Have we had this query before?
-      searchInfo = SearchInfo.db([{name: query}])
-      if !searchInfo.first()
-        #First time finding this
-        SearchInfo.db.insert({tabs: [tabId], date: Date.now(), name: query})
-        PageInfo.db.insert({url: changeInfo.url, query: query, tab: tabId, date: Date.now(), referrer: null, visits: 1, title: tab.title})
+  matches = tab.url.match(/www\.google\.com\/.*q=(.*?)($|&)/)
+
+  if matches != null
+    query = decodeURIComponent(matches[1].replace(/\+/g, ' '))
+    if query != ""
+      createOrUpdateSearchInfo(tabId, tab, query)
+
+  else
+    pageInfo = PageInfo.db({tab: tabId}).order("date desc").first()
+    if pageInfo
+      # check for dup here
+      searchInfo = SearchInfo.db({tabs: {has: pageInfo.___id}}).order("date desc").first()
+      dup_pageInfo = PageInfo.db({title: tab.title, url: tab.url, query: searchInfo.name}).first()
+      if dup_pageInfo
+        PageInfo.db(pageInfo).remove()
       else
-        searchTrack.addTab(searchInfo, tabId)
+        getContentAndTokenize(tabId, tab, pageInfo)
 
-chrome.webNavigation.onDOMContentLoaded.addListener((details) ->
-  console.log '_a'
-  searchInfo = SearchInfo.db({tabs: {has: details.tabId}})
-  console.log details
-  if searchInfo.first()
-    console.log '_b'
-    chrome.tabs.get details.tabId, (tab) ->
-      pages = PageInfo.db({tab: details.tabId}).order("date desc")
-      if pages.first()
-        console.log '_c'
-        chrome.tabs.executeScript details.tabId, {code: 'window.document.documentElement.innerHTML'}, (results) ->
-          console.log '_d'
-          console.log results
-          insert_obj = {html: results[0]}
-          pages.update(insert_obj)
-          console.log PageInfo.db()
-)
-  
-chrome.webNavigation.onCommitted.addListener((details) ->
-  #see what searches have been performed in this tab before
-  searchInfo = SearchInfo.db({tabs: {has: details.tabId}})
-  console.log details
-  #We typed in a URL of some type -- need to remove this from tracking
-  if details.transitionQualifiers.indexOf("from_address_bar") > -1
-    if searchInfo.first()
-      searchTrack.removeTab(searchInfo, details.tabId)
-      console.log 'a'
-  else if details.transitionType == "link" or details.transitionType == "form_submit"
-    #This is a navigation attempt we are doing
-    if details.transitionQualifiers.indexOf("forward_back") > -1
-      if searchInfo.first()
-        pages = PageInfo.db({tab: details.tabId},{query: searchInfo.first().name},{url: details.url})
-        console.log 'b'
-        if pages.first()
-          pages.update({visits: pages.first().visits + 1, date: Date.now()})
-          console.log 'c'
-    else
-      console.log 'd'
-      if searchInfo.first()
-        console.log 'e'
-        if details.transitionQualifiers.indexOf("client_redirect") > -1
-          console.log 'e1'
-          chrome.tabs.get details.tabId, (tab) ->
-            pages = PageInfo.db({tab: details.tabId}).order("date desc")
-            if pages.first()
-              insert_obj = {url: details.url, title: tab.title}
-              pages.update(insert_obj)
-        else
-          console.log 'e2'
-          chrome.tabs.get details.tabId, (tab) ->
-            insert_obj = {url: details.url, query: searchInfo.first().name, tab: details.tabId, date: Date.now(), referrer: null, visits: 1, title: tab.title}
-            pages = PageInfo.db({tab: details.tabId}).order("date desc")
-            #Try to track down an associated page by tab and window info (order them by the soonest one first)
-            if pages.first()
-              insert_obj.referrer = pages.first().___id
-            #Insert what we found
-            PageInfo.db.insert(insert_obj)
-  else if details.transitionType == "auto_bookmark" or details.transitionType == "typed" or details.transitionType == "keyword"
-    console.log 'f'
-    #Lets identify if this URL is part of our search already
-    pages = PageInfo.db({tab: details.tabId}, {url: details.url})
-    #Remove this from this list -- we've started to do something else on this tab
-    if pages.first()
-      console.log 'g'
-      #we've gone back or somethings -- we need to restore this
-      search = SearchInfo.db({name: pages.first().query})
-      searchTrack.addTab(search, details.tabId)
-    else if searchInfo.first()
-      console.log 'h'
-      searchTrack.removeTab(searchInfo, details.tabId)
-)
+chrome.webNavigation.onCompleted.addListener (details) ->
+  # subframe navigation
+  if details.frameId != 0
+    return
 
-#Track the creation of tabs from links -- aka new tab / window from link
-chrome.webNavigation.onCreatedNavigationTarget.addListener((details) ->
-  #see what searches have been performed in this tab before
-  searchInfo = SearchInfo.db({tabs: {has: details.sourceTabId}})
-  if searchInfo.first()
-    chrome.tabs.get details.tabId, (tab) ->
-      insert_obj = {url: details.url, query: searchInfo.first().name, tab: details.tabId, date: Date.now(), referrer: null, visits: 1, title: tab.title}
-      pages = PageInfo.db({tab: details.sourceTabId}).order("date desc")
-      #Try to track down an associated page by tab and window info (order them by the soonest one first)
-      if pages.first()
-        insert_obj.referrer = pages.first().___id
-      #Insert what we found
-      PageInfo.db.insert(insert_obj)
-)
-  
-#TODO remove tab if detected to be a change
+  console.log 'onCompleted:'
+  console.log details
+  console.log details.url
+
+
+chrome.webNavigation.onCreatedNavigationTarget.addListener (details) ->
+  console.log 'onNav: ' + details.sourceTabId + ' -> ' + details.tabId
+  details.url = extractGoogleRedirectURL details.url
+  chrome.tabs.get details.sourceTabId, (sourceTab) ->
+    pageInfo = PageInfo.db({url: sourceTab.url}).order("date desc").first()
+    searchInfo = SearchInfo.db({tabs: {has: pageInfo.___id}}).order("date desc").first()
+    if searchInfo
+      # add referrer here
+      PageInfo.db.insert({isSERP: false, tab: details.tabId, query: searchInfo.name, referrer: pageInfo.___id})
+      pageInfo = PageInfo.db({tab: details.tabId, query: searchInfo.name}).order("date desc").first()
+      searchTrack.addTab(searchInfo, pageInfo.___id)
+
