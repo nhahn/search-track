@@ -1,0 +1,10 @@
+{
+  "version": 3,
+  "file": "behaviorTrack.js",
+  "sourceRoot": "./",
+  "sources": [
+    "behaviorTrack.coffee"
+  ],
+  "names": [],
+  "mappings": "AAAA;AAAA;;;;;;;GAAA;AAAA"
+}

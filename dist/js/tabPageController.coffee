@@ -9,7 +9,7 @@ app.config ($stateProvider, $urlRouterProvider) ->
   $stateProvider
     .state('searches', {
       url: '/'
-      templateUrl: '/dist/templates/tabPage/searches.html'
+      templateUrl: '/templates/tabPage/searches.html'
       controller: ($scope, $state, $http) ->
         updateFn = (apply) ->
           page_info = PageInfo.db({referrer: {isNull: false}}).get()
@@ -44,7 +44,7 @@ app.config ($stateProvider, $urlRouterProvider) ->
       })
     .state('tree', {
       url: '/tree'
-      templateUrl: '/dist/templates/tabPage/tree.html'
+      templateUrl: '/templates/tabPage/tree.html'
       controller: ($scope, $state) ->
         #Get our list of queries
         queryUpdate = () ->
@@ -93,7 +93,7 @@ app.config ($stateProvider, $urlRouterProvider) ->
       })
     .state('graph', {
       url: '/graph'
-      templateUrl: '/dist/templates/tabPage/graph.html'
+      templateUrl: '/templates/tabPage/graph.html'
       controller: ($scope, $state) ->
         #Get our list of queries
 
@@ -373,7 +373,7 @@ app.config ($stateProvider, $urlRouterProvider) ->
       })
     .state('settings', {
       url: '/settings'
-      templateUrl: '/dist/templates/tabPage/settings.html'
+      templateUrl: '/templates/tabPage/settings.html'
       controller: ($scope, $state, $modal) ->
         $scope.openDeleteModal = () ->
           modalInstance = $modal.open {

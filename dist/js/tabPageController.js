@@ -10,7 +10,7 @@ app.run(function($rootScope, $state, $stateParams) {
 app.config(function($stateProvider, $urlRouterProvider) {
   $stateProvider.state('searches', {
     url: '/',
-    templateUrl: '/dist/templates/tabPage/searches.html',
+    templateUrl: '/templates/tabPage/searches.html',
     controller: function($scope, $state, $http) {
       var updateFn;
       updateFn = function(apply) {
@@ -62,7 +62,7 @@ app.config(function($stateProvider, $urlRouterProvider) {
     }
   }).state('tree', {
     url: '/tree',
-    templateUrl: '/dist/templates/tabPage/tree.html',
+    templateUrl: '/templates/tabPage/tree.html',
     controller: function($scope, $state) {
       var queryUpdate, toggleAll, updateFn;
       queryUpdate = function() {
@@ -126,7 +126,7 @@ app.config(function($stateProvider, $urlRouterProvider) {
     }
   }).state('graph', {
     url: '/graph',
-    templateUrl: '/dist/templates/tabPage/graph.html',
+    templateUrl: '/templates/tabPage/graph.html',
     controller: function($scope, $state) {
       var color, current_scale, current_translate, drag, fixPoint, force, graph, height, inPoly, lineData, lineFunction, link, mousedown, mousemove, mouseup, node, pin, pointInPolygon, polygon, real_svg, render, svg, text, tick, updateFn, wasDragging, width, zoom;
       width = 1280;
@@ -452,7 +452,7 @@ app.config(function($stateProvider, $urlRouterProvider) {
     }
   }).state('settings', {
     url: '/settings',
-    templateUrl: '/dist/templates/tabPage/settings.html',
+    templateUrl: '/templates/tabPage/settings.html',
     controller: function($scope, $state, $modal) {
       return $scope.openDeleteModal = function() {
         var modalInstance;

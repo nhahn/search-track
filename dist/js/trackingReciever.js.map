@@ -1,0 +1,10 @@
+{
+  "version": 3,
+  "file": "trackingReciever.js",
+  "sourceRoot": "./",
+  "sources": [
+    "trackingReciever.coffee"
+  ],
+  "names": [],
+  "mappings": "AAAA,MAAM,CAAC,OAAO,CAAC,SAAS,CAAC,WAAzB,CAAqC,SAAA,GAAA;AACnC,MAAA,QAAA;SAAA,QAAA,GAAW,MAAM,CAAC,OAAO,CAAC,QADS;AAAA,CAArC,CAAA,CAAA"
+}

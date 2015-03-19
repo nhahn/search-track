@@ -100,7 +100,7 @@ chrome.webNavigation.onCompleted.addListener (details) ->
   # subframe navigation
   if details.frameId != 0
     return
-
+  
   console.log 'onCompleted:'
   console.log details
   console.log details.url

@@ -11,22 +11,20 @@
  */
 module.exports = function(grunt) {
 
-	grunt.config.set('coffee', {
+	grunt.config.set('browserify', {
 		dev: {
 			options: {
-				bare: true,
-				sourceMap: true,
-				sourceRoot: './'
-			},
+			  exclude: "WNdb, lapack"
+      },
 			files: [{
 				expand: true,
-				cwd: 'assets/js/',
-				src: ['**/*.coffee'],
+				cwd: 'dist/js/',
+				src: ['require/**/*.js'],
 				dest: 'dist/js/',
 				ext: '.js'
 			}]
 		}
 	});
 
-	grunt.loadNpmTasks('grunt-contrib-coffee');
+	grunt.loadNpmTasks('grunt-browserify');
 };

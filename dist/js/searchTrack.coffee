@@ -100,7 +100,7 @@ chrome.webNavigation.onCompleted.addListener (details) ->
   # subframe navigation
   if details.frameId != 0
     return
-
+  
   console.log 'onCompleted:'
   console.log details
   console.log details.url
@@ -117,4 +117,3 @@ chrome.webNavigation.onCreatedNavigationTarget.addListener (details) ->
       PageInfo.db.insert({isSERP: false, tab: details.tabId, query: searchInfo.name, referrer: pageInfo.___id})
       pageInfo = PageInfo.db({tab: details.tabId, query: searchInfo.name}).order("date desc").first()
       searchTrack.addTab(searchInfo, pageInfo.___id)
-
