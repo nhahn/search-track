@@ -135,4 +135,58 @@ window.PageInfo = (function() {
   return obj;
 })();
 
+window.PageEvents = (function() {
+  var obj, settings, updateFunction, updateID;
+  obj = {};
+  obj.db = TAFFY();
+  updateID = generateUUID();
+  updateFunction = null;
+  settings = {
+    template: {},
+    onDBChange: function() {
+      return chrome.storage.local.set({
+        'page_events': {
+          db: this,
+          updateId: updateID
+        }
+      });
+    }
+  };
+  chrome.storage.onChanged.addListener(function(changes, areaName) {
+    if (changes.page_events != null) {
+      if (changes.page_events.newValue == null) {
+        obj.db = TAFFY();
+        obj.db.settings(settings);
+        if (updateFunction != null) {
+          return updateFunction();
+        }
+      } else if (changes.page_events.newValue.updateid !== updateID) {
+        obj.db = TAFFY(changes.page_events.newValue.db, false);
+        obj.db.settings(settings);
+        if (updateFunction != null) {
+          return updateFunction();
+        }
+      }
+    }
+  });
+  chrome.storage.local.get('page_events', function(retVal) {
+    if (retVal.page_events != null) {
+      obj.db = TAFFY(retVal.page_events.db);
+    }
+    obj.db.settings(settings);
+    if (updateFunction != null) {
+      return updateFunction();
+    }
+  });
+  obj.clearDB = function() {
+    chrome.storage.local.remove('page_events');
+    return obj.db = TAFFY();
+  };
+  obj.db.settings(settings);
+  obj.updateFunction = function(fn) {
+    return updateFunction = fn;
+  };
+  return obj;
+})();
+
 //# sourceMappingURL=trackAPI.js.map

@@ -102,3 +102,45 @@ window.PageInfo = (() ->
   return obj
 
 )()
+
+#DB for tracking behavior through page events 
+window.PageEvents = (() ->
+  
+  obj = {}
+  obj.db = TAFFY()
+  #Lets us track which running version of this file is actually updating the DB
+  updateID = generateUUID()
+  updateFunction = null
+  settings =
+    template: {}
+    onDBChange: () ->
+      chrome.storage.local.set {'page_events': {db: this, updateId: updateID}}
+
+  #Grab the info from localStorage and lets update it
+  chrome.storage.onChanged.addListener (changes, areaName) ->
+    if changes.page_events?
+      if !changes.page_events.newValue?
+        obj.db = TAFFY()
+        obj.db.settings(settings)
+        updateFunction() if updateFunction?
+      else if changes.page_events.newValue.updateid != updateID
+        obj.db = TAFFY(changes.page_events.newValue.db, false)
+        obj.db.settings(settings)
+        updateFunction() if updateFunction?
+        
+  chrome.storage.local.get 'page_events', (retVal) ->
+    if retVal.page_events?
+      obj.db = TAFFY(retVal.page_events.db)
+    obj.db.settings(settings)
+    updateFunction() if updateFunction?
+
+  obj.clearDB = () ->
+    chrome.storage.local.remove('page_events')
+    obj.db = TAFFY()
+      
+  obj.db.settings(settings)
+  obj.updateFunction = (fn) -> updateFunction = fn
+
+  return obj
+
+)()

@@ -3,4 +3,6 @@ chrome.runtime.onStartup.addListener(function() {
   return behavior = chrome.runtime.connect;
 });
 
+chrome.tabs.onActivated.addListener(function() {});
+
 //# sourceMappingURL=trackingReciever.js.map

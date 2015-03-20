@@ -11,8 +11,8 @@
  */
 module.exports = function(grunt) {
 
-	grunt.config.set('browserify', {
-		dev: {
+	grunt.config.set('watchify', {
+		app: {
 			options: {
 			  exclude: "WNdb, lapack"
       },
@@ -23,7 +23,10 @@ module.exports = function(grunt) {
 				dest: 'dist/js/',
 				ext: '.js'
 			}]
-		}
+		},
+    background: {
+      
+    }
 	});
 
 	grunt.loadNpmTasks('grunt-browserify');
