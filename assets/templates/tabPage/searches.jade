@@ -3,11 +3,11 @@
   .panel-body
     accordion
       accordion-group(ng-repeat="(url, records) in data.records")
-        accordion-heading(style='word-wrap: break-word; width: 100%; white-space: -webkit-pre-wrap; word-break: break-all; white-space: normal;')
+        accordion-heading
           span(style='color: #320095; font-weight: normal;')
             | {{records[0].title}} 
-          br
-          span(style='color: #095319; font-weight: lighter;')
+          div(style='height: 3px;')
+          span(style='color: #095319; font-weight: lighter; font-size: 0.9em;')
             | {{url}}
           .pull-right
             | {{ records.length }}
