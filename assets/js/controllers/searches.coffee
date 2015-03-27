@@ -1,6 +1,6 @@
 app.controller 'searchesController', ($scope, $state, $http) ->  
   updateFn = (apply) ->
-    page_info = PageInfo.db({referrer: {isNull: false}}).get()
+    page_info = PageInfo.db().get()
     # {query: [record, record,..], ...}
     grouped = _.groupBy page_info, (record) ->
       record.query

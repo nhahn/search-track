@@ -23,6 +23,10 @@
     "angular-bootstrap": "~0.12.0",
     "bluebird": "~2.9.6",
     "taffydb": "nhahn/taffydb#master",
-    "d3": "~3.5.4"
+    "d3": "~3.5.4",
+    "scroll-depth": "~0.7.1",
+    "riveted" : "*",
+    "screentime": "robflaherty/screentime",
+    "cryptojslib": "*"
   }
 }

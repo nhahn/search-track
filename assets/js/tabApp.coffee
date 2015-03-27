@@ -32,6 +32,7 @@ app.config ($stateProvider, $urlRouterProvider) ->
             size: 'sm',
             controller: 'removeModal'
           }
+        $scope.settings = AppSettings
         
       })
 
