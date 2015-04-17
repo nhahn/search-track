@@ -36,7 +36,7 @@ trackFocus = (action, windowId, tabId) ->
   data = {type: 'focus', windowId: windowId, tabId: tabId, action: action, time: Date.now()}
   TabInfo.db.insert(data)
 
-trackRepalce = (removedTabId, addedTabId) ->
+trackReplace = (removedTabId, addedTabId) ->
   console.log 'replaced - ' + addedTabId + ':' + removedTabId
 #  data = {type: 'replace', from: removedTabId, to: addedTabId, time: Date.now()}
 #  TabInfo.db.insert(data)

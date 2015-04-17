@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
 
-  "name": "Search Track",
+  "name": "Tab Manager",
   "description": "Helps you track, manage, and learn from your web searches",
   "version": "0.1",
   "permissions": [
@@ -11,20 +11,64 @@
     "notifications",
     "history",
     "webNavigation",
+    "<all_urls>",
     "http://*/",
     "https://*/"
   ],
   "background": {
     "page": "html/background.html",
-    "persistent": false
+    "persistent": true
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*","https://*/*"],
+      "js": ["js/content/script.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "commands": {
+    "add-importance-1": {
+      "suggested_key": {
+        "default": "Ctrl+Period",
+        "mac": "Command+I"
+      },
+      "description": "1."
+    },
+    "add-importance-2": {
+      "suggested_key": {
+        "default": "Ctrl+Comma",
+        "mac": "Command+K"
+      },
+      "description": "2."
+    },
+    "add-importance-3": {
+      "suggested_key": {
+        "default": "Ctrl+I",
+        "mac": "Command+J"
+      },
+      "description": "3."
+    },
+    "_execute_browser_action": {
+      "suggested_key": {
+        "default": "Ctrl+B",
+        "mac": "Command+Period"
+      }
+    }
+  },
+  "chrome_url_overrides": {
+    "newtab": "html/visual.html"
   },
   "browser_action": {
-    "default_icon": "img/structify_medium.png"
+    "default_icon": "img/structify_medium.png",
+    "default_popup": "html/popup.html"
   },
+  "web_accessible_resources": ["html/popup.html","js/sidebar.js",
+    "js/script.js"],
   "icons": {
     "16": "img/structify_small.png",
     "48": "img/structify_medium.png",
     "128": "img/structify.png"
   }
+
 
 }

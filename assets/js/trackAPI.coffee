@@ -170,6 +170,16 @@ window.TabInfo = (() ->
   return dbMethods.createTable('page_events', [])
 )()
 
+# database for information that user marks as "for later"
+window.SavedInfo = (() ->
+  return dbMethods.createTable('tabs', [])
+)()
+
+# database for user's tasks
+window.TaskInfo = (() ->
+  return dbMethods.createTable('tasks', [])
+)()
+
 window.AppSettings = (() ->
   obj = {}
   settings = ['trackTab', 'trackPage', 'hashTracking']

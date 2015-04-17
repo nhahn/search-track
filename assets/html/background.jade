@@ -1,13 +1,17 @@
 doctype html
-html
+html(ng-csp)
   head
     script(src='/vendor/jquery/dist/jquery.min.js')
     script(src='/vendor/uri.js/src/URI.min.js')
     script(src='/vendor/underscore/underscore-min.js')
     script(src='/vendor/bluebird/js/browser/bluebird.min.js')
     script(src='/vendor/taffydb/taffy-min.js')
+    script(src='/vendor/angular/angular.js')
     
     script(src='/js/trackAPI.js')
     script(src='/js/background/searchTrack.js')
     script(src='/js/background/newTab.js')
+    script(src='/js/extension.js')
+    script(src='/js/visual.js')
+    
   body
