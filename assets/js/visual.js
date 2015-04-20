@@ -18,12 +18,10 @@ var task = "default";
 var nothing1 = [{title:"Nothing here yet.",importance:1,items:[]}];
 var nothing2 = [{title:"Nothing here yet.",importance:2,items:[]}];
 var nothing3 = [{title:"Nothing here yet.",importance:3,items:[]}];
-var tabs;
+var tabs = [];
 
 listApp.controller('MainCtrl', ['$scope', 'listApp', function ($scope, listApp, $filter) {
   $scope.editing = false;
-
-  // listApp.refreshVisual();
   // listApp.refreshTaskVisual();
 
   shortcut.add("Right", function() {
@@ -35,63 +33,68 @@ listApp.controller('MainCtrl', ['$scope', 'listApp', function ($scope, listApp, 
       if (request.task) {  
         task = request.task;
         console.log('got task ' + "\"" + task + "\" from background page"); 
-        listApp.refreshVisual();
 
         $scope.tree1 = nothing1;
         $scope.tree2 = nothing2;
         $scope.tree3 = nothing3;
         $scope.$digest();
         
-        // bug: sometimes this is just empty when you reload the page.
-        tabs = SavedInfo.db().filter({importance:1}).order("position").get();
-        console.log(tabs);
+        // this doesn't really make sense, but I can't think of another way to prevent
+        // it from displaying before tabs is bound.
+        SavedInfo.db().order("position").callback(function() {
+          tabs = SavedInfo.db().filter({importance:1}).order("position").get();
+          console.log(tabs); // ANNOYING bug: timeElapsed field randomly doesn't show up here.....
 
+          // Bug: /very/ slow because of the callbacks...
+          
+          // Display tabs 
+          for(var i = 0; i < tabs.length; i++) {
+            // Read the tab items backwards (most recent first).
+            var tab = tabs[tabs.length - i - 1];
 
-        // Display tabs 
-        for(var i = 0; i < tabs.length; i++) {
-          // Read the tab items backwards (most recent first).
-          var tab = tabs[tabs.length - i - 1];
+            // if (tab.task == task) {
+              var title = tab.title;
+              if (title == undefined || title.length == 0) title = "Untitled";
+              else if (title.length > 65) title = title.substring(0,64) + "... ";
+              var obj = {};
+              obj.title = title;
+              obj.task = tab.task;
+              obj.time = tab.time;
+              obj.items = [];
+              obj.ref = tab.ref;
+              obj.depth = tab.depth;
+              obj.height = tab.height;
+              obj.url = tab.url;
+              obj.timeElapsed = tab.timeElapsed;
 
-          // if (tab.task == task) {
-            var title = tab.title;
-            if (title == undefined || title.length == 0) title = "Untitled";
-            else if (title.length > 65) title = title.substring(0,64) + "... ";
-            var obj = {};
-            obj.title = title;
-            obj.task = tab.task;
-            obj.time = tab.time;
-            obj.items = [];
-            obj.ref = tab.ref;
-            obj.depth = tab.depth;
-            obj.height = tab.height;
-            obj.url = tab.url;
+              var getLocation = function(href) {
+                  var l = document.createElement("a");
+                  l.href = href;
+                  return l;
+              };
+              var l = getLocation(tab.url);
+              obj.favicon = 'http://' + l.hostname + '/favicon.ico';
 
-            var getLocation = function(href) {
-                var l = document.createElement("a");
-                l.href = href;
-                return l;
-            };
-            var l = getLocation(tab.url);
-            obj.favicon = 'http://' + l.hostname + '/favicon.ico';
-
-            if (tab.importance == 1) {
-              if ($scope.tree1 === nothing1) $scope.tree1 = [];
-              obj.importance = 1;
-              $scope.tree1.push(obj);
-            } else if (tab.importance == 2) {
-              if ($scope.tree2 === nothing2) $scope.tree2 = [];
-              obj.importance = 2;
-              $scope.tree2.push(obj);
-            } else {
-              if ($scope.tree3 === nothing3) $scope.tree3 = [];
-              obj.importance = 3;
-              $scope.tree3.push(obj);  
-            } 
-            $scope.$digest();
-          }
+              if (tab.importance == 1) {
+                if ($scope.tree1 === nothing1) $scope.tree1 = [];
+                obj.importance = 1;
+                $scope.tree1.push(obj);
+              } else if (tab.importance == 2) {
+                if ($scope.tree2 === nothing2) $scope.tree2 = [];
+                obj.importance = 2;
+                $scope.tree2.push(obj);
+              } else {
+                if ($scope.tree3 === nothing3) $scope.tree3 = [];
+                obj.importance = 3;
+                $scope.tree3.push(obj);  
+              } 
+              $scope.$digest();
+            }
+            updateExport();
+        });
       } else if (request.newTask) {   //from popup.js
         task = request.task;
-        listApp.refreshVisual();
+        newView();
         // listApp.refreshTaskVisual();
       } else if (request.currentTask) { //newVisual from me
 
@@ -132,6 +135,7 @@ listApp.controller('MainCtrl', ['$scope', 'listApp', function ($scope, listApp, 
     }
   };
 
+  // Bug: seems to be removing everything except one
   $scope.rm = function(scope) {
     var nodeData = scope.$modelValue;
     var time = scope.$modelValue.time;
@@ -193,21 +197,6 @@ listApp.factory('listApp', function() {
   var _list = [];
 
   return {
-
-  // Update the list of todo items.
-  refreshVisual: function refreshVisual() {
-    document.getElementById('currentTask').innerHTML = "My current task: " + task;
-
-    var allTabs = SavedInfo.db().stringify();
-
-    // taken from 
-    // http://stackoverflow.com/questions/20104552/javascript-export-
-    // in-json-and-download-it-as-text-file-by-clicking-a-button
-    var save = document.getElementById("export");
-    save.download = "JSONexport.txt";
-    save.href = "data:text/plain;base64," + btoa(unescape(encodeURIComponent(allTabs)));
-    save.innerHTML = "Export your data here.";
-  },
 
   // refreshTaskVisual: function refreshTaskVisual() {
   //   taskDB.fetchTasks(function(tasks) {
@@ -295,11 +284,24 @@ listApp.factory('listApp', function() {
 });
 
 
+function updateExport() {
+  // Add option to save the database
+  var allTabs = SavedInfo.db().stringify();
+  // taken from 
+  // http://stackoverflow.com/questions/20104552/javascript-export-
+  // in-json-and-download-it-as-text-file-by-clicking-a-button
+  var save = document.getElementById("export");
+  save.download = "JSONexport.txt";
+  save.href = "data:text/plain;base64," + btoa(unescape(encodeURIComponent(allTabs)));
+  save.innerHTML = "Export your data here.";
+} 
+
 function newView() {
-  // Get the current task from the background page.
   chrome.runtime.sendMessage({newVisual: true}, function(response) {
     console.log('new view');
     console.log(response.farewell);
   });
+
+  document.getElementById('currentTask').innerHTML = "My current task: " + task;
 }
 newView();

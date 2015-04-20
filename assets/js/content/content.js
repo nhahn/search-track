@@ -1,6 +1,7 @@
 function getInfo() {
   var tab = {};
   tab.time = Date.now();
+  tab.timeElapsed = 0;
 
   var ttl = document.title;
   if (ttl.length == 0) ttl = prompt("Please name this page","Untitled");

@@ -1,14 +1,14 @@
-var script = document.createElement('script');
-script.src = '/vendor/jquery/dist/jquery.min.js';
-script.type = 'text/javascript';
-document.getElementsByTagName('head')[0].appendChild(script);
+// var script = document.createElement('script');
+// script.src = '/vendor/jquery/dist/jquery.min.js';
+// script.type = 'text/javascript';
+// document.getElementsByTagName('head')[0].appendChild(script);
 
-var s = document.createElement('script');
-s.src = chrome.extension.getURL('/js/sidebar.js');
-(document.head||document.documentElement).appendChild(s);
-s.onload = function() {
-    s.parentNode.removeChild(s);
-};
+// var s = document.createElement('script');
+// s.src = chrome.extension.getURL('/js/sidebar.js');
+// (document.head||document.documentElement).appendChild(s);
+// s.onload = function() {
+//     s.parentNode.removeChild(s);
+// };
 
 
 // // Within a content script:

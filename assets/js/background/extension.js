@@ -1,9 +1,14 @@
 /*
-	Manages the tabs that the user saves (background page)
+	Manages the Forager part of the extension (background page)
 */
 
 task = "default";
 console.log(task);
+
+var currentTab;
+var lastTab;
+
+// SavedInfo.db().remove();
 
 chrome.runtime.onMessage.addListener(
    function(request, sender, sendResponse) {
@@ -32,12 +37,6 @@ chrome.runtime.onMessage.addListener(
 		}
    });
 
-chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
-	// want to also record how much time you were on the last tab.
-	SavedInfo.db().filter({'url':tab.url}).update({'time': Date.now()}).callback(function() {
-			console.log('Updated time for ' + tab.url);
-		});
-});
 
 chrome.commands.onCommand.addListener(function(command) {
   // Call 'update' with an empty properties object to get access to the current
@@ -51,15 +50,20 @@ chrome.commands.onCommand.addListener(function(command) {
 
 // user marks tab as "for later"
 function add1() {
+	// could use tabs.query instead, but doesn't provide info about position.
+	// you would get a better faviconUrl though...
 	chrome.tabs.executeScript(
 		null, {file: '/vendor/taffydb/taffy-min.js', runAt: "document_start"}, function() {
 		chrome.tabs.executeScript(
 			null, {file: '/vendor/underscore/underscore-min.js', runAt: "document_start"}, function() {
 			chrome.tabs.executeScript(
 				null, {file: '/js/trackAPI.js', runAt: "document_start"}, function() {
-					chrome.tabs.executeScript(
-						null, {file: '/js/content/content.js', runAt: "document_start"}, function() {
-							chrome.tabs.remove(activeId);
+				chrome.tabs.executeScript(
+					null, {file: '/js/content/content.js', runAt: "document_start"}, function() {
+					chrome.tabs.query({'currentWindow': true, 'active': true}, function(tabs) {
+						activeId = tabs[0].id;
+						chrome.tabs.remove(activeId);
+					});
 				});
 			}); 
 		}); 
