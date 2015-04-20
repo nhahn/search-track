@@ -8,7 +8,8 @@ console.log(task);
 var currentTab;
 var lastTab;
 
-// SavedInfo.db().remove();
+chrome.storage.local.clear();
+chrome.storage.sync.clear();
 
 chrome.runtime.onMessage.addListener(
    function(request, sender, sendResponse) {

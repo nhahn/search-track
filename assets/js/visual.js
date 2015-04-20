@@ -28,6 +28,7 @@ listApp.controller('MainCtrl', ['$scope', 'listApp', function ($scope, listApp, 
     window.open("/html/visual2.html","_self");   
   });
 
+  // perhaps do TAFFY onUpdate instead.
   chrome.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
       if (request.task) {  

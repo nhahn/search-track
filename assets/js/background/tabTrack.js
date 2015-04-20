@@ -49,11 +49,7 @@ trackReplace = function(removedTabId, addedTabId) {
   return console.log('replaced - ' + addedTabId + ':' + removedTabId);
 };
 
-var current_title = "";
-// chrome.tabs.query({'currentWindow': true, 'active': true}, function(tabs) {
-//   console.log(tabs);
-//   // current_title = tabs[0].title;
-// });
+var current_title = "Extensions";
 var init_time = Date.now();
 
 /* records time spent on each tab in SavedInfo
@@ -61,19 +57,17 @@ var init_time = Date.now();
  * also basing SavedInfo on tab titles, which can be variable
  */
 function recordElapsedTime(oldTabTitle, newTabId) {
-  var t = SavedInfo.db().filter({'title':oldTabTitle}).get();
+  var t = SavedInfo.db({title:oldTabTitle}).get();
   console.log("Last tab: " + oldTabTitle);
 
-  // Bug: t.timeElapsed is NaN.
-  console.log(t);
-  var oldTime = t.timeElapsed;
-
   if (t.length != 0) {
-    SavedInfo.db().filter({'title':oldTabTitle}).update(
-    {'timeElapsed': (oldTime+Date.now()-init_time)}).callback(function() {
-      console.log('Updated time for \"' + oldTabTitle + '\", spent ' + (Date.now()-init_time)/1000 + ' s');
-      console.log('Total time: ' + t.timeElapsed + ' ms');  
-    });
+    var oldTime = t[0].timeElapsed;
+    var updated = SavedInfo.db({title:oldTabTitle}).update(
+      {'timeElapsed': (oldTime+Date.now()-init_time)}).get();
+    console.log('Updated time for \"' + oldTabTitle + '\", spent ' + 
+      (Date.now()-init_time)/1000 + ' s');
+    console.log(updated[0]);
+    console.log('Total time: ' + updated[0].timeElapsed + ' ms'); 
   }
 
   chrome.tabs.get(newTabId, function(tab) {
