@@ -1,0 +1,10 @@
+{
+  "version": 3,
+  "file": "newTab.js",
+  "sourceRoot": "./",
+  "sources": [
+    "newTab.coffee"
+  ],
+  "names": [],
+  "mappings": "AACA,MAAM,CAAC,aAAa,CAAC,SAAS,CAAC,WAA/B,CAA2C,SAAC,QAAD,GAAA;SACzC,MAAM,CAAC,IAAI,CAAC,MAAZ,CAAmB;AAAA,IAAC,KAAA,EAAO,MAAM,CAAC,SAAS,CAAC,MAAjB,CAAwB,mBAAxB,CAAR;GAAnB,EAA0E,SAAC,GAAD,GAAA,CAA1E,EADyC;AAAA,CAA3C,CAAA,CAAA"
+}
