@@ -42,25 +42,26 @@ listApp.controller('MainCtrl', ['$scope', 'listApp', function ($scope, listApp, 
         
         // this doesn't really make sense, but I can't think of another way to prevent
         // it from displaying before tabs is bound.
+        // THIS TAKES QUITE SOME TIME TO DISPLAY...
         SavedInfo.db().order("position").callback(function() {
           tabs = SavedInfo.db().filter({importance:1}).order("position").get();
-          console.log(tabs); // ANNOYING bug: timeElapsed field randomly doesn't show up here.....
-
-          // Bug: /very/ slow because of the callbacks...
+          console.log(tabs); 
           
           // Display tabs 
           for(var i = 0; i < tabs.length; i++) {
-            // Read the tab items backwards (most recent first).
-            var tab = tabs[tabs.length - i - 1];
+            // Read the tab items backwards (most recent first): tabs.length - i - 1
+            var tab = tabs[i];
 
             // if (tab.task == task) {
               var title = tab.title;
               if (title == undefined || title.length == 0) title = "Untitled";
               else if (title.length > 65) title = title.substring(0,64) + "... ";
               var obj = {};
+              // may want to write a function to make this cleaner.
               obj.title = title;
               obj.task = tab.task;
               obj.time = tab.time;
+              obj.favorite = tab.favorite;
               obj.items = [];
               obj.ref = tab.ref;
               obj.depth = tab.depth;
@@ -68,6 +69,8 @@ listApp.controller('MainCtrl', ['$scope', 'listApp', function ($scope, listApp, 
               obj.url = tab.url;
               obj.timeElapsed = tab.timeElapsed;
 
+              // chrome.tabs does this better, but I'm using a content script to
+              // get this info.
               var getLocation = function(href) {
                   var l = document.createElement("a");
                   l.href = href;
@@ -109,34 +112,30 @@ listApp.controller('MainCtrl', ['$scope', 'listApp', function ($scope, listApp, 
 
   $scope.options = {
     dropped: function(event) {
+      // For now, I'm only working with a single list.
       var start = event.source.index;
       var end = event.dest.index;
       var dest = event.dest.nodesScope.$modelValue;
       var sourceList = event.source.nodesScope.$modelValue;
-      if (dest.length != sourceList.length && (dest[start] != sourceList[start])) {
-          console.log(dest[end].title);
-          console.log(event.source.nodeScope.$modelValue.title);
-          if (event.dest.index == 0) importance = dest[1].importance;
-          else importance = dest[0].importance;
-          pageDB.changeImportance(event.source.nodeScope.$modelValue.id, importance, 
-            function() {});
-      }     
-      // Update pageDB order
-      if (Math.abs(start-end) == 1) {
-        pageDB.swapId(dest[end].id,dest[start].id, function() {});
-      } else if (start < end) {
-        for (var i = end; i > start; i--) {
-            pageDB.swapId(dest[i].id,dest[start].id, function() {});
-        }
-      } else {
-        for (var i = end; i < start; i++) {
-            pageDB.swapId(dest[i].id,dest[end].id, function() {});
-        }
-      }
+      // if (dest.length != sourceList.length && (dest[start] != sourceList[start])) {
+      //     console.log(dest[end].title);
+      //     console.log(event.source.nodeScope.$modelValue.title);
+      //     if (event.dest.index == 0) importance = dest[1].importance;
+      //     else importance = dest[0].importance;
+      //     pageDB.changeImportance(event.source.nodeScope.$modelValue.id, importance, 
+      //       function() {});
+      // }   
+
+      // Update order in SavedInfo to reflect the drag and drop. Who needs to actually do 
+      // HOF and stuff when you can just insert a fresh copy?
+      SavedInfo.db().remove();
+      // console.log(dest);
+      SavedInfo.db.insert(dest);
+      console.log('UPDATED:');
+      console.log(SavedInfo.db().get());
     }
   };
 
-  // Bug: seems to be removing everything except one
   $scope.rm = function(scope) {
     var nodeData = scope.$modelValue;
     var time = scope.$modelValue.time;

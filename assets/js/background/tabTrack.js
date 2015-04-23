@@ -66,8 +66,7 @@ function recordElapsedTime(oldTabTitle, newTabId) {
       {'timeElapsed': (oldTime+Date.now()-init_time)}).get();
     console.log('Updated time for \"' + oldTabTitle + '\", spent ' + 
       (Date.now()-init_time)/1000 + ' s');
-    console.log(updated[0]);
-    console.log('Total time: ' + updated[0].timeElapsed + ' ms'); 
+    console.log('Total time: ' + updated[0].timeElapsed/1000 + ' s'); 
   }
 
   chrome.tabs.get(newTabId, function(tab) {
