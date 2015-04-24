@@ -5,6 +5,7 @@
 </head>
 
 <body ng-app="listApp" ng-controller="MainCtrl">
+
   <h2 id="currentTask">Forager</h2>
   <div id="searchbar">
   <h3><div class="glyphicon glyphicon-search"></div> <input placeholder="Search" ng-model="query" ng-change="findNodes()"/></h3>
@@ -176,6 +177,8 @@
   <!-- Angular UI tree - doesn't work from Bower -->
   <link rel="stylesheet" href="/js/angular-ui-tree-master/dist/angular-ui-tree.min.css">
   <script type="text/javascript" src="/js/angular-ui-tree-master/dist/angular-ui-tree.min.js"></script>
+
+  <script src="/js/hoverIntent.js"></script>
   
   <script src="/vendor/taffydb/taffy-min.js"></script>
   <script src="/vendor/underscore/underscore-min.js"></script>
@@ -183,6 +186,7 @@
 
   <script src="/js/visual.js"></script>
   <script src="/js/shortcut.js"></script>
+  <script src="/js/sidebar.js"></script>
   <link rel="stylesheet" href="/css/visual.css">
 
 </body>

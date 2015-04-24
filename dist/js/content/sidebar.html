@@ -1,0 +1,116 @@
+<!-- INJECTED SIDEBAR CODE - FORAGER --> 
+<html ng-csp>
+
+<body ng-app="listApp" ng-controller="MainCtrl">
+
+<div class="esotericsidebarname">
+<div id="border"></div>
+<div class="semitrans"></div>
+<div class="ontop">
+Fill this space with really interesting content. I could just have this be persistent!
+
+
+   <!-- First Row -->
+    <div class="row row-bottom-margin">
+
+     <!-- Column 1 -->
+    <div class="col-md-4 col-xs-4 col-md-offset-1 col-xs-offset-1">
+
+    <h4>Potential (For Later)</h4>
+    <div ui-tree="options" id="col1">
+    <ol ui-tree-nodes="" ng-model="tree1" data-type="item" id="tree1-root">
+      <li ng-repeat="item in tree1" ng-show="visible(item,this)" ui-tree-node>
+
+       <div class="angular-ui-tree-handle" ng-show="visible(item,this)" ng-hide="editing">
+          <!-- <a class="pull-left btn btn-success btn-xs" data-nodrag ng-click="toggle(this)"><span class="glyphicon" ng-class="{'glyphicon-chevron-right': collapsed, 'glyphicon-chevron-down': !collapsed}"></span></a> -->
+          <a class="btn btn-default btn-xs" data-nodrag ng-click="open(this)"><span class="glyphicon glyphicon-open"></span></a>
+          <a href="" class="btn btn-primary btn-xs" data-nodrag ng-click="edit(this)"><i class="glyphicon glyphicon-pencil"></i></a>
+          <img ng-src="{{item.favicon}}" alt="" id="favicon"/>
+          {{item.title}}
+          <a class="pull-right btn btn-danger btn-xs" data-nodrag ng-click="rm(this)" id="rm"><span class="glyphicon glyphicon-remove"></span></a>
+      </div>
+
+      <div class="angular-ui-tree-handle" data-nodrag ng-show="visible(item,this) && editing">
+          <form class="form-inline" role="form">
+            <div class="form-group" id="textform">
+              <input type="text" id="txt" class="form-control" placeholder="{{item.title}}" ng-model="item.name">
+            </div>
+            <a class="pull-right btn btn-default btn-xs" data-nodrag ng-click="cancelEditing(this)"><span class="glyphicon glyphicon-remove"></span></a>
+             <a class="pull-right btn btn-default btn-xs" data-nodrag ng-click="save(this)"><span class="glyphicon glyphicon-ok"></span></a>
+          </form>
+        </div>
+
+      <ol ui-tree-nodes="options" ng-model="item.items" ng-class="{hidden: collapsed}">
+        <li ng-repeat="subItem in item.items" ng-show="visible(item,this)" ui-tree-node>
+          <div ui-tree-handle ng-show="visible(item,this)">
+              {{subItem.title}}
+            </div>
+        </li>
+      </ol>
+
+    </div>
+
+    </div>
+
+</div>
+
+</div>
+
+
+
+
+<style>
+/* Adapted from software-made.blogspot.com */
+.esotericsidebarname {
+	height:350px;  
+	/*margin:0;*/
+	position: fixed;
+	width: 100%;  
+	z-index: 10000;
+	bottom:-335px;
+	opacity:0.85;
+/* -moz-box-shadow: 3px 3px 4px #000;
+ -webkit-box-shadow: 3px 3px 4px #000;
+ box-shadow: 3px 3px 4px #000;*/
+ /* For IE 8 */
+ -ms-filter: "progid:DXImageTransform.Microsoft.Shadow(Strength=4, Direction=135, Color='#000000')";
+ /* For IE 6 and 7 */
+ filter: progid:DXImageTransform.Microsoft.Shadow(Strength=4, Direction=135, Color='#000000'); 
+}
+#border {
+	height:30px;
+	width:100%;
+	background: #cccccc;
+}
+
+.semitrans {
+	/* vvv This was to account for some websites having lower bottoms. */
+	/*border-top:30px solid #cccccc; */
+	width: 100%; 
+	background: lightgray;
+	height: 350px;
+/*    filter:alpha(opacity=80);
+*/
+}
+ 
+.ontop{
+	/*padding-top:30px;*/
+	opacity: 1 !important;
+	position: absolute;
+	color: black;
+	top:10px;
+	left:10px; 
+}
+
+</style>
+
+
+<!-- Bootstrap -->	
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap-theme.min.css">
+
+</body>
+
+</html>
+
+<!-- END SIDEBAR -->

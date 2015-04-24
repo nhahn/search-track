@@ -1,4 +1,30 @@
+// $(document).ready(function(){
+ 
+//  function ShowIn() {
+//    $(".container").slideToggle("slow");
+//  }
+  
+//  function ShowOut() {
+//    $(".container").animate({"top": "-=300px"}, "slow");
+//  }
+ 
+//  var config = {    
+//       over: ShowIn,     
+//       timeout: 500, 
+//       out: ShowOut 
+//  };
+ 
+//  $("div.container").hoverIntent(config);
+// });
 
+$(document).ready(function(){
+    $("#toggle").click(function(){
+        $("#panel").slideToggle("slow");
+    });
+});
+
+
+// A bunch of code I was playing around with. Confusing, though:
 
 // //height of top bar, or width in your case
 // var height = '30px';

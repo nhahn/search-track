@@ -18,12 +18,37 @@
   "background": {
     "page": "html/background.html",
     "persistent": true
+  },  
+  "web_accessible_resources": ["html/popup.html",
+  "/vendor/bootstrap/dist/js/bootstrap.min.js",
+  "/vendor/angular/angular.js",
+  "/js/angular-ui-tree-master/dist/angular-ui-tree.min.js",
+  "/vendor/taffydb/taffy-min.js",
+  "/vendor/underscore/underscore-min.map",
+  "/vendor/underscore/underscore-min.js",
+  "/js/trackAPI.js.map",
+  "/js/trackAPI.js",
+  "/vendor/jquery/dist/jquery.min.map",
+  "/vendor/jquery/dist/jquery.min.js",
+  "/js/content/sidebar.html","/js/content/sidebar.js"],
+  "icons": {
+    "16": "img/structify_small.png",
+    "48": "img/structify_medium.png",
+    "128": "img/structify.png"
   },
   "content_scripts": [
     {
-      "matches": ["http://*/*","https://*/*"],
-      "js": ["js/content/script.js"],
-      "run_at": "document_end"
+      "matches": ["<all_urls>"],
+      "js": ["/vendor/jquery/dist/jquery.min.js",
+      "/vendor/bootstrap/dist/js/bootstrap.min.js",
+      "/vendor/angular/angular.js",
+      "/js/angular-ui-tree-master/dist/angular-ui-tree.min.js",
+      "/vendor/taffydb/taffy-min.js",
+      "/vendor/underscore/underscore-min.js",
+      "/js/trackAPI.js",
+      "/js/hoverIntent.js",
+      "/js/content/sidebar.js"],
+      "run_at": "document_start"
     }
   ],
   "commands": {
@@ -61,14 +86,6 @@
   "browser_action": {
     "default_icon": "img/structify_medium.png",
     "default_popup": "html/popup.html"
-  },
-  "web_accessible_resources": ["html/popup.html","js/sidebar.js",
-    "js/script.js"],
-  "icons": {
-    "16": "img/structify_small.png",
-    "48": "img/structify_medium.png",
-    "128": "img/structify.png"
   }
-
 
 }
