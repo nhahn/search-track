@@ -29,28 +29,17 @@
   "/js/trackAPI.js.map",
   "/js/trackAPI.js",
   "/vendor/jquery/dist/jquery.min.map",
+	"/vendor/bootstrap-less/.js",
   "/vendor/jquery/dist/jquery.min.js",
-  "/js/content/sidebar.html","/js/content/sidebar.js"],
+  "/js/interact.min.js",
+	"/vendor/bootstrap/less/bootstrap.less",
+  "/html/sidebar.html",
+  "/js/content/injectsidebar.js"],
   "icons": {
     "16": "img/structify_small.png",
     "48": "img/structify_medium.png",
     "128": "img/structify.png"
   },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["/vendor/jquery/dist/jquery.min.js",
-      "/vendor/bootstrap/dist/js/bootstrap.min.js",
-      "/vendor/angular/angular.js",
-      "/js/angular-ui-tree-master/dist/angular-ui-tree.min.js",
-      "/vendor/taffydb/taffy-min.js",
-      "/vendor/underscore/underscore-min.js",
-      "/js/trackAPI.js",
-      "/js/hoverIntent.js",
-      "/js/content/sidebar.js"],
-      "run_at": "document_start"
-    }
-  ],
   "commands": {
     "add-importance-1": {
       "suggested_key": {

@@ -82,3 +82,25 @@ chrome.tabs.onCreated.addListener(function(tab) {
 		}
 	});
 });
+
+chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
+	// Inject sidebar
+	chrome.tabs.executeScript(
+	null, {file: '/vendor/taffydb/taffy-min.js', runAt: "document_start"}, function() {
+	chrome.tabs.executeScript(
+	null, {file: '/vendor/underscore/underscore-min.js', runAt: "document_start"}, function() {
+	chrome.tabs.executeScript(
+	null, {file: '/js/trackAPI.js', runAt: "document_start"}, function() {
+	chrome.tabs.executeScript(
+	null, {file: '/vendor/jquery/dist/jquery.min.js', runAt: "document_start"}, function() {
+	chrome.tabs.executeScript(
+	null, {file: '/vendor/angular/angular.js', runAt: "document_start"}, function() {
+	chrome.tabs.executeScript(
+	null, {file: '/js/angular-ui-tree-master/dist/angular-ui-tree.min.js', runAt: "document_start"}, function() {
+	chrome.tabs.executeScript(
+	null, {file: '/js/interact.min.js', runAt: "document_start"}, function() { 	// For some reason, won't work in vendor 
+	chrome.tabs.executeScript(
+	null, {file: '/js/content/injectsidebar.js', runAt: "document_start"});
+	});});});});});});});
+
+});

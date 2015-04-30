@@ -1,0 +1,116 @@
+<!-- INJECTED SIDEBAR CODE - FORAGER --> 
+<html ng-csp>
+
+<body ng-app="listApp" ng-controller="MainCtrl">
+
+<div id="esotericsidebarname">
+<div id="esotericbordername"></div>
+<div class="semitrans"></div>
+
+<div class="ontop">
+<br>
+Fill this space with really interesting content. I could just have this be persistent, and inject into every page! Place all the tabs in a better view here.
+
+<div class="row row-bottom-margin">
+
+	<div class="col-md-4 col-xs-4"> 
+		<div id="col1">
+		
+		</div>
+<!--
+
+<div id="drag-1" class="draggable"> 
+	<p> Hi </p>
+</div>
+
+-->
+	</div>
+
+	<div class="col-md-4 col-xs-4"> 
+		<div id="col1">
+
+		</div>
+	</div> 
+
+	<div class="col-md-4 col-xs-4">
+	 	<div id="col1">
+
+		</div>
+	</div>
+
+</div>
+</div>
+
+<style>
+#col1 {
+    overflow: scroll;
+    height: 275px !important;
+    background-color: rgba(240,248,255,0.55);
+    border: 1.5px solid lightgray;
+}
+
+/* Dragging style */
+#drag-1 {
+  width: 25%;
+  height: 100%;
+  min-height: 6.5em;
+  margin: 10%;
+
+  background-color: #29e;
+  color: white;
+
+  border-radius: 0.75em;
+  padding: 4%;
+
+  -webkit-transform: translate(0px, 0px);
+          transform: translate(0px, 0px);
+}
+
+/* General sidebar style 
+ * Adapted from software-made.blogspot.com 
+ */
+#esotericsidebarname {
+	height:350px;  
+	/*margin:0;*/
+	position: fixed;
+	width: 100%;  
+	z-index: 10000;
+	bottom:-335px;
+ /* For IE 8 */
+ -ms-filter: "progid:DXImageTransform.Microsoft.Shadow(Strength=4, Direction=135, Color='#000000')";
+ /* For IE 6 and 7 */
+ filter: progid:DXImageTransform.Microsoft.Shadow(Strength=4, Direction=135, Color='#000000'); 
+}
+
+#esotericbordername {
+	height:28px;
+	width:100%;
+	background: #cccccc;
+}
+
+.semitrans {
+	/*This was to account for some websites having lower bottoms: */
+	/*border-top:30px solid #cccccc; */
+	width: 100%; 
+	background: rgba(234,234,234,0.85);
+	height: 350px;
+/*    filter:alpha(opacity=80);
+*/
+}
+ 
+.ontop{
+	/*padding-top:30px;*/
+	opacity: 1 !important;
+	position: absolute;
+	color: black;
+	top:10px;
+	left:10px; 
+}
+
+</style>
+
+</body>
+
+</html>
+
+<!-- END SIDEBAR -->
