@@ -71,9 +71,7 @@ function add1() {
 	}); 
 }
 
-// Deleted add2 and add3.
-
-// max at 9 tabs
+// max 9 tabs
 chrome.tabs.onCreated.addListener(function(tab) {
 	chrome.tabs.query({currentWindow: true}, function(tabs) {
 		if (tabs.length > 9) {
@@ -83,8 +81,10 @@ chrome.tabs.onCreated.addListener(function(tab) {
 	});
 });
 
+// Inject sidebar in every website that loads
 chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
-	// Inject sidebar
+	var tab = tabs[0];
+	chrome.tabs.insertCSS(null, {file: "/css/sidebar.css", runAt: "document_start"}, function() {
 	chrome.tabs.executeScript(
 	null, {file: '/vendor/taffydb/taffy-min.js', runAt: "document_start"}, function() {
 	chrome.tabs.executeScript(
@@ -100,7 +100,6 @@ chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
 	chrome.tabs.executeScript(
 	null, {file: '/js/interact.min.js', runAt: "document_start"}, function() { 	// For some reason, won't work in vendor 
 	chrome.tabs.executeScript(
-	null, {file: '/js/content/injectsidebar.js', runAt: "document_start"});
-	});});});});});});});
-
+	null, {file: '/js/content/injectsidebar.js', runAt: "document_start"});	
+	});});});});});});});});
 });

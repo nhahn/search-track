@@ -3,89 +3,75 @@
 
 <body ng-app="listApp" ng-controller="MainCtrl">
 
-<div id="esotericsidebarname">
-<div id="esotericbordername"></div>
+<div class="esotericsidebarname">
+<div class="esotericbordername"></div>
 <div class="semitrans"></div>
 
 <div class="ontop">
 <br>
-Fill this space with really interesting content. I could just have this be persistent, and inject into every page! Place all the tabs in a better view here.
 
-<div class="row row-bottom-margin">
+<div class="row" id="esotericrowname">
 
-	<div class="col-md-4 col-xs-4"> 
-		<div id="col1">
-		
+	<!-- Column 1 -->
+	<div class="col-md-4 col-xs-4"><div id="esotericcolumnname">
+		<div class="draggable"> 
+			<p> Hi </p>
 		</div>
-<!--
+	</div></div>
 
-<div id="drag-1" class="draggable"> 
-	<p> Hi </p>
-</div>
+	<!-- Column 2 -->
+	<div class="col-md-4 col-xs-4"><div id="esotericcolumnname">
+	</div></div> 
 
--->
-	</div>
-
-	<div class="col-md-4 col-xs-4"> 
-		<div id="col1">
-
-		</div>
-	</div> 
-
-	<div class="col-md-4 col-xs-4">
-	 	<div id="col1">
-
-		</div>
-	</div>
+	<!-- Column 3 -->
+	<div class="col-md-4 col-xs-4"><div id="esotericcolumnname">
+	</div></div>
 
 </div>
 </div>
 
 <style>
-#col1 {
-    overflow: scroll;
-    height: 275px !important;
-    background-color: rgba(240,248,255,0.55);
+#esotericcolumnname {
+    height: 240px !important;
+    background-color: rgba(240,248,255,0.92);
     border: 1.5px solid lightgray;
 }
 
 /* Dragging style */
-#drag-1 {
+.draggable {
   width: 25%;
-  height: 100%;
-  min-height: 6.5em;
+  height: 25%;
   margin: 10%;
-
   background-color: #29e;
   color: white;
-
   border-radius: 0.75em;
   padding: 4%;
-
   -webkit-transform: translate(0px, 0px);
           transform: translate(0px, 0px);
+}
+
+.draggable.switch-bg {
+	background-color: red;
 }
 
 /* General sidebar style 
  * Adapted from software-made.blogspot.com 
  */
-#esotericsidebarname {
-	height:350px;  
+.esotericsidebarname {
+	height:275px;  
 	/*margin:0;*/
 	position: fixed;
 	width: 100%;  
 	z-index: 10000;
-	bottom:-335px;
+	bottom:-260px;
  /* For IE 8 */
  -ms-filter: "progid:DXImageTransform.Microsoft.Shadow(Strength=4, Direction=135, Color='#000000')";
- /* For IE 6 and 7 */
- filter: progid:DXImageTransform.Microsoft.Shadow(Strength=4, Direction=135, Color='#000000'); 
 }
 
-#esotericbordername {
-	height:28px;
+.esotericbordername {
+	height:20px;
 	width:100%;
-	background: #cccccc;
+	background: darkgray;
 }
 
 .semitrans {
@@ -93,18 +79,19 @@ Fill this space with really interesting content. I could just have this be persi
 	/*border-top:30px solid #cccccc; */
 	width: 100%; 
 	background: rgba(234,234,234,0.85);
-	height: 350px;
-/*    filter:alpha(opacity=80);
-*/
+	height: 275px;
 }
  
 .ontop{
 	/*padding-top:30px;*/
 	opacity: 1 !important;
+	height: 100% !important;
+	padding-left: 5%;
+	padding-right: 5%;
+	width: 100%;
 	position: absolute;
 	color: black;
-	top:10px;
-	left:10px; 
+	top:15px;
 }
 
 </style>
