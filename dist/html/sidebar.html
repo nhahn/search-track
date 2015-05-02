@@ -1,0 +1,103 @@
+<!-- INJECTED SIDEBAR CODE - FORAGER --> 
+<html ng-csp>
+
+<body ng-app="listApp" ng-controller="MainCtrl">
+
+<div class="esotericsidebarname">
+<div class="esotericbordername"></div>
+<div class="semitrans"></div>
+
+<div class="ontop">
+<br>
+
+<div class="row" id="esotericrowname">
+
+	<!-- Column 1 -->
+	<div class="col-md-4 col-xs-4"><div id="esotericcolumnname">
+		<div class="draggable"> 
+			<p> Hi </p>
+		</div>
+	</div></div>
+
+	<!-- Column 2 -->
+	<div class="col-md-4 col-xs-4"><div id="esotericcolumnname">
+	</div></div> 
+
+	<!-- Column 3 -->
+	<div class="col-md-4 col-xs-4"><div id="esotericcolumnname">
+	</div></div>
+
+</div>
+</div>
+
+<style>
+#esotericcolumnname {
+    height: 240px !important;
+    background-color: rgba(240,248,255,0.92);
+    border: 1.5px solid lightgray;
+}
+
+/* Dragging style */
+.draggable {
+  width: 25%;
+  height: 25%;
+  margin: 10%;
+  background-color: #29e;
+  color: white;
+  border-radius: 0.75em;
+  padding: 4%;
+  -webkit-transform: translate(0px, 0px);
+          transform: translate(0px, 0px);
+}
+
+.draggable.switch-bg {
+	background-color: red;
+}
+
+/* General sidebar style 
+ * Adapted from software-made.blogspot.com 
+ */
+.esotericsidebarname {
+	height:275px;  
+	/*margin:0;*/
+	position: fixed;
+	width: 100%;  
+	z-index: 10000;
+	bottom:-260px;
+ /* For IE 8 */
+ -ms-filter: "progid:DXImageTransform.Microsoft.Shadow(Strength=4, Direction=135, Color='#000000')";
+}
+
+.esotericbordername {
+	height:20px;
+	width:100%;
+	background: darkgray;
+}
+
+.semitrans {
+	/*This was to account for some websites having lower bottoms: */
+	/*border-top:30px solid #cccccc; */
+	width: 100%; 
+	background: rgba(234,234,234,0.85);
+	height: 275px;
+}
+ 
+.ontop{
+	/*padding-top:30px;*/
+	opacity: 1 !important;
+	height: 100% !important;
+	padding-left: 5%;
+	padding-right: 5%;
+	width: 100%;
+	position: absolute;
+	color: black;
+	top:15px;
+}
+
+</style>
+
+</body>
+
+</html>
+
+<!-- END SIDEBAR -->
