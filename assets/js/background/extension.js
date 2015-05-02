@@ -1,5 +1,5 @@
 /*
-	Manages the Forager part of the extension (background page)
+	Background page for the Forager part of the extension 
 */
 
 task = "default";
@@ -11,6 +11,7 @@ var lastTab;
 chrome.storage.local.clear();
 chrome.storage.sync.clear();
 
+// Message passing from content scripts and new tab page
 chrome.runtime.onMessage.addListener(
    function(request, sender, sendResponse) {
     console.log(sender.tab ?
@@ -38,14 +39,13 @@ chrome.runtime.onMessage.addListener(
 		}
    });
 
-
 chrome.commands.onCommand.addListener(function(command) {
   // Call 'update' with an empty properties object to get access to the current
   // tab (given to us in the callback function).
   chrome.tabs.update({}, function(tab) {
    if (command == 'add-importance-1') add1();
-   // else if (command == 'add-importance-2') add2();
-   // else if (command == 'add-importance-3') add3();
+   else if (command == 'add-importance-2') add2();
+   else if (command == 'add-importance-3') add3();
   });
 });
 
@@ -70,8 +70,48 @@ function add1() {
 		}); 
 	}); 
 }
+function add2() {
+	// could use tabs.query instead, but doesn't provide info about position.
+	// you would get a better faviconUrl though...
+	chrome.tabs.executeScript(
+		null, {file: '/vendor/taffydb/taffy-min.js', runAt: "document_start"}, function() {
+		chrome.tabs.executeScript(
+			null, {file: '/vendor/underscore/underscore-min.js', runAt: "document_start"}, function() {
+			chrome.tabs.executeScript(
+				null, {file: '/js/trackAPI.js', runAt: "document_start"}, function() {
+				chrome.tabs.executeScript(
+					null, {file: '/js/content/content2.js', runAt: "document_start"}, function() {
+					chrome.tabs.query({'currentWindow': true, 'active': true}, function(tabs) {
+						activeId = tabs[0].id;
+						// chrome.tabs.remove(activeId);
+					});
+				});
+			}); 
+		}); 
+	}); 
+}
+function add3() {
+	// could use tabs.query instead, but doesn't provide info about position.
+	// you would get a better faviconUrl though...
+	chrome.tabs.executeScript(
+		null, {file: '/vendor/taffydb/taffy-min.js', runAt: "document_start"}, function() {
+		chrome.tabs.executeScript(
+			null, {file: '/vendor/underscore/underscore-min.js', runAt: "document_start"}, function() {
+			chrome.tabs.executeScript(
+				null, {file: '/js/trackAPI.js', runAt: "document_start"}, function() {
+				chrome.tabs.executeScript(
+					null, {file: '/js/content/content3.js', runAt: "document_start"}, function() {
+					chrome.tabs.query({'currentWindow': true, 'active': true}, function(tabs) {
+						activeId = tabs[0].id;
+						// chrome.tabs.remove(activeId);
+					});
+				});
+			}); 
+		}); 
+	}); 
+}
 
-// max 9 tabs
+// Max at 9 tabs
 chrome.tabs.onCreated.addListener(function(tab) {
 	chrome.tabs.query({currentWindow: true}, function(tabs) {
 		if (tabs.length > 9) {
@@ -81,7 +121,7 @@ chrome.tabs.onCreated.addListener(function(tab) {
 	});
 });
 
-// Inject sidebar in every website that loads
+// Inject sidebar to every updated page
 chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
 	var tab = tabs[0];
 	chrome.tabs.insertCSS(null, {file: "/css/sidebar.css", runAt: "document_start"}, function() {

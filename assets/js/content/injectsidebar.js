@@ -38,6 +38,26 @@ $.get(chrome.extension.getURL('/html/sidebar.html'), function(data) {
 		 		$(".esotericsidebarname").animate({"bottom": "-=275px"});
 		 	}
 		});
+
+		// Display all saved tabs
+		SavedInfo.db().order("position").callback(function() {
+    	tabs = SavedInfo.db().order("position").get();
+			for (var i = 0; i < tabs.length; i++) {
+				var tab = tabs[i];
+				console.log(tab);
+				var box = document.getElementById('esotericcolumn1');
+				if (tab.importance == 2) box = document.getElementById('esotericcolumn2');
+				else if (tab.importance == 3) box = document.getElementById('esotericcolumn3');
+				var info = document.createElement('div');
+				info.setAttribute('class','draggable');
+				var title = tab.title;
+        if (title == undefined || title.length == 0) title = "Untitled";
+        else if (title.length > 30) title = title.substring(0,29) + "... ";
+				info.innerHTML = title;
+				box.appendChild(info);
+			}
+		});
+
 	});
 
 });

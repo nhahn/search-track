@@ -13,25 +13,32 @@
 <div class="row" id="esotericrowname">
 
 	<!-- Column 1 -->
-	<div class="col-md-4 col-xs-4"><div id="esotericcolumnname">
-		<div class="draggable"> 
-			<p> Hi </p>
-		</div>
+	<div class="col-md-4 col-xs-4"><div id="esotericcolumn1" >
 	</div></div>
 
 	<!-- Column 2 -->
-	<div class="col-md-4 col-xs-4"><div id="esotericcolumnname">
+	<div class="col-md-4 col-xs-4"><div id="esotericcolumn2">
 	</div></div> 
 
 	<!-- Column 3 -->
-	<div class="col-md-4 col-xs-4"><div id="esotericcolumnname">
+	<div class="col-md-4 col-xs-4"><div id="esotericcolumn3">
 	</div></div>
 
 </div>
 </div>
 
 <style>
-#esotericcolumnname {
+#esotericcolumn1 {
+    height: 240px !important;
+    background-color: rgba(240,248,255,0.92);
+    border: 1.5px solid lightgray;
+}
+#esotericcolumn2 {
+    height: 240px !important;
+    background-color: rgba(240,248,255,0.92);
+    border: 1.5px solid lightgray;
+}
+#esotericcolumn3 {
     height: 240px !important;
     background-color: rgba(240,248,255,0.92);
     border: 1.5px solid lightgray;
@@ -41,11 +48,14 @@
 .draggable {
   width: 25%;
   height: 25%;
-  margin: 10%;
+  margin: 3%;
   background-color: #29e;
+	font-size: 8px;
+	font-size: 1vw;
+	line-height: 1.05vw;
   color: white;
   border-radius: 0.75em;
-  padding: 4%;
+  padding: 2%;
   -webkit-transform: translate(0px, 0px);
           transform: translate(0px, 0px);
 }
