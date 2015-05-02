@@ -62,11 +62,12 @@
       },
       "description": "3."
     },
-    "_execute_browser_action": {
+    "open": {
       "suggested_key": {
         "default": "Ctrl+B",
         "mac": "Command+Period"
-      }
+      },
+			"description": "Opens the sidebar"
     }
   },
   "chrome_url_overrides": {

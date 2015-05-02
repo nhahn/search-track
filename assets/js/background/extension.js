@@ -46,6 +46,7 @@ chrome.commands.onCommand.addListener(function(command) {
    if (command == 'add-importance-1') add1();
    else if (command == 'add-importance-2') add2();
    else if (command == 'add-importance-3') add3();
+	 else if (command == 'open') open();
   });
 });
 
@@ -110,6 +111,10 @@ function add3() {
 		}); 
 	}); 
 }
+function open() {
+	console.log('triggered');
+	chrome.tabs.executeScript(null, {file: 'openclose.js', runAt: "document_start"});
+}
 
 // Max at 9 tabs
 chrome.tabs.onCreated.addListener(function(tab) {
@@ -138,8 +143,10 @@ chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
 	chrome.tabs.executeScript(
 	null, {file: '/js/angular-ui-tree-master/dist/angular-ui-tree.min.js', runAt: "document_start"}, function() {
 	chrome.tabs.executeScript(
+	null, {file: '/vendor/bootstrap/dist/js/bootstrap.min.js', runAt: "document_start"}, function() {
+	chrome.tabs.executeScript(
 	null, {file: '/js/interact.min.js', runAt: "document_start"}, function() { 	// For some reason, won't work in vendor 
 	chrome.tabs.executeScript(
 	null, {file: '/js/content/injectsidebar.js', runAt: "document_start"});	
-	});});});});});});});});
+	});});});});});});});});});
 });
