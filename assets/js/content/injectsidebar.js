@@ -1,9 +1,11 @@
 
 // TODO: switch to the tab on click
-// Currently working on: delete button
+// TODO: finish delete button
+// TODO: insert sidebar faster into windows
+// Currently working on: annotations
 
 var listApp = angular.module('listApp', ['ui.tree'], function($compileProvider) {
-// content security for favicons
+// content security to display favicons
 $compileProvider.imgSrcSanitizationWhitelist(/^\s*(http?|ftp|file|chrome-extension):|data:image\//);
 $compileProvider.aHrefSanitizationWhitelist(/^\s*(http?|ftp|mailto|file|chrome-extension):/);
 $compileProvider.imgSrcSanitizationWhitelist(/^\s*(https?|ftp|file|chrome-extension):|data:image\//);
@@ -38,9 +40,20 @@ $.get(chrome.extension.getURL('/html/sidebar.html'), function(data) {
 	})
 	.on('tap', function (event) {
     event.currentTarget.classList.toggle('switch-bg');
+		// TODO: save in db
     event.preventDefault();
-	}); 
-
+	})
+  .on('doubletap', function (event) {
+		// TODO: do this without alert, support flow
+		var id = event.currentTarget.id;
+		var obj = SavedInfo.db().filter({'time':parseInt(id)});
+		var old_note = obj.get()[0].note;
+ 	  var new_note = prompt("Annotate this tab",old_note);
+ 	  if (new_note != null) obj.update({'note':new_note});
+		event.preventDefault();
+	});
+	// TODO: Hover for current annotation after a few seconds (hoverintent.js)
+	
 	$app.ready(function(){
 		$(".esotericbordername").click(function(){
 			if ($('.esotericsidebarname').css('bottom') == '-260px') {
@@ -88,6 +101,7 @@ $.get(chrome.extension.getURL('/html/sidebar.html'), function(data) {
 				del.setAttribute('class','pull-right btn btn-danger btn-xs');
 				del.setAttribute('click', function() {
 					deleteTab(tab.time);
+					// TODO: REMOVE PARENT DIV
 				});
 				info.appendChild(del);
 

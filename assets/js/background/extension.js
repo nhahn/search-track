@@ -113,7 +113,8 @@ function add3() {
 }
 function open() {
 	console.log('triggered');
-	chrome.tabs.executeScript(null, {file: 'openclose.js', runAt: "document_start"});
+	// Opens or closes the sidebar in the current page.
+	chrome.tabs.executeScript(null, {file: '/js/content/openclose.js', runAt: "document_start"});
 }
 
 // Max at 9 tabs

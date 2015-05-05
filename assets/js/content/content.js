@@ -12,7 +12,8 @@ function getInfo() {
   if (window.getSelection().toString().replace(/ /g,'') != '')
   		var highlighted = window.getSelection().toString();
   tab.selected = highlighted;
-  	
+	tab.note = "";  
+
   tab.importance = 1;
 
   tab.depth = window.scrollY;
