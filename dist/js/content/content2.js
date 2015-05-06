@@ -12,6 +12,8 @@ function getInfo() {
   if (window.getSelection().toString().replace(/ /g,'') != '')
   		var highlighted = window.getSelection().toString();
   tab.selected = highlighted;
+	tab.note = "";  
+	tab.color = "rgba(219,217,219,1)";  
   	
   tab.importance = 2;
 

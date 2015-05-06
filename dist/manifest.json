@@ -46,21 +46,21 @@
         "default": "Ctrl+Period",
         "mac": "Command+I"
       },
-      "description": "1."
+      "description": "Saves the current tab to box 1"
     },
     "add-importance-2": {
       "suggested_key": {
         "default": "Ctrl+Comma",
         "mac": "Command+K"
       },
-      "description": "2."
+      "description": "Saves the current tab to box 2"
     },
     "add-importance-3": {
       "suggested_key": {
         "default": "Ctrl+I",
         "mac": "Command+J"
       },
-      "description": "3."
+      "description": "Saves the current tab to box 3"
     },
     "open": {
       "suggested_key": {

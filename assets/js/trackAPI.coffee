@@ -10,6 +10,7 @@
 # be interacted with 
 #
 ###
+throttle = null
 window.dbMethods = (() -> 
 
   obj = {}
@@ -69,10 +70,8 @@ window.dbMethods = (() ->
     #Lets us track which running version of this file is actually updating the DB
     updateID = dbMethods.generateUUID()
     updateFunction = null
-    settings =
-      template: {}
-      onDBChange: () ->
-        if this.length >= 1250
+    onDBChange = (_this) ->
+      if this.length >= 1250
           console.log 'persisting to file'
           old = obj_ret.db().order('time asec').limit(250).get()
 
@@ -90,9 +89,19 @@ window.dbMethods = (() ->
 
           obj_ret.db(old).remove()
         hsh = {}
-        hsh[name] = {db: this, updateId: updateID}
+        hsh[name] = {db: _this, updateId: updateID}
         chrome.storage.local.set hsh
 
+    settings =
+      template: {}
+      onDBChange: () ->
+        console.log 'onDBChange throttle'
+        chrome.runtime.sendMessage({updated:true})
+        clearTimeout(throttle)
+        _this = this
+        _exec = () -> onDBChange(_this)
+        throttle = setTimeout(_exec, 1500)
+        
     #Grab the info from localStorage and lets update it
     chrome.storage.onChanged.addListener (changes, areaName) ->
       if changes[name]? 

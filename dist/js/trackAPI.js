@@ -11,7 +11,10 @@
  * be interacted with 
  *
  */
-var __hasProp = {}.hasOwnProperty;
+var throttle,
+  __hasProp = {}.hasOwnProperty;
+
+throttle = null;
 
 window.dbMethods = (function() {
   var errorHandler, obj, objects2csv, persistToFile;
@@ -85,42 +88,55 @@ window.dbMethods = (function() {
     return console.log('Error: ' + msg);
   };
   obj.createTable = function(name, attributes) {
-    var obj_ret, settings, updateFunction, updateID;
+    var obj_ret, onDBChange, settings, updateFunction, updateID;
     obj_ret = {};
     obj_ret.db = TAFFY();
     updateID = dbMethods.generateUUID();
     updateFunction = null;
+    onDBChange = function(_this) {
+      var focusCsv, focuses, hsh, old, tabCsv, tabs;
+      if (this.length >= 1250) {
+        console.log('persisting to file');
+        old = obj_ret.db().order('time asec').limit(250).get();
+        tabs = _.filter(old, function(e) {
+          return e.type === 'tab';
+        });
+        if (tabs.length > 0) {
+          attributes = ['snapshotId', 'windowId', 'id', 'openerTabId', 'index', 'status', 'snapshotAction', 'domain', 'url', 'domainHash', 'urlHash', 'favIconUrl', 'time'];
+          tabCsv = objects2csv(tabs, attributes);
+          persistToFile('_tabLogs.csv', tabCsv);
+        }
+        focuses = _.filter(old, function(e) {
+          return e.type === 'focus';
+        });
+        if (focuses.length > 0) {
+          attributes = ['action', 'windowId', 'tabId', 'time'];
+          focusCsv = objects2csv(focuses, attributes);
+          persistToFile('_focusLogs.csv', focusCsv);
+        }
+        obj_ret.db(old).remove();
+      }
+      hsh = {};
+      hsh[name] = {
+        db: _this,
+        updateId: updateID
+      };
+      return chrome.storage.local.set(hsh);
+    };
     settings = {
       template: {},
       onDBChange: function() {
-        var focusCsv, focuses, hsh, old, tabCsv, tabs;
-        if (this.length >= 1250) {
-          console.log('persisting to file');
-          old = obj_ret.db().order('time asec').limit(250).get();
-          tabs = _.filter(old, function(e) {
-            return e.type === 'tab';
-          });
-          if (tabs.length > 0) {
-            attributes = ['snapshotId', 'windowId', 'id', 'openerTabId', 'index', 'status', 'snapshotAction', 'domain', 'url', 'domainHash', 'urlHash', 'favIconUrl', 'time'];
-            tabCsv = objects2csv(tabs, attributes);
-            persistToFile('_tabLogs.csv', tabCsv);
-          }
-          focuses = _.filter(old, function(e) {
-            return e.type === 'focus';
-          });
-          if (focuses.length > 0) {
-            attributes = ['action', 'windowId', 'tabId', 'time'];
-            focusCsv = objects2csv(focuses, attributes);
-            persistToFile('_focusLogs.csv', focusCsv);
-          }
-          obj_ret.db(old).remove();
-        }
-        hsh = {};
-        hsh[name] = {
-          db: this,
-          updateId: updateID
+        var _exec, _this;
+        console.log('onDBChange throttle');
+        chrome.runtime.sendMessage({
+          updated: true
+        });
+        clearTimeout(throttle);
+        _this = this;
+        _exec = function() {
+          return onDBChange(_this);
         };
-        return chrome.storage.local.set(hsh);
+        return throttle = setTimeout(_exec, 1500);
       }
     };
     chrome.storage.onChanged.addListener(function(changes, areaName) {

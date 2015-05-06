@@ -30,13 +30,20 @@ chrome.runtime.onMessage.addListener(
 				console.log('sent current task');
         		console.log(response.farewell);
      		});
-		} else if (request.scrollDown != 0) {
+		} else if (request.updated) {
+			chrome.tabs.query({active: true, currentWindow: true}, function(tabs){
+	   	  chrome.tabs.sendMessage(tabs[0].id, {updated: true}, function(response) {});  
+			});
+		}	
+	/*	
+		else if (request.scrollDown != 0) {
 			setTimeout(function() {
 				chrome.tabs.executeScript(
 					null, {file: '/js/scroll.js', runAt: "document_start"}, function() {});
 				chrome.runtime.sendMessage({down: request.scrollDown}, function() {});
 			  }, 5000);
 		}
+		*/
    });
 
 chrome.commands.onCommand.addListener(function(command) {
@@ -113,7 +120,8 @@ function add3() {
 }
 function open() {
 	console.log('triggered');
-	chrome.tabs.executeScript(null, {file: 'openclose.js', runAt: "document_start"});
+	// Opens or closes the sidebar in the current page.
+	chrome.tabs.executeScript(null, {file: '/js/content/openclose.js', runAt: "document_start"});
 }
 
 // Max at 9 tabs

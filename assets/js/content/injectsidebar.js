@@ -1,8 +1,15 @@
-
-// TODO: switch to the tab on click
+// Bug: first load, obj is null
+// TODO: switch to the tab on click - save tabid somewhere? and scroll down correctly!
+// TODO: save current x and y transforms, etc
+// TODO: snap instead of drag, increase flow (between sandboxes)
+// TODO: make it useable, speed up
 // TODO: finish delete button
 // TODO: insert sidebar faster into windows
-// Currently working on: annotations
+// TODO: notepad for each bucket
+// TODO: could merge content scripts (1-3) with this, use message passing
+// TODO: perhaps use an iframe instead? look at vimium bar
+// TODO: less calls to update - should be more discerning
+// Currently working on: deleting tabs and updating the sidebar
 
 var listApp = angular.module('listApp', ['ui.tree'], function($compileProvider) {
 // content security to display favicons
@@ -10,7 +17,15 @@ $compileProvider.imgSrcSanitizationWhitelist(/^\s*(http?|ftp|file|chrome-extensi
 $compileProvider.aHrefSanitizationWhitelist(/^\s*(http?|ftp|mailto|file|chrome-extension):/);
 $compileProvider.imgSrcSanitizationWhitelist(/^\s*(https?|ftp|file|chrome-extension):|data:image\//);
 $compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|file|chrome-extension):/);
-}); 
+});
+
+chrome.runtime.onMessage.addListener(
+  	function(request, sender, sendResponse) {
+			if (request.updated) {
+				console.log('updated!');
+				update();
+			}
+	});
 
 // Inject HTML for sidebar if it hasn't been injected already
 if (typeof injected === 'undefined') {
@@ -39,9 +54,16 @@ $.get(chrome.extension.getURL('/html/sidebar.html'), function(data) {
 		}	
 	})
 	.on('tap', function (event) {
-    event.currentTarget.classList.toggle('switch-bg');
-		// TODO: save in db
-    event.preventDefault();
+		var id = event.currentTarget.id;
+		var obj = SavedInfo.db().filter({'time':parseInt(id)});
+		if (obj.get()[0].color == 'rgba(219,217,219,1)') {
+    	event.currentTarget.style.backgroundColor = 'red';
+			obj.update({'color':'red'});
+		} else {
+		  event.currentTarget.style.backgroundColor = 'rgba(219,217,219,1)';
+			obj.update({'color':'rgba(219,217,219,1)'});
+		}
+		event.preventDefault();
 	})
   .on('doubletap', function (event) {
 		// TODO: do this without alert, support flow
@@ -62,62 +84,18 @@ $.get(chrome.extension.getURL('/html/sidebar.html'), function(data) {
 		 		$(".esotericsidebarname").animate({"bottom": "-=275px"});
 		 	}
 		});
-
-		// Display all saved tabs in the correct box
-		SavedInfo.db().order("position").callback(function() {
-    	tabs = SavedInfo.db().order("position").get();
-			for (var i = 0; i < tabs.length; i++) {
-				var tab = tabs[i];
-				var box = document.getElementById('esotericcolumn1');
-				if (tab.importance == 2) box = document.getElementById('esotericcolumn2');
-				else if (tab.importance == 3) box = document.getElementById('esotericcolumn3');
-				var info = document.createElement('div');
-				info.setAttribute('class','draggable');
-				info.setAttribute('id',tab.time);
-
-	  		// chrome.tabs does this better, but I'm using a content script to
-        // get this info.
-        var getLocation = function(href) {
-          var l = document.createElement("a");
-          l.href = href;
-          return l;
-        };    
-				var l = getLocation(tab.url);
-				var favLink = 'http://' + l.hostname + '/favicon.ico';
-				var favicon = document.createElement('img');
-				favicon.setAttribute('src',favLink);
-				favicon.setAttribute('id','esotericfavicon');
-        info.appendChild(favicon);
-
-				var title = tab.title;
-        if (title == undefined || title.length == 0) title = "Untitled";
-        else if (title.length > 25) title = ' ' + title.substring(0,24) + "... ";
-				var ttl = document.createElement('a');
-				ttl.innerHTML = title;
-				ttl.setAttribute('href',tab.url);
-				info.appendChild(ttl);
-
-				var del = document.createElement('a');
-				del.setAttribute('class','pull-right btn btn-danger btn-xs');
-				del.setAttribute('click', function() {
-					deleteTab(tab.time);
-					// TODO: REMOVE PARENT DIV
-				});
-				info.appendChild(del);
-
-				box.appendChild(info);
-			}
-		});
-
+		update();
 	});
 
+
+	
 });
 }
 
  // $("div.container").hoverIntent(config);
 
 function deleteTab (time) {
-  SavedInfo.db().filter({'time':time}).remove();  // using callback is undefined
+  SavedInfo.db().filter({'time':time}).remove();  
 	// TODO: refresh or update
 }
 
@@ -137,4 +115,59 @@ function dragMoveListener (event) {
 	target.setAttribute('data-y', y);
 }
 
+function update() {
+	console.log($('div[class="draggable"]'));
+	$('div[class="draggable"]').each(function() {
+    $(this).remove();
+	});
 
+	// Display all saved tabs in the correct box
+	SavedInfo.db().order("position").callback(function() {
+ 	tabs = SavedInfo.db().order("position").get();
+		for (var i = 0; i < tabs.length; i++) {
+			var tab = tabs[i];
+			if (document.getElementById(tab.time) == null) {
+				var box = document.getElementById('esotericcolumn1');
+				if (tab.importance == 2) box = document.getElementById('esotericcolumn2');
+				else if (tab.importance == 3) box = document.getElementById('esotericcolumn3');
+				var info = document.createElement('div');
+				info.setAttribute('class','draggable');
+				info.setAttribute('id',tab.time);
+				if (tab.color == "red") info.style.backgroundColor = 'red';
+
+	  		/* chrome.tabs does this better, but I'm using a content script to
+	       * get this info.
+				 */
+	     	var getLocation = function(href) {
+	        var l = document.createElement("a");
+	        l.href = href;
+	        return l;
+	      }; 
+				var l = getLocation(tab.url);
+				var favLink = 'http://' + l.hostname + '/favicon.ico';
+				var favicon = document.createElement('img');
+				favicon.setAttribute('src',favLink);
+				favicon.setAttribute('id','esotericfavicon');
+	      info.appendChild(favicon);
+
+				var title = tab.title;
+	      if (title == undefined || title.length == 0) title = "Untitled";
+	      else if (title.length > 25) title = ' ' + title.substring(0,24) + "... ";
+				var ttl = document.createElement('a');
+				ttl.innerHTML = title;
+				ttl.setAttribute('href',tab.url);
+				info.appendChild(ttl);
+
+				var del = document.createElement('a');
+				del.setAttribute('class','pull-right btn btn-danger btn-xs');
+				del.setAttribute('click', function() {
+					deleteTab(tab.time);
+					// TODO: REMOVE PARENT DIV
+				});
+				info.appendChild(del);
+			
+				box.appendChild(info);
+			}
+		}
+	});
+}
