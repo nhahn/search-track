@@ -33,6 +33,16 @@ app.config ($stateProvider, $urlRouterProvider) ->
             controller: 'removeModal'
           }
         $scope.settings = AppSettings
+        $scope.logLevels = [
+          Logger.OFF
+          Logger.ERROR
+          Logger.WARN
+          Logger.INFO
+          Logger.DEUBG
+        ]
+        AppSettings.on 'ready', (settings) ->
+          $scope.$apple () ->
+            $scope.settings = AppSettings
         
       })
 

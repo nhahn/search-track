@@ -25,28 +25,27 @@ extractGoogleRedirectURL = (url) ->
 
 
 createOrUpdateSearchInfo = (tabId, tab, query) ->
-  searchInfo = SearchInfo.db([{name: query}]).order("date desc").first()
-  if !searchInfo
-    #First time finding this
-    console.log 'creating for: ' + tab.url
-    data = {isSERP: true, url: tab.url, query: query, tab: tabId, date: Date.now(), referrer: null, visits: 1, title: tab.title}
-    PageInfo.db.insert(data)
-    pageInfo = PageInfo.db(data).order("date desc").first()
-    SearchInfo.db.insert({tabs: [pageInfo.___id], date: Date.now(), name: query})
-  else
-    pageInfo = PageInfo.db({url: tab.url, query: query}).order("date desc").first()
-    # dont add dup search page
-    if !pageInfo
+  db.SearchInfo.where('name').equalsIgnoreCase(query).soryBy("date").first().then (searchInfo) ->
+    if !searchInfo
+      #First time finding this
+      Logger.debug 'creating for: ' + tab.url
       data = {isSERP: true, url: tab.url, query: query, tab: tabId, date: Date.now(), referrer: null, visits: 1, title: tab.title}
-      PageInfo.db.insert(data)
-      pageInfo = PageInfo.db(data).order("date desc").first()
-      console.log 'add tab for: '
-      console.log pageInfo
-      console.log 'to: '
-      console.log searchInfo
-      searchTrack.addTab(searchInfo, pageInfo.___id)
-      console.log 'result: '
-      console.log searchInfo
+      return db.SearchInfo.add(data).then (pageInfo) ->
+        db.SearchInfo.add({tabs: [tab.id], date: Date.now(), name: query})
+      
+    else
+      db.PageInfo.where("url").equals(tab.url).and((val) -> val.query == query).sortBy("date").first().then (pageInfo) ->
+      # dont add dup search page
+      if !pageInfo
+        data = {isSERP: true, url: tab.url, query: query, tab: tabId, date: Date.now(), referrer: null, visits: 1, title: tab.title}
+        return db.PageInfo.add(data).then (pageInfo) ->
+          Logger.debug.log "add tab for: \n" + pageInfo + "\n to: \n" + searchInfo
+          searchTrack.addTab(searchInfo, pageInfo.___id)
+        .then (searchInfo) ->
+          Logger.debug.log "result: \n" + searchInfo
+  .catch (err) ->
+    console.log("Error updating searchInfo: " + err)
+
 
 getContentAndTokenize = (tabId, tab, pageInfo) ->
   console.log "TOK:"

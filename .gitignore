@@ -33,5 +33,10 @@ bower_components
 
 #npm
 node_modules/
+
+#dev folders
 vendor/
 dist/
+
+#private key
+*.pem

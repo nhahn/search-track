@@ -27,6 +27,8 @@
     "scroll-depth": "~0.7.1",
     "riveted" : "*",
     "screentime": "robflaherty/screentime",
-    "cryptojslib": "*"
+    "cryptojslib": "*",
+    "dexie": "~1.0.4",
+    "js-logger": "~1.0.0"
   }
 }

@@ -13,8 +13,12 @@ script(type='text/ng-template', id='deleteContent.html')
 .row
   .col-sm-4
     | Delete Database
-  .col-sm-8
+  .col-sm-4
     button.btn.btn-danger(ng-click="openDeleteModal()") Delete
+  .col-sm-4
+    | Log Level
+    select(ng-model="settings.logLevel", ng-Options="level.name for level in logLevels")
+      
 .row
   .col-sm-12
     h4 Tracking Options
@@ -32,4 +36,3 @@ script(type='text/ng-template', id='deleteContent.html')
       label
         input(type="checkbox", ng-model="settings.hashTracking")
         | Don't store the URLs I go to (hide them with a hash)
-        

@@ -1,21 +1,34 @@
 /**
- * Compiles LESS files into CSS.
+ * Compiles SASS files into CSS.
  *
  * ---------------------------------------------------------------
  *
- * Only the `assets/styles/importer.less` is compiled.
+ * Only the `assets/styles/importer.sass` is compiled.
  * This allows you to control the ordering yourself, i.e. import your
  * dependencies, mixins, variables, resets, etc. before other stylesheets)
  *
  * For usage docs see:
- * 		https://github.com/gruntjs/grunt-contrib-less
+ * 		https://github.com/gruntjs/grunt-contrib-sass
  */
 module.exports = function(grunt) {
 
 	grunt.config.set('sass', {
       dev: {
         options: {
-          outputsStyle: 'nested'
+          style: 'nested'
+        },
+        files: [{
+          expand: true,
+          cwd: 'assets/styles/',
+          src: ['*.scss', '*.sass'],
+          dest: 'dist/css/',
+          ext: '.css'
+        }]
+      },
+     build: {
+        options: {
+          style: 'compressed',
+          sourcemap: 'none'
         },
         files: [{
           expand: true,
