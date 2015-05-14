@@ -2,6 +2,9 @@
   For new tab page (visual.html)
 */
 
+// TODO: Make more compact while retaining as much semantic info about tabs as possible
+// TODO: Speed up! It's really laggy...
+
 'use strict';
 
 console.log("opened a new new tab page");

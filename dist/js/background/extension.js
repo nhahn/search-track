@@ -2,6 +2,9 @@
 	Background page for the Forager part of the extension 
 */
 
+// TODO: why is angular loading twice?
+// TODO: task db!
+
 task = "default";
 console.log(task);
 
@@ -149,6 +152,8 @@ chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
 	chrome.tabs.executeScript(
 	null, {file: '/vendor/angular/angular.js', runAt: "document_start"}, function() {
 	chrome.tabs.executeScript(
+	null, {file: '/js/content/hoverintent.js', runAt: "document_start"}, function() {
+  chrome.tabs.executeScript(
 	null, {file: '/js/angular-ui-tree-master/dist/angular-ui-tree.min.js', runAt: "document_start"}, function() {
 	chrome.tabs.executeScript(
 	null, {file: '/vendor/bootstrap/dist/js/bootstrap.min.js', runAt: "document_start"}, function() {
@@ -156,5 +161,5 @@ chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
 	null, {file: '/js/interact.min.js', runAt: "document_start"}, function() { 	// For some reason, won't work in vendor 
 	chrome.tabs.executeScript(
 	null, {file: '/js/content/injectsidebar.js', runAt: "document_start"});	
-	});});});});});});});});});
+	});});});});});});});});});});
 });

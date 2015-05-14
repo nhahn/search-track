@@ -1,15 +1,16 @@
 // Bug: first load, obj is null
 // TODO: switch to the tab on click - save tabid somewhere? and scroll down correctly!
+// TODO: reload button?
+// TODO: be able to add the other tabs in the window, not just the one you're currently on - shortcuts
 // TODO: save current x and y transforms, etc
-// TODO: snap instead of drag, increase flow (between sandboxes)
+// TODO: minimize manipulation! snap instead of drag, increase flow (between sandboxes)
 // TODO: make it useable, speed up
-// TODO: finish delete button
 // TODO: insert sidebar faster into windows
-// TODO: notepad for each bucket
+// TODO: notepad in third bucket
 // TODO: could merge content scripts (1-3) with this, use message passing
 // TODO: perhaps use an iframe instead? look at vimium bar
 // TODO: less calls to update - should be more discerning
-// Currently working on: deleting tabs and updating the sidebar
+// Currently working on: 
 
 var listApp = angular.module('listApp', ['ui.tree'], function($compileProvider) {
 // content security to display favicons
@@ -20,11 +21,10 @@ $compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|file|chrome-
 });
 
 chrome.runtime.onMessage.addListener(
-  	function(request, sender, sendResponse) {
-			if (request.updated) {
-				console.log('updated!');
-				update();
-			}
+  function(request, sender, sendResponse) {
+		if (request.updated) {
+			update();
+		}
 	});
 
 // Inject HTML for sidebar if it hasn't been injected already
@@ -74,7 +74,6 @@ $.get(chrome.extension.getURL('/html/sidebar.html'), function(data) {
  	  if (new_note != null) obj.update({'note':new_note});
 		event.preventDefault();
 	});
-	// TODO: Hover for current annotation after a few seconds (hoverintent.js)
 	
 	$app.ready(function(){
 		$(".esotericbordername").click(function(){
@@ -87,16 +86,7 @@ $.get(chrome.extension.getURL('/html/sidebar.html'), function(data) {
 		update();
 	});
 
-
-	
 });
-}
-
- // $("div.container").hoverIntent(config);
-
-function deleteTab (time) {
-  SavedInfo.db().filter({'time':time}).remove();  
-	// TODO: refresh or update
 }
 
 function dragMoveListener (event) {
@@ -116,14 +106,9 @@ function dragMoveListener (event) {
 }
 
 function update() {
-	console.log($('div[class="draggable"]'));
-	$('div[class="draggable"]').each(function() {
-    $(this).remove();
-	});
-
 	// Display all saved tabs in the correct box
 	SavedInfo.db().order("position").callback(function() {
- 	tabs = SavedInfo.db().order("position").get();
+ 		tabs = SavedInfo.db().order("position").get();
 		for (var i = 0; i < tabs.length; i++) {
 			var tab = tabs[i];
 			if (document.getElementById(tab.time) == null) {
@@ -132,6 +117,8 @@ function update() {
 				else if (tab.importance == 3) box = document.getElementById('esotericcolumn3');
 				var info = document.createElement('div');
 				info.setAttribute('class','draggable');
+        // If you change the note, it won't update
+				info.setAttribute('title',tab.note);
 				info.setAttribute('id',tab.time);
 				if (tab.color == "red") info.style.backgroundColor = 'red';
 
@@ -159,15 +146,27 @@ function update() {
 				info.appendChild(ttl);
 
 				var del = document.createElement('a');
-				del.setAttribute('class','pull-right btn btn-danger btn-xs');
-				del.setAttribute('click', function() {
-					deleteTab(tab.time);
-					// TODO: REMOVE PARENT DIV
-				});
+				del.setAttribute('class','pull-right btn btn-danger btn-xs esotericdelete');
 				info.appendChild(del);
 			
 				box.appendChild(info);
 			}
 		}
+	
+    // Adds a lot of the same listeners to each element, but I'm doing this so every new element
+    // can be deleted  
+    $(document).ready(function() {
+      // $(".draggable").hoverIntent(function() {alert(this)});
+  
+      $('.esotericdelete').each(function() {
+        $(this).click(function() {
+    	    var time = parseInt($(this)[0].parentElement.id);
+          // var title = $(this).context.parentElement.innerText;
+          SavedInfo.db().filter({'time':time}).remove();
+          $(this)[0].parentElement.remove();
+        });
+      });
+    });
 	});
 }
+
