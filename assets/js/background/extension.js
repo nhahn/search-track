@@ -13,6 +13,7 @@ var lastTab;
 
 chrome.storage.local.clear();
 chrome.storage.sync.clear();
+SavedInfo.db.insert({'annotation':""});
 
 // Message passing from content scripts and new tab page
 chrome.runtime.onMessage.addListener(
@@ -55,7 +56,7 @@ chrome.commands.onCommand.addListener(function(command) {
   chrome.tabs.update({}, function(tab) {
    if (command == 'add-importance-1') add1();
    else if (command == 'add-importance-2') add2();
-   else if (command == 'add-importance-3') add3();
+   // else if (command == 'add-importance-3') add3();
 	 else if (command == 'open') open();
   });
 });
@@ -101,7 +102,8 @@ function add2() {
 		}); 
 	}); 
 }
-function add3() {
+/*
+ function add3() {
 	// could use tabs.query instead, but doesn't provide info about position.
 	// you would get a better faviconUrl though...
 	chrome.tabs.executeScript(
@@ -121,6 +123,7 @@ function add3() {
 		}); 
 	}); 
 }
+*/
 function open() {
 	console.log('triggered');
 	// Opens or closes the sidebar in the current page.

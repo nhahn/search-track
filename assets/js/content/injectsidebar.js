@@ -6,11 +6,10 @@
 // TODO: minimize manipulation! snap instead of drag, increase flow (between sandboxes)
 // TODO: make it useable, speed up
 // TODO: insert sidebar faster into windows
-// TODO: notepad in third bucket
 // TODO: could merge content scripts (1-3) with this, use message passing
 // TODO: perhaps use an iframe instead? look at vimium bar
 // TODO: less calls to update - should be more discerning
-// Currently working on: 
+// Currently working on: notepad in third bucket
 
 var listApp = angular.module('listApp', ['ui.tree'], function($compileProvider) {
 // content security to display favicons
@@ -83,6 +82,15 @@ $.get(chrome.extension.getURL('/html/sidebar.html'), function(data) {
 		 		$(".esotericsidebarname").animate({"bottom": "-=275px"});
 		 	}
 		});
+   
+    var annotation = SavedInfo.db().get()[0].annotation;
+    $('#esoterictextbox').val(annotation);
+
+    var notepad = document.getElementById('esoterictextbox');
+    notepad.addEventListener('input', function() {
+      var text = $('#esoterictextbox').val();
+      SavedInfo.db().update({'annotation': text});
+    });
 		update();
 	});
 
@@ -106,10 +114,10 @@ function dragMoveListener (event) {
 }
 
 function update() {
-	// Display all saved tabs in the correct box
-	SavedInfo.db().order("position").callback(function() {
- 		tabs = SavedInfo.db().order("position").get();
-		for (var i = 0; i < tabs.length; i++) {
+	// Display all saved tabs in the correct box. Not sure what the callback is for exactly.
+	SavedInfo.db().callback(function() {
+ 		tabs = SavedInfo.db().get();
+		for (var i = 1; i < tabs.length; i++) {
 			var tab = tabs[i];
 			if (document.getElementById(tab.time) == null) {
 				var box = document.getElementById('esotericcolumn1');
