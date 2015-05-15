@@ -1,15 +1,15 @@
 // Bug: first load, obj is null
-// TODO: switch to the tab on click - save tabid somewhere? and scroll down correctly!
+// TODO: task database! a better way to manage tasks
 // TODO: reload button?
 // TODO: be able to add the other tabs in the window, not just the one you're currently on - shortcuts
-// TODO: save current x and y transforms, etc
-// TODO: minimize manipulation! snap instead of drag, increase flow (between sandboxes)
 // TODO: make it useable, speed up
 // TODO: insert sidebar faster into windows
 // TODO: could merge content scripts (1-3) with this, use message passing
 // TODO: perhaps use an iframe instead? look at vimium bar
-// TODO: less calls to update - should be more discerning
-// Currently working on: notepad in third bucket
+// TODO: name each bucket
+// TODO: save current x and y transforms, etc
+// TODO: only allow one item per small column
+// CWO: minimize manipulation! snap instead of drag, increase flow (between sandboxes)
 
 var listApp = angular.module('listApp', ['ui.tree'], function($compileProvider) {
 // content security to display favicons
@@ -24,7 +24,7 @@ chrome.runtime.onMessage.addListener(
 		if (request.updated) {
 			update();
 		}
-	});
+});
 
 // Inject HTML for sidebar if it hasn't been injected already
 if (typeof injected === 'undefined') {
@@ -35,7 +35,7 @@ $.get(chrome.extension.getURL('/html/sidebar.html'), function(data) {
 	interact('.draggable')
 	.draggable({
 		restrict: {
-			restriction: "parent",
+			restriction: "#ontop",
 			endOnly: true,
 			elementRect: { top: 0, left: 0, bottom: 1, right: 1 }
 		},
@@ -52,6 +52,7 @@ $.get(chrome.extension.getURL('/html/sidebar.html'), function(data) {
 	 					         event.dy * event.dy)|0) + 'px');
 		}	
 	})
+  /*
 	.on('tap', function (event) {
 		var id = event.currentTarget.id;
 		var obj = SavedInfo.db().filter({'time':parseInt(id)});
@@ -64,6 +65,7 @@ $.get(chrome.extension.getURL('/html/sidebar.html'), function(data) {
 		}
 		event.preventDefault();
 	})
+  */
   .on('doubletap', function (event) {
 		// TODO: do this without alert, support flow
 		var id = event.currentTarget.id;
@@ -73,6 +75,37 @@ $.get(chrome.extension.getURL('/html/sidebar.html'), function(data) {
  	  if (new_note != null) obj.update({'note':new_note});
 		event.preventDefault();
 	});
+
+  interact('.esotericinnercol').dropzone({
+    // only accept elements matching this CSS selector
+    accept: '.draggable',
+    // Require a 55% element overlap for a drop to be possible
+    overlap: 0.55,
+
+    ondropactivate: function (event) {
+      // add active dropzone feedback
+      event.target.classList.add('drop-active');
+    },
+    ondragenter: function (event) {
+      var draggableElement = event.relatedTarget,
+      dropzoneElement = event.target;
+    
+      // feedback the possibility of a drop
+      dropzoneElement.classList.add('drop-target');
+      draggableElement.classList.add('can-drop');
+    }, 
+    ondragleave: function (event) {
+      //remove the drop feedback style
+      event.target.classList.remove('drop-target');
+      event.relatedTarget.classList.remove('can-drop');
+    },
+    ondrop: function (event) {},
+    ondropdeactivate: function (event) {
+      // remove active dropzone feedback
+      event.target.classList.remove('drop-active');
+      event.target.classList.remove('drop-target');
+    }
+  });
 	
 	$app.ready(function(){
 		$(".esotericbordername").click(function(){
@@ -82,16 +115,15 @@ $.get(chrome.extension.getURL('/html/sidebar.html'), function(data) {
 		 		$(".esotericsidebarname").animate({"bottom": "-=275px"});
 		 	}
 		});
-   
-    var annotation = SavedInfo.db().get()[0].annotation;
-    $('#esoterictextbox').val(annotation);
 
     var notepad = document.getElementById('esoterictextbox');
     notepad.addEventListener('input', function() {
       var text = $('#esoterictextbox').val();
       SavedInfo.db().update({'annotation': text});
+		  update();
     });
-		update();
+
+    update();
 	});
 
 });
@@ -117,7 +149,7 @@ function update() {
 	// Display all saved tabs in the correct box. Not sure what the callback is for exactly.
 	SavedInfo.db().callback(function() {
  		tabs = SavedInfo.db().get();
-		for (var i = 1; i < tabs.length; i++) {
+		for (var i = 1; i < tabs.length; i++) { // limit to 9 for now?
 			var tab = tabs[i];
 			if (document.getElementById(tab.time) == null) {
 				var box = document.getElementById('esotericcolumn1');
@@ -130,18 +162,17 @@ function update() {
 				info.setAttribute('id',tab.time);
 				if (tab.color == "red") info.style.backgroundColor = 'red';
 
-	  		/* chrome.tabs does this better, but I'm using a content script to
-	       * get this info.
-				 */
-	     	var getLocation = function(href) {
+	  		/* old way of getting favicon url 
+        var getLocation = function(href) {
 	        var l = document.createElement("a");
 	        l.href = href;
 	        return l;
 	      }; 
 				var l = getLocation(tab.url);
 				var favLink = 'http://' + l.hostname + '/favicon.ico';
+        */
 				var favicon = document.createElement('img');
-				favicon.setAttribute('src',favLink);
+				favicon.setAttribute('src',tab.favicon);
 				favicon.setAttribute('id','esotericfavicon');
 	      info.appendChild(favicon);
 
@@ -150,17 +181,38 @@ function update() {
 	      else if (title.length > 25) title = ' ' + title.substring(0,24) + "... ";
 				var ttl = document.createElement('a');
 				ttl.innerHTML = title;
-				ttl.setAttribute('href',tab.url);
+        ttl.setAttribute('class','esoterictitlehref');
+        ttl.tabId = tab.tabId;
+        ttl.id = tab.time;
 				info.appendChild(ttl);
 
 				var del = document.createElement('a');
 				del.setAttribute('class','pull-right btn btn-danger btn-xs esotericdelete');
 				info.appendChild(del);
-			
+
+        // Set offsets for display
+        var parentWidth = document.getElementById('esotericcolumn1').clientWidth;
+        var parentHeight = document.getElementById('esotericcolumn1').clientHeight;
+        // Using percentages:
+        /* info.style.transform = 'translate(' + (16.6666667 + 133.333333*(i%3)) + '%, ' + (16.6666667 + 133.333333*(Math.floor((i-1)/3))) + '%)';
+        info.style.webkitTransform = 'translate(' + (16.6666667 + 133.333333*(i%3)) + '%, ' + (16.6666667 + 133.333333*(Math.floor((i-1)/3))) + '%)'; */
+        var x_buff = parentWidth*(.25/6);
+        var x_offset = x_buff*2 + .25*parentWidth;
+        var y_buff = parentHeight*(.25/6);
+        var y_offset = y_buff*2 + .25*parentHeight;
+			  info.style.transform = 'translate(' + (x_buff + x_offset*(i%3)) + 'px, ' + (y_buff + y_offset*(Math.floor((i-1)/3))) + 'px)';
+        info.style.webkitTransform = 'translate(' + (x_buff + x_offset*(i%3)) + 'px, ' + (y_buff + y_offset*(Math.floor((i-1)/3))) + 'px)';
+			  info.setAttribute('data-x',x_buff + x_offset*(i%3)); 
+        info.setAttribute('data-y',y_buff + y_offset*(Math.floor((i-1)/3)));
+
 				box.appendChild(info);
 			}
 		}
-	
+	  
+    // Update annotation box 
+    var annotation = SavedInfo.db().get()[0].annotation;
+    $('#esoterictextbox').val(annotation);
+
     // Adds a lot of the same listeners to each element, but I'm doing this so every new element
     // can be deleted  
     $(document).ready(function() {
@@ -174,7 +226,28 @@ function update() {
           $(this)[0].parentElement.remove();
         });
       });
+
+      $('.esoterictitlehref').each(function() {
+        $(this).click(function() {
+          chrome.runtime.onMessage.addListener(
+            function(request, sender, sendResponse) {
+              if (request.notOpened) chrome.tabs.create({'url':$(this)[0].url});
+          });
+
+         chrome.runtime.sendMessage({'changeId':$(this)[0].tabId});
+          
+          // undo color change
+          /*
+          var id = $(this)[0].id;
+          var obj = SavedInfo.db().filter({'time':parseInt(id)});
+      		if (obj.get()[0].color == 'rgba(219,217,219,1)') {
+            obj.update({'color':'red'});
+          } else {
+            obj.update({'color':'rgba(219,217,219,1)'});
+          }
+          */
+        });
+      });
     });
 	});
 }
-

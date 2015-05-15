@@ -3,7 +3,7 @@
 
 <body ng-app="listApp" ng-controller="MainCtrl">
 
-<div class="esotericsidebarname">
+<div class="esotericsidebarname no-print">
 <div class="esotericbordername"></div>
 <div class="semitrans"></div>
 
@@ -14,10 +14,28 @@
 
 	<!-- Column 1 -->
 	<div class="col-md-4 col-xs-4"><div id="esotericcolumn1" >
+    <div class="col-md-4 col-xs-4 esotericinnercol"></div>
+    <div class="col-md-4 col-xs-4 esotericinnercol"></div>
+    <div class="col-md-4 col-xs-4 esotericinnercol"></div>
+    <div class="col-md-4 col-xs-4 esotericinnercol"></div>
+    <div class="col-md-4 col-xs-4 esotericinnercol"></div>
+    <div class="col-md-4 col-xs-4 esotericinnercol"></div>
+    <div class="col-md-4 col-xs-4 esotericinnercol"></div>
+    <div class="col-md-4 col-xs-4 esotericinnercol"></div>
+    <div class="col-md-4 col-xs-4 esotericinnercol"></div>
 	</div></div>
 
 	<!-- Column 2 -->
 	<div class="col-md-4 col-xs-4"><div id="esotericcolumn2">
+    <div class="col-md-4 col-xs-4 esotericinnercol"></div>
+    <div class="col-md-4 col-xs-4 esotericinnercol"></div>
+    <div class="col-md-4 col-xs-4 esotericinnercol"></div>
+    <div class="col-md-4 col-xs-4 esotericinnercol"></div>
+    <div class="col-md-4 col-xs-4 esotericinnercol"></div>
+    <div class="col-md-4 col-xs-4 esotericinnercol"></div>
+    <div class="col-md-4 col-xs-4 esotericinnercol"></div>
+    <div class="col-md-4 col-xs-4 esotericinnercol"></div>
+    <div class="col-md-4 col-xs-4 esotericinnercol"></div>
 	</div></div> 
 
 	<!-- Column 3 -->
@@ -29,13 +47,23 @@
 </div>
 
 <style>
+@media print
+{    
+  .no-print, .no-print *
+  {
+    display: none !important;
+  }
+}
+
 #esotericcolumn1 {
   height: 240px !important;
+  width: 100%;
   background-color: rgba(240,248,255,0.92);
   border: 1.5px solid lightgray;
 }
 #esotericcolumn2 {
   height: 240px !important;
+  width: 100%;
   background-color: rgba(240,248,255,0.92);
   border: 1.5px solid lightgray;
 }
@@ -47,20 +75,30 @@
 #esoterictextbox {
   height: 100%;
   width: 100%;
+  resize: none;
+  background-color: rgba(240,248,255,0);
+  border: 0px;
+  font-size: 14px !important;
+  font-size: 1.25vw !important;
+  padding: 5px;
+}
+.esotericinnercol {
+  height: 33.33333333%;
+  border: 1px solid rgba(199,199,199,0.85);
 }
 #esotericfavicon {
-    height: 1.15vw;
+  height: 1.15vw;
 }
 del {
-    cursor: pointer;
+  cursor: pointer;
 }
 
 /* Dragging style */
 .draggable {
-  width: 28%;
+  width: 22%;
   height: 25%;
-  margin-left: 4%;
-  margin-top: 4%;
+  /* margin-left: 4%;
+  margin-top: 4%; */
   background-color: rgba(219,217,219,1);
 	font-size: 8px;
 	font-size: 1vw;
@@ -68,20 +106,44 @@ del {
   color: black; 
   border: 1.5px solid lightgray;
   padding: 2%;
-	display: inline-block;
+  position: absolute;
+  vertical-align: top;
+	/* display: inline-block; */
+  float: left;
+  clear: left;
 	word-wrap: break-word;
-  -webkit-transform: translate(0px, 0px);
-          transform: translate(0px, 0px);
+  /* -webkit-transform: translate(0px, 0px);
+          transform: translate(0px, 0px); */
+}
+.draggable:after{
+  clear: left;
+}
+.drop-active {
+  border-color: #aaa;
+}
+
+.drop-target {
+  background-color: #29e;
+  border-color: #fff;
+  border-style: solid;
+}
+.draggable.can-drop {
+  color: #000;
+  background-color: #4e4;
 }
 
 /* General sidebar style 
  * Adapted from software-made.blogspot.com 
  */
+.esotericsidebarname a {
+  font-weight: normal !important;
+}
 .esotericsidebarname {
+  font: arial !important;
 	height:275px;  
 	/*margin:0;*/
-	position: fixed;
-	width: 100%;  
+	position: fixed; 
+	width: 100%;
 	z-index: 10000;
 	bottom:-260px;
  /* For IE 8 */
@@ -108,6 +170,7 @@ del {
  
 .ontop{
 	/*padding-top:30px;*/
+  z-index: 10001;
 	opacity: 1 !important;
 	height: 100% !important;
 	padding-left: 5%;

@@ -26,20 +26,19 @@ chrome.runtime.onMessage.addListener(
 		} else if (request.newVisual) {
 			chrome.runtime.sendMessage({task: task}, function(response) {
 				console.log('sent current task'); // doesn't work
-        		console.log(response.farewell);
-     		});
-		} else if (request.newTab) { // from content.js, to visual.js
-			// for some reason, have to route through the background page.
-			chrome.runtime.sendMessage({task: task}, function(response) {
-				console.log('sent current task');
-        		console.log(response.farewell);
      		});
 		} else if (request.updated) {
 			chrome.tabs.query({active: true, currentWindow: true}, function(tabs){
 	   	  chrome.tabs.sendMessage(tabs[0].id, {updated: true}, function(response) {});  
 			});
-		}	
-	/*	
+		} else if (request.changeId) {
+      var success = false;
+      chrome.tabs.update(request.changeId, {selected:true}, function() {
+        success = true; 
+      });
+      if (success) chrome.tabs.sendMessage(tabs[0].id, {notOpened:true});
+    }  
+  	/*	
 		else if (request.scrollDown != 0) {
 			setTimeout(function() {
 				chrome.tabs.executeScript(
@@ -54,76 +53,78 @@ chrome.commands.onCommand.addListener(function(command) {
   // Call 'update' with an empty properties object to get access to the current
   // tab (given to us in the callback function).
   chrome.tabs.update({}, function(tab) {
-   if (command == 'add-importance-1') add1();
-   else if (command == 'add-importance-2') add2();
-   // else if (command == 'add-importance-3') add3();
+   if (command == 'add-importance-1') add(1);
+   else if (command == 'add-importance-2') add(2);
+   // else if (command == 'add-importance-3') add(3);
 	 else if (command == 'open') open();
   });
 });
 
 // user marks tab as "for later"
-function add1() {
-	// could use tabs.query instead, but doesn't provide info about position.
-	// you would get a better faviconUrl though...
-	chrome.tabs.executeScript(
+function add(importance) {
+  var tab = {};
+  chrome.tabs.query({currentWindow: true, active: true}, function(tabs) {
+    var chromeTab = tabs[0];
+
+    tab.time = Date.now();
+    tab.timeElapsed = 0;
+
+    tab.tabId = chromeTab.id;
+    tab.favicon = chromeTab.favIconUrl;
+
+    var ttl = chromeTab.title;
+    if (ttl.length == 0) ttl = prompt("Please name this page","Untitled");
+    tab.title = ttl;
+
+    tab.url = chromeTab.url;
+
+    tab.note = "";  
+    tab.color = "rgba(219,217,219,1)";  
+      
+    tab.importance = importance;
+
+    tab.depth = window.scrollY;
+    tab.height = window.innerHeight;
+    console.log("My Depth: " + tab.depth);
+    console.log("Total Depth: " + document.body.clientHeight);
+
+    // for the drag-and-drop list (could be adapted for 2D manipulation)
+    tab.position = SavedInfo.db().count();
+
+    // will be able to "favorite" tabs
+    tab.favorite = false;
+
+    // is it a reference tab?
+    tab.ref = false;
+
+    //TODO: TASK DB, then get the right task. Where do I record the current task? I'll have to send a message?
+    tab.task = "";
+
+    // add to DB.
+    SavedInfo.db.insert(tab);
+
+    // inform visual that there's a new tab that's been added. TODO when you work on new tab page (no content script anymore)
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs){
+	  	chrome.tabs.sendMessage(tabs[0].id, {updated: true}, function(response) {});  
+		});
+  });
+    
+	// Originally was using a context script here to get page depth information and user highlights on page
+  /* chrome.tabs.executeScript(
 		null, {file: '/vendor/taffydb/taffy-min.js', runAt: "document_start"}, function() {
 		chrome.tabs.executeScript(
-			null, {file: '/vendor/underscore/underscore-min.js', runAt: "document_start"}, function() {
-			chrome.tabs.executeScript(
-				null, {file: '/js/trackAPI.js', runAt: "document_start"}, function() {
-				chrome.tabs.executeScript(
-					null, {file: '/js/content/content.js', runAt: "document_start"}, function() {
-					chrome.tabs.query({'currentWindow': true, 'active': true}, function(tabs) {
-						activeId = tabs[0].id;
-						// chrome.tabs.remove(activeId);
-					});
-				});
-			}); 
-		}); 
-	}); 
-}
-function add2() {
-	// could use tabs.query instead, but doesn't provide info about position.
-	// you would get a better faviconUrl though...
-	chrome.tabs.executeScript(
-		null, {file: '/vendor/taffydb/taffy-min.js', runAt: "document_start"}, function() {
+		null, {file: '/vendor/underscore/underscore-min.js', runAt: "document_start"}, function() {
 		chrome.tabs.executeScript(
-			null, {file: '/vendor/underscore/underscore-min.js', runAt: "document_start"}, function() {
-			chrome.tabs.executeScript(
-				null, {file: '/js/trackAPI.js', runAt: "document_start"}, function() {
-				chrome.tabs.executeScript(
-					null, {file: '/js/content/content2.js', runAt: "document_start"}, function() {
-					chrome.tabs.query({'currentWindow': true, 'active': true}, function(tabs) {
-						activeId = tabs[0].id;
-						// chrome.tabs.remove(activeId);
-					});
-				});
-			}); 
-		}); 
-	}); 
-}
-/*
- function add3() {
-	// could use tabs.query instead, but doesn't provide info about position.
-	// you would get a better faviconUrl though...
-	chrome.tabs.executeScript(
-		null, {file: '/vendor/taffydb/taffy-min.js', runAt: "document_start"}, function() {
+		null, {file: '/js/trackAPI.js', runAt: "document_start"}, function() {
 		chrome.tabs.executeScript(
-			null, {file: '/vendor/underscore/underscore-min.js', runAt: "document_start"}, function() {
-			chrome.tabs.executeScript(
-				null, {file: '/js/trackAPI.js', runAt: "document_start"}, function() {
-				chrome.tabs.executeScript(
-					null, {file: '/js/content/content3.js', runAt: "document_start"}, function() {
-					chrome.tabs.query({'currentWindow': true, 'active': true}, function(tabs) {
-						activeId = tabs[0].id;
-						// chrome.tabs.remove(activeId);
-					});
-				});
-			}); 
-		}); 
-	}); 
+		null, {file: '/js/content/content.js', runAt: "document_start"}, function() {
+		chrome.tabs.query({'currentWindow': true, 'active': true}, function(tabs) {
+			activeId = tabs[0].id;
+    	// chrome.tabs.remove(activeId);
+	  });});});});}); 
+  */
 }
-*/
+
 function open() {
 	console.log('triggered');
 	// Opens or closes the sidebar in the current page.
