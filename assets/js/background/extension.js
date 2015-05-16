@@ -12,8 +12,35 @@ var currentTab;
 var lastTab;
 
 chrome.storage.local.clear();
-chrome.storage.sync.clear();
-SavedInfo.db.insert({'annotation':""});
+chrome.storage.sync.clear(function() {
+  SavedInfo.db.insert({annotation:""}).callback(function() {
+    
+  // Inject sidebar to every updated page
+  chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
+    chrome.tabs.insertCSS(null, {file: "/css/sidebar.css", runAt: "document_start"}, function() {
+    chrome.tabs.executeScript(
+    null, {file: '/vendor/taffydb/taffy-min.js', runAt: "document_start"}, function() {
+    chrome.tabs.executeScript(
+    null, {file: '/vendor/underscore/underscore-min.js', runAt: "document_start"}, function() {
+    chrome.tabs.executeScript(
+    null, {file: '/js/trackAPI.js', runAt: "document_start"}, function() {
+    chrome.tabs.executeScript(
+    null, {file: '/vendor/jquery/dist/jquery.min.js', runAt: "document_start"}, function() {
+    chrome.tabs.executeScript(
+    null, {file: '/vendor/angular/angular.js', runAt: "document_start"}, function() {
+    /* chrome.tabs.executeScript(
+    null, {file: '/js/content/hoverintent.js', runAt: "document_start"}, function() { */
+    chrome.tabs.executeScript(
+    null, {file: '/vendor/bootstrap/dist/js/bootstrap.min.js', runAt: "document_start"}, function() {
+    chrome.tabs.executeScript(
+    null, {file: '/js/interact.min.js', runAt: "document_start"}, function() { 	// For some reason, won't work in vendor 
+    chrome.tabs.executeScript(
+    null, {file: '/js/content/injectsidebar.js', runAt: "document_start"});	
+    });});});});});});});});
+  });
+
+  });
+});
 
 // Message passing from content scripts and new tab page
 chrome.runtime.onMessage.addListener(
@@ -27,11 +54,14 @@ chrome.runtime.onMessage.addListener(
 			chrome.runtime.sendMessage({task: task}, function(response) {
 				console.log('sent current task'); // doesn't work
      		});
-		} else if (request.updated) {
+		} 
+    /* else if (request.updated) {
 			chrome.tabs.query({active: true, currentWindow: true}, function(tabs){
 	   	  chrome.tabs.sendMessage(tabs[0].id, {updated: true}, function(response) {});  
 			});
-		} else if (request.changeId) {
+		} 
+    */
+    else if (request.changeId) {
       var success = false;
       chrome.tabs.update(request.changeId, {selected:true}, function() {
         success = true; 
@@ -101,12 +131,14 @@ function add(importance) {
     tab.task = "";
 
     // add to DB.
-    SavedInfo.db.insert(tab);
+    SavedInfo.db.insert(tab).callback(function() {
+      // inform visual that there's a new tab that's been added. TODO when you work on new tab page (no content script anymore)
+      chrome.tabs.query({active: true, currentWindow: true}, function(tabs){
+        var db = SavedInfo.db().get();
+        chrome.tabs.sendMessage(tabs[0].id, {updated: db}, function(response) {});  
+      }); 
+    });
 
-    // inform visual that there's a new tab that's been added. TODO when you work on new tab page (no content script anymore)
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs){
-	  	chrome.tabs.sendMessage(tabs[0].id, {updated: true}, function(response) {});  
-		});
   });
     
 	// Originally was using a context script here to get page depth information and user highlights on page
@@ -141,29 +173,4 @@ chrome.tabs.onCreated.addListener(function(tab) {
 	});
 });
 
-// Inject sidebar to every updated page
-chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
-	var tab = tabs[0];
-	chrome.tabs.insertCSS(null, {file: "/css/sidebar.css", runAt: "document_start"}, function() {
-	chrome.tabs.executeScript(
-	null, {file: '/vendor/taffydb/taffy-min.js', runAt: "document_start"}, function() {
-	chrome.tabs.executeScript(
-	null, {file: '/vendor/underscore/underscore-min.js', runAt: "document_start"}, function() {
-	chrome.tabs.executeScript(
-	null, {file: '/js/trackAPI.js', runAt: "document_start"}, function() {
-	chrome.tabs.executeScript(
-	null, {file: '/vendor/jquery/dist/jquery.min.js', runAt: "document_start"}, function() {
-	chrome.tabs.executeScript(
-	null, {file: '/vendor/angular/angular.js', runAt: "document_start"}, function() {
-	chrome.tabs.executeScript(
-	null, {file: '/js/content/hoverintent.js', runAt: "document_start"}, function() {
-  chrome.tabs.executeScript(
-	null, {file: '/js/angular-ui-tree-master/dist/angular-ui-tree.min.js', runAt: "document_start"}, function() {
-	chrome.tabs.executeScript(
-	null, {file: '/vendor/bootstrap/dist/js/bootstrap.min.js', runAt: "document_start"}, function() {
-	chrome.tabs.executeScript(
-	null, {file: '/js/interact.min.js', runAt: "document_start"}, function() { 	// For some reason, won't work in vendor 
-	chrome.tabs.executeScript(
-	null, {file: '/js/content/injectsidebar.js', runAt: "document_start"});	
-	});});});});});});});});});});
-});
+

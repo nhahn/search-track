@@ -80,7 +80,7 @@ chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
     console.log(changeInfo);
     return;
   }
-  recordElapsedTime(current_title, tabId);
+  // recordElapsedTime(current_title, tabId);
   return takeSnapshot('updated:' + changeInfo.status);
 });
 
@@ -97,7 +97,7 @@ chrome.tabs.onRemoved.addListener(function(tabId, removeInfo) {
 });
 
 chrome.tabs.onActivated.addListener(function(activeInfo) {
-  recordElapsedTime(current_title, activeInfo.tabId);
+  // recordElapsedTime(current_title, activeInfo.tabId);
   return trackFocus('tabChange', activeInfo.windowId, activeInfo.tabId);
 });
 

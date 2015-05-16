@@ -1,14 +1,15 @@
-// Bug: first load, obj is null
 // TODO: task database! a better way to manage tasks
 // TODO: reload button?
 // TODO: be able to add the other tabs in the window, not just the one you're currently on - shortcuts
-// TODO: make it useable, speed up
+// TODO: make it useable, speed up. I disabled the time elapsed function since it seems to be the laggiest
 // TODO: insert sidebar faster into windows
-// TODO: could merge content scripts (1-3) with this, use message passing
 // TODO: perhaps use an iframe instead? look at vimium bar
 // TODO: name each bucket
 // TODO: save current x and y transforms, etc
 // TODO: only allow one item per small column
+// TODO: option to hide sidebar
+// TODO: need a better place to put annotation in db
+// BUG: throttling messes with db saving.
 // CWO: minimize manipulation! snap instead of drag, increase flow (between sandboxes)
 
 var listApp = angular.module('listApp', ['ui.tree'], function($compileProvider) {
@@ -22,7 +23,7 @@ $compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|file|chrome-
 chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
 		if (request.updated) {
-			update();
+			update(request.updated);
 		}
 });
 
@@ -34,6 +35,7 @@ $.get(chrome.extension.getURL('/html/sidebar.html'), function(data) {
 
 	interact('.draggable')
 	.draggable({
+    inertia: false,
 		restrict: {
 			restriction: "#ontop",
 			endOnly: true,
@@ -109,7 +111,7 @@ $.get(chrome.extension.getURL('/html/sidebar.html'), function(data) {
 	
 	$app.ready(function(){
 		$(".esotericbordername").click(function(){
-			if ($('.esotericsidebarname').css('bottom') == '-260px') {
+			if ($('.esotericsidebarname').css('bottom') <= '-260px') {
 		 		$(".esotericsidebarname").animate({"bottom": "+=275px"});
 		 	} else {
 		 		$(".esotericsidebarname").animate({"bottom": "-=275px"});
@@ -120,10 +122,12 @@ $.get(chrome.extension.getURL('/html/sidebar.html'), function(data) {
     notepad.addEventListener('input', function() {
       var text = $('#esoterictextbox').val();
       SavedInfo.db().update({'annotation': text});
-		  update();
+      var db = SavedInfo.db().get();
+		  update(db);
     });
 
-    update();
+    var db = SavedInfo.db().get();
+    update(db);
 	});
 
 });
@@ -145,109 +149,107 @@ function dragMoveListener (event) {
 	target.setAttribute('data-y', y);
 }
 
-function update() {
-	// Display all saved tabs in the correct box. Not sure what the callback is for exactly.
-	SavedInfo.db().callback(function() {
- 		tabs = SavedInfo.db().get();
-		for (var i = 1; i < tabs.length; i++) { // limit to 9 for now?
-			var tab = tabs[i];
-			if (document.getElementById(tab.time) == null) {
-				var box = document.getElementById('esotericcolumn1');
-				if (tab.importance == 2) box = document.getElementById('esotericcolumn2');
-				else if (tab.importance == 3) box = document.getElementById('esotericcolumn3');
-				var info = document.createElement('div');
-				info.setAttribute('class','draggable');
-        // If you change the note, it won't update
-				info.setAttribute('title',tab.note);
-				info.setAttribute('id',tab.time);
-				if (tab.color == "red") info.style.backgroundColor = 'red';
+function update(tabs) {
+  for (var i = 1; i < tabs.length; i++) { // limit to 9 for now?
+    var tab = tabs[i];
+    console.log(tab.title);
+    console.log(i);
+    if (document.getElementById(tab.time) == null) {
+      var box = document.getElementById('esotericcolumn1');
+      if (tab.importance == 2) box = document.getElementById('esotericcolumn2');
+      else if (tab.importance == 3) box = document.getElementById('esotericcolumn3');
+      var info = document.createElement('div');
+      info.setAttribute('class','draggable');
+      // If you change the note, it won't update
+      info.setAttribute('title',tab.note);
+      info.setAttribute('id',tab.time);
+      if (tab.color == "red") info.style.backgroundColor = 'red';
 
-	  		/* old way of getting favicon url 
-        var getLocation = function(href) {
-	        var l = document.createElement("a");
-	        l.href = href;
-	        return l;
-	      }; 
-				var l = getLocation(tab.url);
-				var favLink = 'http://' + l.hostname + '/favicon.ico';
-        */
-				var favicon = document.createElement('img');
-				favicon.setAttribute('src',tab.favicon);
-				favicon.setAttribute('id','esotericfavicon');
-	      info.appendChild(favicon);
+      /* old way of getting favicon url 
+      var getLocation = function(href) {
+        var l = document.createElement("a");
+        l.href = href;
+        return l;
+      }; 
+      var l = getLocation(tab.url);
+      var favLink = 'http://' + l.hostname + '/favicon.ico';
+      */
+      var favicon = document.createElement('img');
+      favicon.setAttribute('src',tab.favicon);
+      favicon.setAttribute('id','esotericfavicon');
+      info.appendChild(favicon);
 
-				var title = tab.title;
-	      if (title == undefined || title.length == 0) title = "Untitled";
-	      else if (title.length > 25) title = ' ' + title.substring(0,24) + "... ";
-				var ttl = document.createElement('a');
-				ttl.innerHTML = title;
-        ttl.setAttribute('class','esoterictitlehref');
-        ttl.tabId = tab.tabId;
-        ttl.id = tab.time;
-				info.appendChild(ttl);
+      var title = tab.title;
+      if (title == undefined || title.length == 0) title = "Untitled";
+      else if (title.length > 25) title = ' ' + title.substring(0,24) + "... ";
+      var ttl = document.createElement('a');
+      ttl.innerHTML = title;
+      ttl.setAttribute('class','esoterictitlehref');
+      ttl.tabId = tab.tabId;
+      ttl.id = tab.time;
+      info.appendChild(ttl);
 
-				var del = document.createElement('a');
-				del.setAttribute('class','pull-right btn btn-danger btn-xs esotericdelete');
-				info.appendChild(del);
+      var del = document.createElement('a');
+      del.setAttribute('class','pull-right btn btn-danger btn-xs esotericdelete');
+      info.appendChild(del);
 
-        // Set offsets for display
-        var parentWidth = document.getElementById('esotericcolumn1').clientWidth;
-        var parentHeight = document.getElementById('esotericcolumn1').clientHeight;
-        // Using percentages:
-        /* info.style.transform = 'translate(' + (16.6666667 + 133.333333*(i%3)) + '%, ' + (16.6666667 + 133.333333*(Math.floor((i-1)/3))) + '%)';
-        info.style.webkitTransform = 'translate(' + (16.6666667 + 133.333333*(i%3)) + '%, ' + (16.6666667 + 133.333333*(Math.floor((i-1)/3))) + '%)'; */
-        var x_buff = parentWidth*(.25/6);
-        var x_offset = x_buff*2 + .25*parentWidth;
-        var y_buff = parentHeight*(.25/6);
-        var y_offset = y_buff*2 + .25*parentHeight;
-			  info.style.transform = 'translate(' + (x_buff + x_offset*(i%3)) + 'px, ' + (y_buff + y_offset*(Math.floor((i-1)/3))) + 'px)';
-        info.style.webkitTransform = 'translate(' + (x_buff + x_offset*(i%3)) + 'px, ' + (y_buff + y_offset*(Math.floor((i-1)/3))) + 'px)';
-			  info.setAttribute('data-x',x_buff + x_offset*(i%3)); 
-        info.setAttribute('data-y',y_buff + y_offset*(Math.floor((i-1)/3)));
+      // Set offsets for display
+      var parentWidth = document.getElementById('esotericcolumn1').clientWidth;
+      var parentHeight = document.getElementById('esotericcolumn1').clientHeight;
+      // Using percentages:
+      /* info.style.transform = 'translate(' + (16.6666667 + 133.333333*(i%3)) + '%, ' + (16.6666667 + 133.333333*(Math.floor((i-1)/3))) + '%)';
+      info.style.webkitTransform = 'translate(' + (16.6666667 + 133.333333*(i%3)) + '%, ' + (16.6666667 + 133.333333*(Math.floor((i-1)/3))) + '%)'; */
+      var x_buff = parentWidth*(.25/6);
+      var x_offset = x_buff*2 + .25*parentWidth;
+      var y_buff = parentHeight*(.25/6);
+      var y_offset = y_buff*2 + .25*parentHeight;
+      info.style.transform = 'translate(' + (x_buff + x_offset*((i-1)%3)) + 'px, ' + (y_buff + y_offset*(Math.floor((i-1)/3))) + 'px)';
+      info.style.webkitTransform = 'translate(' + (x_buff + x_offset*((i-1)%3)) + 'px, ' + (y_buff + y_offset*(Math.floor((i-1)/3))) + 'px)';
+      info.setAttribute('data-x',x_buff + x_offset*(i%3)); 
+      info.setAttribute('data-y',y_buff + y_offset*(Math.floor((i-1)/3)));
 
-				box.appendChild(info);
-			}
-		}
-	  
-    // Update annotation box 
-    var annotation = SavedInfo.db().get()[0].annotation;
-    $('#esoterictextbox').val(annotation);
-
-    // Adds a lot of the same listeners to each element, but I'm doing this so every new element
-    // can be deleted  
-    $(document).ready(function() {
-      // $(".draggable").hoverIntent(function() {alert(this)});
+      box.appendChild(info);
+    }
+  }
   
-      $('.esotericdelete').each(function() {
-        $(this).click(function() {
-    	    var time = parseInt($(this)[0].parentElement.id);
-          // var title = $(this).context.parentElement.innerText;
-          SavedInfo.db().filter({'time':time}).remove();
-          $(this)[0].parentElement.remove();
-        });
-      });
+  // Update annotation box 
+  var annotation = tabs[0].annotation;
+  $('#esoterictextbox').val(annotation);
 
-      $('.esoterictitlehref').each(function() {
-        $(this).click(function() {
-          chrome.runtime.onMessage.addListener(
-            function(request, sender, sendResponse) {
-              if (request.notOpened) chrome.tabs.create({'url':$(this)[0].url});
-          });
+  // Adds a lot of the same listeners to each element, but I'm doing this so every new element
+  // can be deleted  
+  $(document).ready(function() {
+    // $(".draggable").hoverIntent(function() {alert(this)});
 
-         chrome.runtime.sendMessage({'changeId':$(this)[0].tabId});
-          
-          // undo color change
-          /*
-          var id = $(this)[0].id;
-          var obj = SavedInfo.db().filter({'time':parseInt(id)});
-      		if (obj.get()[0].color == 'rgba(219,217,219,1)') {
-            obj.update({'color':'red'});
-          } else {
-            obj.update({'color':'rgba(219,217,219,1)'});
-          }
-          */
-        });
+    $('.esotericdelete').each(function() {
+      $(this).click(function() {
+        var time = parseInt($(this)[0].parentElement.id);
+        // var title = $(this).context.parentElement.innerText;
+        SavedInfo.db().filter({'time':time}).remove(); // may take some time..
+        $(this)[0].parentElement.remove(); 
       });
     });
-	});
+
+    $('.esoterictitlehref').each(function() {
+      $(this).click(function() {
+        chrome.runtime.onMessage.addListener(
+          function(request, sender, sendResponse) {
+            if (request.notOpened) chrome.tabs.create({'url':$(this)[0].url});
+        });
+
+       chrome.runtime.sendMessage({'changeId':$(this)[0].tabId});
+        
+        // undo color change
+        /*
+        var id = $(this)[0].id;
+        var obj = SavedInfo.db().filter({'time':parseInt(id)});
+        if (obj.get()[0].color == 'rgba(219,217,219,1)') {
+          obj.update({'color':'red'});
+        } else {
+          obj.update({'color':'rgba(219,217,219,1)'});
+        }
+        */
+      });
+    });
+  });
 }
