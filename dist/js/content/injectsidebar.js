@@ -1,3 +1,8 @@
+/*
+ * This script is injected into every page the user opens. It injects the sidebar that users can
+ * interact with.
+ */
+
 // TODO: task database! a better way to manage tasks
 // TODO: reload button? button to switch view
 // TODO: be able to add the other tabs in the window, not just the one you're currently on - shortcuts
@@ -10,9 +15,15 @@
 // TODO: minimize manipulation!
 // TODO: can do things with dragging with shift key!
 // TODO: if tab not currently open, open in a new tab
-// BUG: throttling occasionally messes with db saving.
+// TODO: enable search-track, integrate with it
+// BUG: throttling occasionally messes with db saving. Not everything seems to be on the same page.
+/* "chrome.storage is not a big truck. It's a series of tubes. And if you don't understand,
+ * those tubes can be filled, and if they are filled when you put your message in, it gets in line, 
+ * and it's going to be delayed by anyone that puts into that tube enormous amounts of material."
+ */
 // BUG: Uncaught TypeError: Cannot read property 'clientWidth' of null
 // BUG: doesn't work on first injection after extension loads, for many different errors (probably due to race conditions)
+// CWO: bug testing. actually use it, then push first stable build
 
 var listApp = angular.module('listApp', ['ui.tree'], function($compileProvider) {
 // content security to display favicons
@@ -46,6 +57,8 @@ chrome.runtime.onMessage.addListener(
         + (y_buff + y_offset*(Math.floor((request.newLoc[1])/3))) + 'px)';
       info.setAttribute('data-x',x_buff + x_offset*((request.newLoc[1])%3)); 
       info.setAttribute('data-y',y_buff + y_offset*(Math.floor((request.newLoc[1])/3)));
+    } else if (request.delTab) { // user deleted a tab on some page - update here
+      $('#' + request.delTab).remove();
     }
 });
 
@@ -170,7 +183,7 @@ $.get(chrome.extension.getURL('/html/sidebar.html'), function(data) {
       var text = $('#esoterictextbox').val();
       SavedInfo.db().update({'annotation': text}).callback(function() {
         console.log(SavedInfo.db().get()[0]);
-        chrome.runtime.sendMessage({changedNote: text}, function(response) {
+        chrome.runtime.sendMessage({changed: text}, function(response) {
           console.log(response.farewell + ' annotation');
         });
       });
@@ -227,13 +240,14 @@ function update(tabs,imp,annotation) {
       else if (title.length > 25) title = ' ' + title.substring(0,24) + "... ";
       var ttl = document.createElement('a');
       ttl.innerHTML = title;
-      ttl.setAttribute('class','esoterictitlehref');
+      ttl.setAttribute('id','ttl_' + tab.time);
       ttl.tabId = tab.tabId;
-      ttl.id = tab.time;
+      ttl.url = tab.url;
       info.appendChild(ttl);
 
       var del = document.createElement('a');
-      del.setAttribute('class','pull-right btn btn-danger btn-xs esotericdelete');
+      del.setAttribute('class','pull-right btn btn-danger btn-xs');
+      del.setAttribute('id','del_' + tab.time); 
       info.appendChild(del);
 
       // Set offsets for display using the tab's index (tab.loc)
@@ -249,49 +263,42 @@ function update(tabs,imp,annotation) {
       info.setAttribute('data-y',y_buff + y_offset*(Math.floor(tab.loc/3)));
 
       box.appendChild(info);
+
+      $(document).ready(function() {
+        // $(".draggable").hoverIntent(function() {alert(this)});
+
+        $('#del_' + tab.time).click(function() {
+          var time = parseInt($(this)[0].parentElement.id);
+          // var title = $(this).context.parentElement.innerText;
+          SavedInfo.db().filter({'time':time}).remove(); // may take some time..
+          $(this)[0].parentElement.remove();
+          
+          chrome.runtime.sendMessage({deleted: time}, function() {
+            console.log(response.farewell + ' ' + time);
+          });
+        });
+
+        $('#ttl_' + tab.time).click(function() {
+          chrome.runtime.sendMessage({'changeUrl':[$(this)[0].tabId,$(this)[0].url]}, function() {
+            console.log('opened');
+          });
+          
+          // undo color change
+          /*
+          var id = $(this)[0].id;
+          var obj = SavedInfo.db().filter({'time':parseInt(id)});
+          if (obj.get()[0].color == 'rgba(219,217,219,1)') {
+            obj.update({'color':'red'});
+          } else {
+            obj.update({'color':'rgba(219,217,219,1)'});
+          }
+          */
+        });
+      });
+
     }
   }
   
   // Update annotation box
   $('#esoterictextbox').val(annotation);
-
-  // Adds a lot of the same listeners to each element, but I'm doing this so every new element
-  // can be deleted  
-  $(document).ready(function() {
-    // $(".draggable").hoverIntent(function() {alert(this)});
-
-    $('.esotericdelete').each(function() {
-      $(this).click(function() {
-        var time = parseInt($(this)[0].parentElement.id);
-        // var title = $(this).context.parentElement.innerText;
-        SavedInfo.db().filter({'time':time}).remove(); // may take some time..
-        $(this)[0].parentElement.remove(); 
-      });
-    });
-
-    $('.esoterictitlehref').each(function() {
-      $(this).click(function() {
-        chrome.runtime.onMessage.addListener(
-          function(request, sender, sendResponse) {
-            if (request.notOpened) chrome.tabs.create({'url':$(this)[0].url});
-        });
-
-        // TODO: not working
-        chrome.runtime.sendMessage({'changeId':$(this)[0].tabId}, function() {
-          console.log('opened');
-        });
-        
-        // undo color change
-        /*
-        var id = $(this)[0].id;
-        var obj = SavedInfo.db().filter({'time':parseInt(id)});
-        if (obj.get()[0].color == 'rgba(219,217,219,1)') {
-          obj.update({'color':'red'});
-        } else {
-          obj.update({'color':'rgba(219,217,219,1)'});
-        }
-        */
-      });
-    });
-  });
 }

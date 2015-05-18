@@ -3,7 +3,6 @@
 */
 
 // TODO: why is angular loading twice?
-// TODO: task db!
 
 task = "default";
 console.log(task);
@@ -14,30 +13,32 @@ var lastTab;
 chrome.storage.local.clear();
 chrome.storage.sync.clear(function() {
   SavedInfo.db.insert({annotation:""}).callback(function() {
+    var annotation = SavedInfo.db().get()[0].annotation;
+    console.log(annotation);
 
-  // Inject sidebar to every updated page
-  chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
-    chrome.tabs.insertCSS(null, {file: "/css/sidebar.css", runAt: "document_start"}, function() {
-    chrome.tabs.executeScript(
-    null, {file: '/vendor/taffydb/taffy-min.js', runAt: "document_start"}, function() {
-    chrome.tabs.executeScript(
-    null, {file: '/vendor/underscore/underscore-min.js', runAt: "document_start"}, function() {
-    chrome.tabs.executeScript(
-    null, {file: '/js/trackAPI.js', runAt: "document_start"}, function() {
-    chrome.tabs.executeScript(
-    null, {file: '/vendor/jquery/dist/jquery.min.js', runAt: "document_start"}, function() {
-    chrome.tabs.executeScript(
-    null, {file: '/vendor/angular/angular.js', runAt: "document_start"}, function() {
-    /* chrome.tabs.executeScript(
-    null, {file: '/js/content/hoverintent.js', runAt: "document_start"}, function() { */
-    chrome.tabs.executeScript(
-    null, {file: '/vendor/bootstrap/dist/js/bootstrap.min.js', runAt: "document_start"}, function() {
-    chrome.tabs.executeScript(
-    null, {file: '/js/interact.min.js', runAt: "document_start"}, function() { 	// For some reason, won't work in vendor 
-    chrome.tabs.executeScript(
-    null, {file: '/js/content/injectsidebar.js', runAt: "document_start"});	
-    });});});});});});});});
-  });
+    // Inject sidebar to every updated page
+    chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
+      chrome.tabs.insertCSS(null, {file: "/css/sidebar.css", runAt: "document_start"}, function() {
+      chrome.tabs.executeScript(
+      null, {file: '/vendor/taffydb/taffy-min.js', runAt: "document_start"}, function() {
+      chrome.tabs.executeScript(
+      null, {file: '/vendor/underscore/underscore-min.js', runAt: "document_start"}, function() {
+      chrome.tabs.executeScript(
+      null, {file: '/js/trackAPI.js', runAt: "document_start"}, function() {
+      chrome.tabs.executeScript(
+      null, {file: '/vendor/jquery/dist/jquery.min.js', runAt: "document_start"}, function() {
+      chrome.tabs.executeScript(
+      null, {file: '/vendor/angular/angular.js', runAt: "document_start"}, function() {
+      /* chrome.tabs.executeScript(
+      null, {file: '/js/content/hoverintent.js', runAt: "document_start"}, function() { */
+      chrome.tabs.executeScript(
+      null, {file: '/vendor/bootstrap/dist/js/bootstrap.min.js', runAt: "document_start"}, function() {
+      chrome.tabs.executeScript(
+      null, {file: '/js/interact.min.js', runAt: "document_start"}, function() { 	// For some reason, won't work in vendor 
+      chrome.tabs.executeScript(
+      null, {file: '/js/content/injectsidebar.js', runAt: "document_start"});	
+      });});});});});});});});
+    });
 
   });
 });
@@ -54,7 +55,7 @@ chrome.runtime.onMessage.addListener(
 			chrome.runtime.sendMessage({task: task}, function(response) {
 				console.log('sent current task'); // doesn't work 
      		});
-		} else if (request.changedNote) { // annotation changed
+		} else if (request.changed) { // annotation changed
       changed(request.changed);
       sendResponse({farewell:'changed'});
 		} else if (request.changedLoc) { // dragged tab to new location on some page - tell others
@@ -64,17 +65,17 @@ chrome.runtime.onMessage.addListener(
         });
         sendResponse({farewell:'moved'});
       });
-		} else if (request.changeId) {
-      var success = false;
-      chrome.tabs.update(request.changeId, {selected:true}, function() {
-        success = true; 
-      });
-      
-      if (success) { 
-        chrome.tabs.query({active: true, currentWindow: true}, function(tabs){
-          chrome.tabs.sendMessage(tabs[0].id, {notOpened:true});
+		} else if (request.deleted) { // deleted a tab - tell others
+      chrome.tabs.query({}, function(tabs) {
+        tabs.forEach(function(tab) {
+          chrome.tabs.sendMessage(tab.id, {delTab: request.deleted});
         });
-      }
+        sendResponse({farewell:'deleted'});
+      });
+    } else if (request.changeUrl) {
+      chrome.tabs.update(request.changeUrl[0], {selected:true}, function() {
+        if (chrome.runtime.lastError) chrome.tabs.create({'url': request.changeUrl[1]});
+      });
     }  
   	/* TODO: automatic scroll down on a page that's re-opened	
 		else if (request.scrollDown != 0) {
