@@ -4,6 +4,7 @@
 
 // TODO: Make more compact while retaining as much semantic info about tabs as possible
 // TODO: Speed up! It's really laggy...
+// TODO: actually send farewell to extension.js (proper message passing)
 
 'use strict';
 

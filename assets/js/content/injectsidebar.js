@@ -1,8 +1,7 @@
 // TODO: task database! a better way to manage tasks
-// TODO: reload button?
+// TODO: reload button? button to switch view
 // TODO: be able to add the other tabs in the window, not just the one you're currently on - shortcuts
 // TODO: make it useable, speed up. I disabled the time elapsed function since it seems to be the laggiest
-// TODO: insert sidebar faster into windows
 // TODO: perhaps use an iframe instead? look at vimium bar
 // TODO: name each bucket
 // TODO: only allow one item per small box
@@ -10,9 +9,10 @@
 // TODO: need a better place to put annotation in db
 // TODO: minimize manipulation!
 // TODO: can do things with dragging with shift key!
-// BUG: throttling messes with db saving.
+// TODO: if tab not currently open, open in a new tab
+// BUG: throttling occasionally messes with db saving.
 // BUG: Uncaught TypeError: Cannot read property 'clientWidth' of null
-// BUG: doesn't work on first injection after extension loads
+// BUG: doesn't work on first injection after extension loads, for many different errors (probably due to race conditions)
 
 var listApp = angular.module('listApp', ['ui.tree'], function($compileProvider) {
 // content security to display favicons
@@ -24,13 +24,29 @@ $compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|file|chrome-
 
 chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
-		if (request.updated) {
+		if (request.updated) { // database was updated - make relevant changes
       var db1 = request.updated[0];
       var db2 = request.updated[1];
       var annotation = request.updated[2];
 			update(db1,1,annotation);
 			update(db2,2,annotation);
-		}
+		} else if (request.newLoc) { // user dragged a tab to a new location - update here
+      console.log(request.newLoc);
+      var info = document.getElementById(request.newLoc[0]);
+      // Set offsets for display using the tab's index (tab.loc)
+      var parentWidth = document.getElementById('esotericcolumn1').clientWidth;
+      var parentHeight = 240;
+      var x_buff = parentWidth*(.25/6);
+      var x_offset = x_buff*2 + .25*parentWidth;
+      var y_buff = parentHeight*(.25/6);
+      var y_offset = y_buff*2 + .25*parentHeight;
+      info.style.transform = 'translate(' + (x_buff + x_offset*((request.newLoc[1])%3)) + 'px, ' 
+        + (y_buff + y_offset*(Math.floor((request.newLoc[1])/3))) + 'px)';
+      info.style.webkitTransform = 'translate(' + (x_buff + x_offset*((request.newLoc[1])%3)) + 'px, ' 
+        + (y_buff + y_offset*(Math.floor((request.newLoc[1])/3))) + 'px)';
+      info.setAttribute('data-x',x_buff + x_offset*((request.newLoc[1])%3)); 
+      info.setAttribute('data-y',y_buff + y_offset*(Math.floor((request.newLoc[1])/3)));
+    }
 });
 
 // Inject HTML for sidebar if it hasn't been injected already
@@ -111,11 +127,14 @@ $.get(chrome.extension.getURL('/html/sidebar.html'), function(data) {
     },
     */
     ondrop: function (event) {
+      // Save current location to the database
       var id = parseInt(event.relatedTarget.attributes.id.value);
       var loc = parseInt(event.target.attributes.colid.value);
       SavedInfo.db().filter({time:id}).update({loc:loc}).callback(function() {
-        console.log(SavedInfo.db().filter({time:id}).get());
-        console.log('moved ' + id + ' to ' + loc);
+        // db doesn't update fast enough, so tell all content scripts directly
+        chrome.runtime.sendMessage({changedLoc: [id,loc]}, function() {
+          console.log(response.farewell + ' ' + id + ' to ' + loc);
+        });
       });
     },
     ondropdeactivate: function (event) {
@@ -134,17 +153,30 @@ $.get(chrome.extension.getURL('/html/sidebar.html'), function(data) {
 		 	}
 		});
 
-    var notepad = document.getElementById('esoterictextbox');
-    notepad.addEventListener('input', function() {
-      var text = $('#esoterictextbox').val();
-      SavedInfo.db().update({'annotation': text});
-      var db1 = SavedInfo.db().filter({importance:1}).get();
-      var db2 = SavedInfo.db().filter({importance:2}).get();
-
-		  update(db1,1,text);
-		  update(db2,2,text);
+    // Update database after user finishes typing
+    var typingTimer;                
+    var doneTypingInterval = 500; 
+    // on keyup, start the countdown
+    $('#esoterictextbox').keyup(function(){
+      clearTimeout(typingTimer);
+      typingTimer = setTimeout(doneTyping, doneTypingInterval);
     });
-    
+    // on keydown, clear the countdown 
+    $('#esoterictextbox').keydown(function(){
+      clearTimeout(typingTimer);
+    });
+
+    function doneTyping () {
+      var text = $('#esoterictextbox').val();
+      SavedInfo.db().update({'annotation': text}).callback(function() {
+        console.log(SavedInfo.db().get()[0]);
+        chrome.runtime.sendMessage({changedNote: text}, function(response) {
+          console.log(response.farewell + ' annotation');
+        });
+      });
+    }
+   
+    // Updates visual for the first time 
     var db1 = SavedInfo.db().filter({importance:1}).get();
     var db2 = SavedInfo.db().filter({importance:2}).get();
     console.log(SavedInfo.db().get());
@@ -176,7 +208,6 @@ function update(tabs,imp,annotation) {
   // var len = Math.min(8,tabs.length); // cap at 8 items
   for (var i = 0; i < tabs.length; i++) {  
     var tab = tabs[i];
-    console.log(tab.loc);
     if (document.getElementById(tab.time) == null) {
       var box = document.getElementById('esotericcolumn' + imp.toString());
       var info = document.createElement('div');
@@ -186,15 +217,6 @@ function update(tabs,imp,annotation) {
       info.setAttribute('id',tab.time);
       if (tab.color == "red") info.style.backgroundColor = 'red';
 
-      /* old way of getting favicon url 
-      var getLocation = function(href) {
-        var l = document.createElement("a");
-        l.href = href;
-        return l;
-      }; 
-      var l = getLocation(tab.url);
-      var favLink = 'http://' + l.hostname + '/favicon.ico';
-      */
       var favicon = document.createElement('img');
       favicon.setAttribute('src',tab.favicon);
       favicon.setAttribute('id','esotericfavicon');
@@ -214,12 +236,9 @@ function update(tabs,imp,annotation) {
       del.setAttribute('class','pull-right btn btn-danger btn-xs esotericdelete');
       info.appendChild(del);
 
-      // Set offsets for display
+      // Set offsets for display using the tab's index (tab.loc)
       var parentWidth = document.getElementById('esotericcolumn1').clientWidth;
       var parentHeight = 240;
-      // Using percentages:
-      /* info.style.transform = 'translate(' + (16.6666667 + 133.333333*(i%3)) + '%, ' + (16.6666667 + 133.333333*(Math.floor(i/3))) + '%)';
-      info.style.webkitTransform = 'translate(' + (16.6666667 + 133.333333*(i%3)) + '%, ' + (16.6666667 + 133.333333*(Math.floor(i/3))) + '%)'; */
       var x_buff = parentWidth*(.25/6);
       var x_offset = x_buff*2 + .25*parentWidth;
       var y_buff = parentHeight*(.25/6);
@@ -257,7 +276,10 @@ function update(tabs,imp,annotation) {
             if (request.notOpened) chrome.tabs.create({'url':$(this)[0].url});
         });
 
-       chrome.runtime.sendMessage({'changeId':$(this)[0].tabId});
+        // TODO: not working
+        chrome.runtime.sendMessage({'changeId':$(this)[0].tabId}, function() {
+          console.log('opened');
+        });
         
         // undo color change
         /*

@@ -52,21 +52,29 @@ chrome.runtime.onMessage.addListener(
 			task = request.task;
 		} else if (request.newVisual) {
 			chrome.runtime.sendMessage({task: task}, function(response) {
-				console.log('sent current task'); // doesn't work
+				console.log('sent current task'); // doesn't work 
      		});
-		} 
-    /* else if (request.updated) {
-			chrome.tabs.query({active: true, currentWindow: true}, function(tabs){
-	   	  chrome.tabs.sendMessage(tabs[0].id, {updated: true}, function(response) {});  
-			});
-		} 
-    */
-    else if (request.changeId) {
+		} else if (request.changedNote) { // annotation changed
+      changed(request.changed);
+      sendResponse({farewell:'changed'});
+		} else if (request.changedLoc) { // dragged tab to new location on some page - tell others
+      chrome.tabs.query({}, function(tabs) {
+        tabs.forEach(function(tab) {
+          chrome.tabs.sendMessage(tab.id, {newLoc: request.changedLoc});
+        });
+        sendResponse({farewell:'moved'});
+      });
+		} else if (request.changeId) {
       var success = false;
       chrome.tabs.update(request.changeId, {selected:true}, function() {
         success = true; 
       });
-      if (success) chrome.tabs.sendMessage(tabs[0].id, {notOpened:true});
+      
+      if (success) { 
+        chrome.tabs.query({active: true, currentWindow: true}, function(tabs){
+          chrome.tabs.sendMessage(tabs[0].id, {notOpened:true});
+        });
+      }
     }  
   	/* TODO: automatic scroll down on a page that's re-opened	
 		else if (request.scrollDown != 0) {
@@ -89,6 +97,18 @@ chrome.commands.onCommand.addListener(function(command) {
 	 else if (command == 'open') open();
   });
 });
+
+// inform all content scripts that there's been a change. TODO: inform visual as well (when I work on the new tab page)
+// Kind of janky way to send the annotation
+function changed(annotation) {
+  var db1 = SavedInfo.db().filter({importance:1}).get();
+  var db2 = SavedInfo.db().filter({importance:2}).get();
+  chrome.tabs.query({}, function(tabs) {
+    tabs.forEach(function(tab) {
+      chrome.tabs.sendMessage(tab.id, {updated: [db1,db2,annotation]});
+    });
+  });
+}
 
 // user marks tab as "for later"
 function add(importance) {
@@ -132,16 +152,8 @@ function add(importance) {
     tab.task = "";
 
     // add to DB.
-    SavedInfo.db.insert(tab).callback(function() {
-      // inform visual that there's a new tab that's been added. TODO when you work on new tab page (no content script anymore)
-      chrome.tabs.query({active: true, currentWindow: true}, function(tabs){
-        var db1 = SavedInfo.db().filter({importance:1}).get();
-        var db2 = SavedInfo.db().filter({importance:2}).get();
-        var annotation = SavedInfo.db().get()[0].annotation; // is there a better way of saving the annotation?
-        chrome.tabs.sendMessage(tabs[0].id, {updated: [db1,db2,annotation]}, function(response) {});  
-      }); 
-    });
-
+    var annotation = SavedInfo.db().get()[0].annotation;
+    SavedInfo.db.insert(tab).callback(changed(annotation));
   });
     
 	// Originally was using a context script here to get page depth information and user highlights on page
