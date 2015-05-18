@@ -14,7 +14,7 @@ var lastTab;
 chrome.storage.local.clear();
 chrome.storage.sync.clear(function() {
   SavedInfo.db.insert({annotation:""}).callback(function() {
-    
+
   // Inject sidebar to every updated page
   chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
     chrome.tabs.insertCSS(null, {file: "/css/sidebar.css", runAt: "document_start"}, function() {
@@ -68,7 +68,7 @@ chrome.runtime.onMessage.addListener(
       });
       if (success) chrome.tabs.sendMessage(tabs[0].id, {notOpened:true});
     }  
-  	/*	
+  	/* TODO: automatic scroll down on a page that's re-opened	
 		else if (request.scrollDown != 0) {
 			setTimeout(function() {
 				chrome.tabs.executeScript(
@@ -98,6 +98,7 @@ function add(importance) {
 
     tab.time = Date.now();
     tab.timeElapsed = 0;
+    tab.loc = SavedInfo.db().filter({importance:importance}).get().length;
 
     tab.tabId = chromeTab.id;
     tab.favicon = chromeTab.favIconUrl;
@@ -134,8 +135,10 @@ function add(importance) {
     SavedInfo.db.insert(tab).callback(function() {
       // inform visual that there's a new tab that's been added. TODO when you work on new tab page (no content script anymore)
       chrome.tabs.query({active: true, currentWindow: true}, function(tabs){
-        var db = SavedInfo.db().get();
-        chrome.tabs.sendMessage(tabs[0].id, {updated: db}, function(response) {});  
+        var db1 = SavedInfo.db().filter({importance:1}).get();
+        var db2 = SavedInfo.db().filter({importance:2}).get();
+        var annotation = SavedInfo.db().get()[0].annotation; // is there a better way of saving the annotation?
+        chrome.tabs.sendMessage(tabs[0].id, {updated: [db1,db2,annotation]}, function(response) {});  
       }); 
     });
 
@@ -172,5 +175,3 @@ chrome.tabs.onCreated.addListener(function(tab) {
 		}
 	});
 });
-
-

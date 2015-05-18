@@ -5,12 +5,14 @@
 // TODO: insert sidebar faster into windows
 // TODO: perhaps use an iframe instead? look at vimium bar
 // TODO: name each bucket
-// TODO: save current x and y transforms, etc
-// TODO: only allow one item per small column
+// TODO: only allow one item per small box
 // TODO: option to hide sidebar
 // TODO: need a better place to put annotation in db
+// TODO: minimize manipulation!
+// TODO: can do things with dragging with shift key!
 // BUG: throttling messes with db saving.
-// CWO: minimize manipulation! snap instead of drag, increase flow (between sandboxes)
+// BUG: Uncaught TypeError: Cannot read property 'clientWidth' of null
+// BUG: doesn't work on first injection after extension loads
 
 var listApp = angular.module('listApp', ['ui.tree'], function($compileProvider) {
 // content security to display favicons
@@ -23,7 +25,11 @@ $compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|file|chrome-
 chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
 		if (request.updated) {
-			update(request.updated);
+      var db1 = request.updated[0];
+      var db2 = request.updated[1];
+      var annotation = request.updated[2];
+			update(db1,1,annotation);
+			update(db2,2,annotation);
 		}
 });
 
@@ -32,27 +38,28 @@ if (typeof injected === 'undefined') {
 $.get(chrome.extension.getURL('/html/sidebar.html'), function(data) {
 	injected = true;
   var $app = $($.parseHTML(data)).appendTo('body');
+  var parentWidth = document.getElementById('esotericcolumn1').clientWidth;
+  var parentHeight = 240;
 
 	interact('.draggable')
 	.draggable({
+    snap: {
+      targets: [
+        interact.createSnapGrid({
+          x: parentWidth/3,
+          y: parentHeight/3
+        })
+      ]
+    },
     inertia: false,
 		restrict: {
-			restriction: "#ontop",
-			endOnly: true,
-			elementRect: { top: 0, left: 0, bottom: 1, right: 1 }
+			restriction: "parent"
 		},
 
 	  // call this function on every dragmove event
 		onmove: dragMoveListener,	
 		// call this function on every dragend event
-		onend: function (event) {
- 	   var textEl = event.target.querySelector('p');
-
-	    textEl && (textEl.textContent =
- 	      'moved a distance of '
-      	+ (Math.sqrt(event.dx * event.dx +
-	 					         event.dy * event.dy)|0) + 'px');
-		}	
+		onend: function (event) {}	
 	})
   /*
 	.on('tap', function (event) {
@@ -81,13 +88,14 @@ $.get(chrome.extension.getURL('/html/sidebar.html'), function(data) {
   interact('.esotericinnercol').dropzone({
     // only accept elements matching this CSS selector
     accept: '.draggable',
-    // Require a 55% element overlap for a drop to be possible
-    overlap: 0.55,
+    // Require a 75% element overlap for a drop to be possible
+    overlap: 1,
 
     ondropactivate: function (event) {
       // add active dropzone feedback
       event.target.classList.add('drop-active');
     },
+    /* BUG: one behind the drag, due to snapping
     ondragenter: function (event) {
       var draggableElement = event.relatedTarget,
       dropzoneElement = event.target;
@@ -101,7 +109,15 @@ $.get(chrome.extension.getURL('/html/sidebar.html'), function(data) {
       event.target.classList.remove('drop-target');
       event.relatedTarget.classList.remove('can-drop');
     },
-    ondrop: function (event) {},
+    */
+    ondrop: function (event) {
+      var id = parseInt(event.relatedTarget.attributes.id.value);
+      var loc = parseInt(event.target.attributes.colid.value);
+      SavedInfo.db().filter({time:id}).update({loc:loc}).callback(function() {
+        console.log(SavedInfo.db().filter({time:id}).get());
+        console.log('moved ' + id + ' to ' + loc);
+      });
+    },
     ondropdeactivate: function (event) {
       // remove active dropzone feedback
       event.target.classList.remove('drop-active');
@@ -122,12 +138,19 @@ $.get(chrome.extension.getURL('/html/sidebar.html'), function(data) {
     notepad.addEventListener('input', function() {
       var text = $('#esoterictextbox').val();
       SavedInfo.db().update({'annotation': text});
-      var db = SavedInfo.db().get();
-		  update(db);
-    });
+      var db1 = SavedInfo.db().filter({importance:1}).get();
+      var db2 = SavedInfo.db().filter({importance:2}).get();
 
-    var db = SavedInfo.db().get();
-    update(db);
+		  update(db1,1,text);
+		  update(db2,2,text);
+    });
+    
+    var db1 = SavedInfo.db().filter({importance:1}).get();
+    var db2 = SavedInfo.db().filter({importance:2}).get();
+    console.log(SavedInfo.db().get());
+    var annotation = SavedInfo.db().get()[0].annotation;
+    update(db1,1,annotation);
+    update(db2,2,annotation);
 	});
 
 });
@@ -149,15 +172,13 @@ function dragMoveListener (event) {
 	target.setAttribute('data-y', y);
 }
 
-function update(tabs) {
-  for (var i = 1; i < tabs.length; i++) { // limit to 9 for now?
+function update(tabs,imp,annotation) {
+  // var len = Math.min(8,tabs.length); // cap at 8 items
+  for (var i = 0; i < tabs.length; i++) {  
     var tab = tabs[i];
-    console.log(tab.title);
-    console.log(i);
+    console.log(tab.loc);
     if (document.getElementById(tab.time) == null) {
-      var box = document.getElementById('esotericcolumn1');
-      if (tab.importance == 2) box = document.getElementById('esotericcolumn2');
-      else if (tab.importance == 3) box = document.getElementById('esotericcolumn3');
+      var box = document.getElementById('esotericcolumn' + imp.toString());
       var info = document.createElement('div');
       info.setAttribute('class','draggable');
       // If you change the note, it won't update
@@ -195,25 +216,24 @@ function update(tabs) {
 
       // Set offsets for display
       var parentWidth = document.getElementById('esotericcolumn1').clientWidth;
-      var parentHeight = document.getElementById('esotericcolumn1').clientHeight;
+      var parentHeight = 240;
       // Using percentages:
-      /* info.style.transform = 'translate(' + (16.6666667 + 133.333333*(i%3)) + '%, ' + (16.6666667 + 133.333333*(Math.floor((i-1)/3))) + '%)';
-      info.style.webkitTransform = 'translate(' + (16.6666667 + 133.333333*(i%3)) + '%, ' + (16.6666667 + 133.333333*(Math.floor((i-1)/3))) + '%)'; */
+      /* info.style.transform = 'translate(' + (16.6666667 + 133.333333*(i%3)) + '%, ' + (16.6666667 + 133.333333*(Math.floor(i/3))) + '%)';
+      info.style.webkitTransform = 'translate(' + (16.6666667 + 133.333333*(i%3)) + '%, ' + (16.6666667 + 133.333333*(Math.floor(i/3))) + '%)'; */
       var x_buff = parentWidth*(.25/6);
       var x_offset = x_buff*2 + .25*parentWidth;
       var y_buff = parentHeight*(.25/6);
       var y_offset = y_buff*2 + .25*parentHeight;
-      info.style.transform = 'translate(' + (x_buff + x_offset*((i-1)%3)) + 'px, ' + (y_buff + y_offset*(Math.floor((i-1)/3))) + 'px)';
-      info.style.webkitTransform = 'translate(' + (x_buff + x_offset*((i-1)%3)) + 'px, ' + (y_buff + y_offset*(Math.floor((i-1)/3))) + 'px)';
-      info.setAttribute('data-x',x_buff + x_offset*(i%3)); 
-      info.setAttribute('data-y',y_buff + y_offset*(Math.floor((i-1)/3)));
+      info.style.transform = 'translate(' + (x_buff + x_offset*(tab.loc%3)) + 'px, ' + (y_buff + y_offset*(Math.floor(tab.loc/3))) + 'px)';
+      info.style.webkitTransform = 'translate(' + (x_buff + x_offset*(tab.loc%3)) + 'px, ' + (y_buff + y_offset*(Math.floor(tab.loc/3))) + 'px)';
+      info.setAttribute('data-x',x_buff + x_offset*(tab.loc%3)); 
+      info.setAttribute('data-y',y_buff + y_offset*(Math.floor(tab.loc/3)));
 
       box.appendChild(info);
     }
   }
   
-  // Update annotation box 
-  var annotation = tabs[0].annotation;
+  // Update annotation box
   $('#esoterictextbox').val(annotation);
 
   // Adds a lot of the same listeners to each element, but I'm doing this so every new element
