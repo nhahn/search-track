@@ -10,11 +10,8 @@
 // TODO: perhaps use an iframe instead? look at vimium bar
 // TODO: name each bucket
 // TODO: only allow one item per small box
-// TODO: option to hide sidebar
-// TODO: need a better place to put annotation in db
 // TODO: minimize manipulation!
 // TODO: can do things with dragging with shift key!
-// TODO: if tab not currently open, open in a new tab
 // TODO: enable search-track, integrate with it
 // BUG: throttling occasionally messes with db saving. Not everything seems to be on the same page.
 /* "chrome.storage is not a big truck. It's a series of tubes. And if you don't understand,
@@ -67,97 +64,105 @@ if (typeof injected === 'undefined') {
 $.get(chrome.extension.getURL('/html/sidebar.html'), function(data) {
 	injected = true;
   var $app = $($.parseHTML(data)).appendTo('body');
-  var parentWidth = document.getElementById('esotericcolumn1').clientWidth;
-  var parentHeight = 240;
 
-	interact('.draggable')
-	.draggable({
-    snap: {
-      targets: [
-        interact.createSnapGrid({
-          x: parentWidth/3,
-          y: parentHeight/3
-        })
-      ]
-    },
-    inertia: false,
-		restrict: {
-			restriction: "parent"
-		},
-
-	  // call this function on every dragmove event
-		onmove: dragMoveListener,	
-		// call this function on every dragend event
-		onend: function (event) {}	
-	})
-  /*
-	.on('tap', function (event) {
-		var id = event.currentTarget.id;
-		var obj = SavedInfo.db().filter({'time':parseInt(id)});
-		if (obj.get()[0].color == 'rgba(219,217,219,1)') {
-    	event.currentTarget.style.backgroundColor = 'red';
-			obj.update({'color':'red'});
-		} else {
-		  event.currentTarget.style.backgroundColor = 'rgba(219,217,219,1)';
-			obj.update({'color':'rgba(219,217,219,1)'});
-		}
-		event.preventDefault();
-	})
-  */
-  .on('doubletap', function (event) {
-		// TODO: do this without alert, support flow
-		var id = event.currentTarget.id;
-		var obj = SavedInfo.db().filter({'time':parseInt(id)});
-		var old_note = obj.get()[0].note;
- 	  var new_note = prompt("Annotate this tab",old_note);
- 	  if (new_note != null) obj.update({'note':new_note});
-		event.preventDefault();
-	});
-
-  interact('.esotericinnercol').dropzone({
-    // only accept elements matching this CSS selector
-    accept: '.draggable',
-    // Require a 75% element overlap for a drop to be possible
-    overlap: 1,
-
-    ondropactivate: function (event) {
-      // add active dropzone feedback
-      event.target.classList.add('drop-active');
-    },
-    /* BUG: one behind the drag, due to snapping
-    ondragenter: function (event) {
-      var draggableElement = event.relatedTarget,
-      dropzoneElement = event.target;
-    
-      // feedback the possibility of a drop
-      dropzoneElement.classList.add('drop-target');
-      draggableElement.classList.add('can-drop');
-    }, 
-    ondragleave: function (event) {
-      //remove the drop feedback style
-      event.target.classList.remove('drop-target');
-      event.relatedTarget.classList.remove('can-drop');
-    },
-    */
-    ondrop: function (event) {
-      // Save current location to the database
-      var id = parseInt(event.relatedTarget.attributes.id.value);
-      var loc = parseInt(event.target.attributes.colid.value);
-      SavedInfo.db().filter({time:id}).update({loc:loc}).callback(function() {
-        // db doesn't update fast enough, so tell all content scripts directly
-        chrome.runtime.sendMessage({changedLoc: [id,loc]}, function() {
-          console.log(response.farewell + ' ' + id + ' to ' + loc);
-        });
-      });
-    },
-    ondropdeactivate: function (event) {
-      // remove active dropzone feedback
-      event.target.classList.remove('drop-active');
-      event.target.classList.remove('drop-target');
-    }
-  });
-	
 	$app.ready(function(){
+    var parentWidth = document.getElementById('esotericcolumn1').clientWidth;
+    var parentHeight = 240;
+
+    interact('.draggable')
+    .draggable({
+      snap: {
+        targets: [
+          interact.createSnapGrid({
+            x: parentWidth/3,
+            y: parentHeight/3,
+            onEnd: true
+          })
+        ]
+      },
+      inertia: false,
+      restrict: {
+        restriction: "parent"
+      },
+
+      // call this function on every dragmove event
+      onmove: dragMoveListener,	
+      // call this function on every dragend event
+      onend: function (event) {}	
+    })
+    /*
+    .on('tap', function (event) {
+      var id = event.currentTarget.id;
+      var obj = SavedInfo.db().filter({'time':parseInt(id)});
+      if (obj.get()[0].color == 'rgba(219,217,219,1)') {
+        event.currentTarget.style.backgroundColor = 'red';
+        obj.update({'color':'red'});
+      } else {
+        event.currentTarget.style.backgroundColor = 'rgba(219,217,219,1)';
+        obj.update({'color':'rgba(219,217,219,1)'});
+      }
+      event.preventDefault();
+    })
+    */
+    .on('doubletap', function (event) {
+      // TODO: do this without alert, support flow
+      var id = event.currentTarget.id;
+      var obj = SavedInfo.db().filter({'time':parseInt(id)});
+      var old_note = obj.get()[0].note;
+      var new_note = prompt("Annotate this tab",old_note);
+      if (new_note != null) obj.update({'note':new_note});
+      event.preventDefault();
+    });
+
+    interact('.esotericinnercol').dropzone({
+      // only accept elements matching this CSS selector
+      accept: '.draggable',
+      // Require a 75% element overlap for a drop to be possible
+      overlap: 1,
+
+      ondropactivate: function (event) {
+        // add active dropzone feedback
+        event.target.classList.add('drop-active');
+      },
+      /* BUG: one behind the drag, due to snapping
+      ondragenter: function (event) {
+        var draggableElement = event.relatedTarget,
+        dropzoneElement = event.target;
+      
+        // feedback the possibility of a drop
+        dropzoneElement.classList.add('drop-target');
+        draggableElement.classList.add('can-drop');
+      }, 
+      ondragleave: function (event) {
+        //remove the drop feedback style
+        event.target.classList.remove('drop-target');
+        event.relatedTarget.classList.remove('can-drop');
+      },
+      */
+      ondrop: function (event) {
+        // Save current location to the database
+        var id = parseInt(event.relatedTarget.attributes.id.value);
+        var loc = parseInt(event.target.attributes.colid.value);
+        SavedInfo.db().filter({time:id}).update({loc:loc}).callback(function() {
+          // db doesn't update fast enough, so tell all content scripts directly
+          chrome.runtime.sendMessage({changedLoc: [id,loc]}, function() {
+            console.log(response.farewell + ' ' + id + ' to ' + loc);
+          });
+        });
+      },
+      ondropdeactivate: function (event) {
+        // remove active dropzone feedback
+        event.target.classList.remove('drop-active');
+        event.target.classList.remove('drop-target');
+      }
+    });
+    
+    // "Remove" button 
+    $(".esotericbordername a").click(function() {
+      $(".esotericsidebarname").remove()
+    });
+
+    // Click to open sidebar
 		$(".esotericbordername").click(function(){
 			if ($('.esotericsidebarname').css('bottom') <= '-260px') {
 		 		$(".esotericsidebarname").animate({"bottom": "+=275px"});
@@ -190,9 +195,11 @@ $.get(chrome.extension.getURL('/html/sidebar.html'), function(data) {
     }
    
     // Updates visual for the first time 
+    console.log(SavedInfo);
+    console.log(SavedInfo.db());
+    console.log(SavedInfo.db().get());
     var db1 = SavedInfo.db().filter({importance:1}).get();
     var db2 = SavedInfo.db().filter({importance:2}).get();
-    console.log(SavedInfo.db().get());
     var annotation = SavedInfo.db().get()[0].annotation;
     update(db1,1,annotation);
     update(db2,2,annotation);

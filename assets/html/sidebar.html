@@ -4,7 +4,7 @@
 <body ng-app="listApp" ng-controller="MainCtrl">
 
 <div class="esotericsidebarname no-print">
-<div class="esotericbordername"></div>
+<div class="esotericbordername"><span><a>Remove</a></span></div>
 <div class="semitrans"></div>
 
 <div class="ontop">
@@ -140,6 +140,7 @@ del {
  */
 .esotericsidebarname a {
   font-weight: normal !important;
+  padding-right: 2px;
 }
 .esotericsidebarname {
   font: arial !important;
@@ -163,6 +164,11 @@ del {
 	background: rgba(222,219,221,0.85);
   border-top: 1px solid rgba(163,163,163,1);
   border-bottom: 1px solid rgba(163,163,163,1);
+  font-size: 12px;
+  text-align: right;
+}
+.esotericbordername span {
+  vertical-align: top;
 }
 
 .semitrans {
