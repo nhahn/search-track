@@ -37,9 +37,7 @@ chrome.storage.sync.clear(function() {
       null, {file: '/js/content/injectsidebar.js', runAt: "document_start"}, function() {
         chrome.tabs.query({currentWindow: true, active: true}, function(tabs) {
           chrome.tabs.sendMessage(tabs[0].id, {'currentDb':
-            [SavedInfo.db().filter({importance:1}).get(),
-            SavedInfo.db().filter({importance:2}).get(),
-            SavedInfo.db().get()[0].annotation]});
+            {'tabs':SavedInfo.db().get(), 'annotation':SavedInfo.db().get()[0].annotation}, 'tabId':tabs[0].id});
         });
       });});});});});});});});});
     });
@@ -55,13 +53,19 @@ chrome.runtime.onMessage.addListener(
                 "from the extension");
 		if (request.newTask) {
 			task = request.task;
-		} else if (request.newVisual) {
+		/*
+    } else if (request.newVisual) {
 			chrome.runtime.sendMessage({task: task}, function(response) {
 				console.log('sent current task'); // doesn't work 
      		});
-		} else if (request.changed) { // annotation changed
-      changed(request.changed);
-      sendResponse({farewell:'changed'});
+    */
+		} else if (request.changedAnnotation) { // annotation changed
+      chrome.tabs.query({}, function(tabs) { // changed a tab's note - tell others
+        tabs.forEach(function(tab) {
+          chrome.tabs.sendMessage(tab.id, {newAnnotation:request.changedAnnotation});
+        });
+        sendResponse({farewell:'changed'});
+      });
 		} else if (request.changedLoc) { // dragged tab to new location on some page - tell others
       chrome.tabs.query({}, function(tabs) {
         tabs.forEach(function(tab) {
@@ -72,8 +76,10 @@ chrome.runtime.onMessage.addListener(
 		} else if (request.deleted) { // deleted a tab - tell others
       chrome.tabs.query({}, function(tabs) {
         tabs.forEach(function(tab) {
-          chrome.tabs.sendMessage(tab.id, {delTab: request.deleted});
+          chrome.tabs.sendMessage(tab.id, {delTab: 
+            {'id':request.deleted.id, 'tabId':request.deleted.tabId}});
         });
+        // Potentially can remove tab from window as well
         sendResponse({farewell:'deleted'});
       });
     } else if (request.changeUrl) {
@@ -116,18 +122,6 @@ chrome.commands.onCommand.addListener(function(command) {
 	 else if (command == 'open') open();
   });
 });
-
-// inform all content scripts that there's been a change. TODO: inform visual as well (when I work on the new tab page)
-// Kind of janky way to send the annotation
-function changed(annotation) {
-  var db1 = SavedInfo.db().filter({importance:1}).get();
-  var db2 = SavedInfo.db().filter({importance:2}).get();
-  chrome.tabs.query({}, function(tabs) {
-    tabs.forEach(function(tab) {
-      chrome.tabs.sendMessage(tab.id, {updated: [db1,db2,annotation]});
-    });
-  });
-}
 
 // user marks tab as "for later"
 function add(importance) {
@@ -182,7 +176,14 @@ function add(importance) {
 
     // add to DB.
     var annotation = SavedInfo.db().get()[0].annotation;
-    SavedInfo.db.insert(tab).callback(changed(annotation));
+    SavedInfo.db.insert(tab);
+
+    // Tell tabs
+    chrome.tabs.query({}, function(tabs) {
+      tabs.forEach(function(t) {
+        chrome.tabs.sendMessage(t.id, {newTab:tab});
+      });
+    }); 
   });
     
 	// Originally was using a context script here to get page depth information and user highlights on page

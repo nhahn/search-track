@@ -4,7 +4,10 @@
 <body ng-app="listApp" ng-controller="MainCtrl">
 
 <div class="esotericsidebarname no-print">
-<div class="esotericbordername"><span><a>Remove</a></span></div>
+<div class="esotericbordername">
+  <!-- <span class='esotericreload' id='esotericreload'>Reload</span> -->
+  <span class='esotericremove' id='esotericremove'>Remove</span>
+</div>
 <div class="semitrans"></div>
 
 <div class="ontop">
@@ -23,6 +26,11 @@
     <div class="col-md-4 col-xs-4 esotericinnercol" colid="6"></div>
     <div class="col-md-4 col-xs-4 esotericinnercol" colid="7"></div>
     <div class="col-md-4 col-xs-4 esotericinnercol" colid="8"></div>
+    <!-- Bootstrap glyphicons don't work -->
+    <div class='col-md-3 col-xs-3 btn esotericbuttonname esotericmassdelete'>Delete All</div>
+    <div class='col-md-3 col-xs-3 btn esotericbuttonname'>Hide</div>
+    <div class='col-md-3 col-xs-3 btn esotericbuttonname'>Search</div>
+    <div class='col-md-3 col-xs-3 btn esotericbuttonname esotericbucketname'><b>Bucket 1</b></div>
 	</div></div>
 
 	<!-- Column 2 -->
@@ -36,6 +44,10 @@
     <div class="col-md-4 col-xs-4 esotericinnercol" colid="6"></div>
     <div class="col-md-4 col-xs-4 esotericinnercol" colid="7"></div>
     <div class="col-md-4 col-xs-4 esotericinnercol" colid="8"></div>
+    <div class='col-md-3 col-xs-3 btn esotericbuttonname esotericmassdelete'>Delete All</div>
+    <div class='col-md-3 col-xs-3 btn esotericbuttonname'>Hide</div>
+    <div class='col-md-3 col-xs-3 btn esotericbuttonname'>Search</div>
+    <div class='col-md-3 col-xs-3 btn esotericbuttonname esotericbucketname'><b>Bucket 2</b></div>
 	</div></div> 
 
 	<!-- Column 3 -->
@@ -76,8 +88,8 @@
   height: 100%;
   width: 100%;
   resize: none;
-  background-color: rgba(240,248,255,0);
   border: 0px;
+  background-color: rgba(0,0,0,0);
   font-size: 14px !important;
   font-size: 1.25vw !important;
   padding: 5px;
@@ -94,6 +106,15 @@
   cursor: pointer;
   height:4px !important;
   width:13px !important;
+}
+.esotericbuttonname {
+  font-size: 0.8vw !important;
+  padding: 0 !important;
+	background: rgba(222,219,221,0.85);
+  border-radius: 0px !important;
+  border: 1px solid rgba(199,199,199,0.85) !important;
+  font-color: black !important;
+  font-weight: normal !important; 
 }
 
 /* Dragging style */
@@ -155,11 +176,9 @@
  /* For IE 8 */
  -ms-filter: "progid:DXImageTransform.Microsoft.Shadow(Strength=4, Direction=135, Color='#000000')";
 }
-
 .esotericsidebarname a {
 	color: black;
 }
-
 .esotericbordername {
 	height:20px;
 	width:100%;
@@ -168,9 +187,13 @@
   border-bottom: 1px solid rgba(163,163,163,1);
   font-size: 12px;
   text-align: right;
+  padding: 0 !important;
+  font-size:1.1vw;
+  vertical-align: top !important;
 }
 .esotericbordername span {
-  vertical-align: top;
+  padding-right: 3px;
+  cursor: pointer;
 }
 
 .semitrans {

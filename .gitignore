@@ -35,3 +35,6 @@ bower_components
 node_modules/
 vendor/
 
+# packed extensions
+tabmanager.crx
+tabmanager.pem

@@ -3,31 +3,29 @@
  * interact with.
  */
 
-// Note: I'd rather use db.settings and onUpdate/onRemove instead of message passing to make it more synchronized, but
-// doesn't work.
-// TODO: task database! a better way to manage tasks
-// TODO: reload button? button to switch view
-// TODO: be able to add the other tabs in the window, not just the one you're currently on - shortcuts
-// TODO: make it useable, speed up. I disabled the time elapsed function since it seems to be the laggiest
-// TODO: perhaps use an iframe instead? look at vimium bar
-// TODO: name each bucket
-// TODO: delete bucket
-// TODO: only allow one item per small box
+// TODO: reload button - remove event listener doesn't work??
+// TODO: change button colors on hover
+// TODO: operations on buckets: name each, merge, save somewhere else, hide 
+// TODO: better annotations - display on tab instead of hover
+// TODO: can do stuff with only checked tabs
+// TODO: auto-size buckets - "groups"
+// TODO: add search, base off of AngularUI - search multiple pages!!
+// TODO: task database! a better way to manage tasks. sidebar is like WM for one task
 // TODO: minimize manipulation!
-// TODO: can do things with dragging with shift key!
-// TODO: enable search-track, integrate with it
+// TODO: perhaps use an iframe instead? look at vimium bar
 // TODO: mouse over to see whole title
-// TODO: find first open spot to place tab
-// TODO: add a link while opening in new tab
-// BUG: throttling occasionally messes with db saving. Not everything seems to be on the same page.
+// TODO: can do things with dragging with shift key!
+// TODO: integrate wtih search-track
+// TODO: make it useable, speed up. I disabled the time elapsed function since it seems to be the laggiest
+// BUG: throttling occasionally messes with db saving. Not everything seems to be on the same page. 
+// Figure out best throttle interval.
 /* "chrome.storage is not a big truck. It's a series of tubes. And if you don't understand,
  * those tubes can be filled, and if they are filled when you put your message in, it gets in line, 
  * and it's going to be delayed by anyone that puts into that tube enormous amounts of material."
  */
-// BUG: doesn't work if tab was closed in different window
 // BUG: Uncaught TypeError: Cannot read property 'clientWidth' of null
-// BUG: doesn't work on first injection after extension loads, for many different errors (probably due to race conditions)
-// CWO: bug testing. actually use it, then push first stable build
+// BUG: doesn't work on first injection after extension loads, for many different errors (maybe due to race conditions)
+// CWO: bug testing. actually use it and find use cases
 
 var listApp = angular.module('listApp', ['ui.tree'], function($compileProvider) {
 // content security to display favicons
@@ -36,13 +34,23 @@ $compileProvider.aHrefSanitizationWhitelist(/^\s*(http?|ftp|mailto|file|chrome-e
 $compileProvider.imgSrcSanitizationWhitelist(/^\s*(https?|ftp|file|chrome-extension):|data:image\//);
 $compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|file|chrome-extension):/);
 });
+var TABID = 0; // this tab's id
 
 chrome.runtime.onMessage.addListener(
+  // Instead of waiting for the database to update, I'm using message passing to instantly update across all pages
+  // Note: I'd rather use db.settings and onUpdate/onRemove instead of message passing to make it more synchronized, but
+  // doesn't work.
   function(request, sender, sendResponse) {
-		if (request.currentDb) { // Updates visual for the first time (fails from SavedDB sometimes)
+		if (request.currentDb) { // Updates visual for the first time (fails if you call SavedDB directly sometimes)
+      TABID = request.tabId;
+      console.log(TABID);
       var db = request.currentDb;
-      update(db[0],1,db[2]);
-      update(db[1],2,db[2]);
+      // var len = Math.min(8,tabs.length); // cap at 8 items
+      for (var i = 1; i < db.tabs.length; i++) { // db.tabs[0] is the annotation
+        var tab = db.tabs[i];
+        newTab(tab);
+      }
+      $('#esoterictextbox').val(db.annotation);
     } else if (request.updated) { // database was updated - make relevant changes
       var db1 = request.updated[0];
       var db2 = request.updated[1];
@@ -66,14 +74,19 @@ chrome.runtime.onMessage.addListener(
       info.setAttribute('data-x',x_buff + x_offset*((request.newLoc[1])%3)); 
       info.setAttribute('data-y',y_buff + y_offset*(Math.floor((request.newLoc[1])/3)));
     } else if (request.delTab) { // user deleted a tab on some page - update here
-      $('#' + request.delTab).remove();
-    } else if (request.newNote) { // user updated a tab's note on some page - update here
+      if (request.delTab.tabId == TABID) 
+        $('.esotericbordername').css('background','rgba(222,219,221,.85)');
+      $('#' + request.delTab.id).remove();
+    } if (request.newNote) { // user updated a tab's note on some page - update here
       $('#' + request.newNote[0]).title = request.newNote[1];
     } else if (request.newColor) { // user updated a tab's color on some page - update here
       console.log(request.newColor);
       $('#' + request.newColor[0]).css('backgroundColor',request.newColor[1]);
+    } else if (request.newTab) { // new tab was inserted to db
+      newTab(request.newTab);
+    } else if (request.newAnnotation) { // user updated the annotation box - update here
+      $('#esoterictextbox').val(request.newAnnotation);
     }
-
 });
 
 // Inject HTML for sidebar if it hasn't been injected already
@@ -111,20 +124,19 @@ $.get(chrome.extension.getURL('/html/sidebar.html'), function(data) {
       var id = parseInt(event.currentTarget.id);
       var obj = SavedInfo.db().filter({'time':id});
       if (obj.get()[0].color == 'rgba(219,217,219,1)') {
-        event.currentTarget.style.backgroundColor = 'red';
-            console.log('changed 1');
-        obj.update({'color':'red'});
-        chrome.runtime.sendMessage({changedColor:[id,'red']});
+        event.currentTarget.style.backgroundColor = '#FF7878';
+            console.log('changed 1 - red');
+        obj.update({'color':'#FF7878'});
+        chrome.runtime.sendMessage({changedColor:[id,'#FF7878']});
       } else {
         event.currentTarget.style.backgroundColor = 'rgba(219,217,219,1)';
-            console.log('changed 1');
+            console.log('changed 1 - gray');
         obj.update({'color':'rgba(219,217,219,1)'});
         chrome.runtime.sendMessage({changedColor:[id,'rgba(219,217,219,1)']});
       }
       event.preventDefault();
     })
     .on('doubletap', function (event) {
-      // TODO: do this without alert, support flow
       var id = event.currentTarget.id;
       var obj = SavedInfo.db().filter({'time':parseInt(id)});
       var old_note = obj.get()[0].note;
@@ -183,11 +195,6 @@ $.get(chrome.extension.getURL('/html/sidebar.html'), function(data) {
         event.target.classList.remove('drop-target');
       }
     });
-    
-    // "Remove" button 
-    $(".esotericbordername a").click(function() {
-      $(".esotericsidebarname").remove()
-    });
 
     // Click to open sidebar
 		$(".esotericbordername").click(function(){
@@ -197,6 +204,43 @@ $.get(chrome.extension.getURL('/html/sidebar.html'), function(data) {
 		 		$(".esotericsidebarname").animate({"bottom": "-=275px"});
 		 	}
 		});
+
+    /* 
+    // "Reload" button
+    // Remove event listeners by cloning and replacing
+    var old_reload = document.getElementById('esotericreload');
+    var new_reload = old_reload.cloneNode(true);
+    console.log(old_reload.parentNode)
+    old_reload.parentNode.replaceChild(new_reload,old_reload);
+    // JQuery won't select by id?
+    $(".esotericreload").off();
+    $(".esotericreload").click(function() {
+      console.log('afa');
+    });
+    */
+
+    // "Remove" button 
+    $(".esotericremove").click(function() {
+      $(this).removeEventListener("click");
+      $(".esotericsidebarname").remove()
+    });
+
+    // Mass delete a bucket
+    $(".esotericmassdelete").click(function() {
+      $(this).parent().children(".draggable").each(function() {
+        var time = parseInt($(this)[0].id);
+        var tabId = SavedInfo.db().filter({'time':time}).get()[0].tabId;
+        SavedInfo.db().filter({'time':time}).remove(); // may take some time...
+        // Force db to update by updating something else first?
+        var text = $('#esoterictextbox').val();
+        SavedInfo.db().update({'annotation': text});
+        $(this)[0].remove();
+        
+        chrome.runtime.sendMessage({deleted: {'id':time,'tabId':tabId}}, function() {
+          console.log(response.farewell + ' ' + time);
+        });
+      });
+    });
 
     // Update database after user finishes typing
     var typingTimer;                
@@ -217,12 +261,11 @@ $.get(chrome.extension.getURL('/html/sidebar.html'), function(data) {
         // Force db to update by doing it twice
         SavedInfo.db().update({'annotation': text})
         console.log(SavedInfo.db().get()[0]);
-        chrome.runtime.sendMessage({changed: text}, function(response) {
+        chrome.runtime.sendMessage({changedAnnotation: text}, function(response) {
           console.log(response.farewell + ' annotation');
         });
       });
     }
-
 	});
 });
 }
@@ -243,94 +286,96 @@ function dragMoveListener (event) {
 	target.setAttribute('data-y', y);
 }
 
-function update(tabs,imp,annotation) {
-  // var len = Math.min(8,tabs.length); // cap at 8 items
-  for (var i = 0; i < tabs.length; i++) {
-    var tab = tabs[i];
-    if (document.getElementById(tab.time) == null) {
-      var box = document.getElementById('esotericcolumn' + imp.toString());
-      var info = document.createElement('div');
-      info.setAttribute('class','draggable');
-      info.setAttribute('title',tab.note);
-      info.setAttribute('id',tab.time);
-      if (tab.color == "red") info.style.backgroundColor = 'red';
+function newTab(tab) {
+  if (document.getElementById(tab.time) == null) {
+    console.log(tab.url);
+    console.log(window.location.href);
+    if (tab.url == window.location.href || tab.tabId == TABID) 
+      $('.esotericbordername').css('background','rgba(248,193,47,.85)');
 
-      var favicon = document.createElement('img');
-      favicon.setAttribute('src',tab.favicon);
-      favicon.setAttribute('id','esotericfavicon');
-      info.appendChild(favicon);
+    imp = tab.importance;
+    var box = document.getElementById('esotericcolumn' + imp.toString());
+    var info = document.createElement('div');
+    info.setAttribute('class','draggable');
+    info.setAttribute('title',tab.note);
+    info.setAttribute('id',tab.time);
+    if (tab.color == "#FF7878") info.style.backgroundColor = '#FF7878';
 
-      var title = tab.title;
-      if (title == undefined || title.length == 0) title = "Untitled";
-      else if (title.length > 25) title = ' ' + title.substring(0,24) + "... ";
-      var ttl = document.createElement('a');
-      ttl.innerHTML = title;
-      ttl.setAttribute('id','ttl_' + tab.time);
-      ttl.tabId = tab.tabId;
-      ttl.url = tab.url;
-      info.appendChild(ttl);
+    var favicon = document.createElement('img');
+    favicon.setAttribute('src',tab.favicon);
+    favicon.setAttribute('id','esotericfavicon');
+    info.appendChild(favicon);
 
-      var del = document.createElement('a');
-      del.setAttribute('class','pull-right btn btn-danger btn-xs esotericdelete');
-      del.setAttribute('id','del_' + tab.time); 
-      info.appendChild(del);
+    var title = tab.title;
+    if (title == undefined || title.length == 0) title = "Untitled";
+    else if (title.length > 25) title = ' ' + title.substring(0,24) + "... ";
+    var ttl = document.createElement('a');
+    ttl.innerHTML = title;
+    ttl.setAttribute('id','ttl_' + tab.time);
+    ttl.tabId = tab.tabId;
+    ttl.url = tab.url;
+    info.appendChild(ttl);
 
-      // Set offsets for display using the tab's index (tab.loc)
-      var parentWidth = document.getElementById('esotericcolumn1').clientWidth;
-      var parentHeight = 240;
-      var x_buff = parentWidth*(.25/6);
-      var x_offset = x_buff*2 + .25*parentWidth;
-      var y_buff = parentHeight*(.25/6);
-      var y_offset = y_buff*2 + .25*parentHeight;
-      info.style.transform = 'translate(' + (x_buff + x_offset*(tab.loc%3)) + 'px, ' + (y_buff + y_offset*(Math.floor(tab.loc/3))) + 'px)';
-      info.style.webkitTransform = 'translate(' + (x_buff + x_offset*(tab.loc%3)) + 'px, ' + (y_buff + y_offset*(Math.floor(tab.loc/3))) + 'px)';
-      info.setAttribute('data-x',x_buff + x_offset*(tab.loc%3)); 
-      info.setAttribute('data-y',y_buff + y_offset*(Math.floor(tab.loc/3)));
+    var del = document.createElement('a');
+    del.setAttribute('class','pull-right btn btn-danger btn-xs esotericdelete');
+    del.setAttribute('id','del_' + tab.time); 
+    info.appendChild(del);
 
-      box.appendChild(info);
+    // Set offsets for display using the tab's index (tab.loc)
+    var parentWidth = document.getElementById('esotericcolumn1').clientWidth;
+    var parentHeight = 240;
+    var x_buff = parentWidth*(.25/6);
+    var x_offset = x_buff*2 + .25*parentWidth;
+    var y_buff = parentHeight*(.25/6);
+    var y_offset = y_buff*2 + .25*parentHeight;
+    info.style.transform = 'translate(' + (x_buff + x_offset*(tab.loc%3)) + 'px, ' + (y_buff + y_offset*(Math.floor(tab.loc/3))) + 'px)';
+    info.style.webkitTransform = 'translate(' + (x_buff + x_offset*(tab.loc%3)) + 'px, ' + (y_buff + y_offset*(Math.floor(tab.loc/3))) + 'px)';
+    info.setAttribute('data-x',x_buff + x_offset*(tab.loc%3)); 
+    info.setAttribute('data-y',y_buff + y_offset*(Math.floor(tab.loc/3)));
 
-      $(document).ready(function() {
-        // Could just use id from above, given that these listeners are only for this tab
-        // $(".draggable").hoverIntent(function() {alert(this)});
+    box.appendChild(info);
 
-        $('#del_' + tab.time).click(function() {
-          var time = parseInt($(this)[0].parentElement.id);
-          // var title = $(this).context.parentElement.innerText;
-          SavedInfo.db().filter({'time':time}).remove(); // may take some time...
-          // Force db to update by updating something else after?
-          var text = $('#esoterictextbox').val();
-          SavedInfo.db().update({'annotation': text});
-          $(this)[0].parentElement.remove();
-          
-          chrome.runtime.sendMessage({deleted: time}, function() {
-            console.log(response.farewell + ' ' + time);
-          });
-        });
+    $(document).ready(function() {
+      // Could just use id from above, given that these listeners are only for this tab
+      // $(".draggable").hoverIntent(function() {alert(this)});
 
-        $('#ttl_' + tab.time).click(function() {
-          var id = parseInt($(this)[0].parentElement.id);
-          // undo color change from the tap
-          if ($(this)[0].parentElement.style.backgroundColor == 'red') {
-            var obj = SavedInfo.db().filter({'time':id});
-            obj.update({'color':'rgba(219,217,219,1)'});
-            chrome.runtime.sendMessage({changedColor:[id,'rgba(219,217,219,1)']});
-            console.log('changed 2');
-          } else {
-            var obj = SavedInfo.db().filter({'time':id});
-            obj.update({'color':'red'});
-            chrome.runtime.sendMessage({changedColor:[id,'red']});
-            console.log('changed 2');
-          }
-
-          chrome.runtime.sendMessage({'changeUrl':[$(this)[0].tabId,$(this)[0].url]}, function() {
-            console.log('opened');
-          }); 
+      $('#del_' + tab.time).click(function() {
+        var time = parseInt($(this)[0].parentElement.id);
+        // var title = $(this).context.parentElement.innerText;
+        var tabId = SavedInfo.db().filter({'time':time}).get()[0].tabId;
+        SavedInfo.db().filter({'time':time}).remove(); // may take some time...
+        // Force db to update by updating something else first?
+        var text = $('#esoterictextbox').val();
+        SavedInfo.db().update({'annotation': text});
+        $(this)[0].parentElement.remove();
+        
+        chrome.runtime.sendMessage({deleted: {'id':time,'tabId':tabId}}, function() {
+          console.log(response.farewell + ' ' + time);
         });
       });
 
-    }
+      $('#ttl_' + tab.time).click(function() {
+        var id = parseInt($(this)[0].parentElement.id);
+
+        // undo color change from the tap
+        console.log($(this)[0].parentElement.style.backgroundColor); 
+        if ($(this)[0].parentElement.style.backgroundColor == 'rgba(219,217,219,1)') {
+          var obj = SavedInfo.db().filter({'time':id});
+          obj.update({'color':'#FF7878'});
+          chrome.runtime.sendMessage({changedColor:[id,'#FF7878']});
+          console.log('changed 2 - red');
+        } else {
+          var obj = SavedInfo.db().filter({'time':id});
+          obj.update({'color':'rgba(219,217,219,1)'});
+          chrome.runtime.sendMessage({changedColor:[id,'rgba(219,217,219,1)']});
+          console.log('changed 2 - gray');
+        }
+
+        chrome.runtime.sendMessage({'changeUrl':[$(this)[0].tabId,$(this)[0].url]}, function() {
+          console.log('opened');
+        }); 
+      });
+    });
+
   }
-  
-  // Update annotation box
-  $('#esoterictextbox').val(annotation);
 }
