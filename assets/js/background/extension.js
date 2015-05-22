@@ -2,8 +2,6 @@
 	Background page for the Forager part of the extension 
 */
 
-// TODO: why is angular loading twice?
-
 task = "default";
 console.log(task);
 
@@ -13,10 +11,10 @@ var lastTab;
 chrome.storage.local.clear();
 chrome.storage.sync.clear(function() {
   SavedInfo.db.insert({annotation:""}).callback(function() {
-    var annotation = SavedInfo.db().get()[0].annotation;
-    console.log(annotation);
+    SavedInfo.db().update({annotation:""});
 
     // Inject sidebar to every updated page
+    // Unfortunately, it does so a few times because onUpdated gets called a bunch of times
     chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
       chrome.tabs.insertCSS(null, {file: "/css/sidebar.css", runAt: "document_start"}, function() {
       chrome.tabs.executeScript(
@@ -34,10 +32,16 @@ chrome.storage.sync.clear(function() {
       chrome.tabs.executeScript(
       null, {file: '/vendor/bootstrap/dist/js/bootstrap.min.js', runAt: "document_start"}, function() {
       chrome.tabs.executeScript(
-      null, {file: '/js/interact.min.js', runAt: "document_start"}, function() { 	// For some reason, won't work in vendor 
+      null, {file: '/js/interact.min.js', runAt: "document_start"}, function() { 	// For some reason, won't work through Bower
       chrome.tabs.executeScript(
-      null, {file: '/js/content/injectsidebar.js', runAt: "document_start"});	
-      });});});});});});});});
+      null, {file: '/js/content/injectsidebar.js', runAt: "document_start"}, function() {
+        chrome.tabs.query({currentWindow: true, active: true}, function(tabs) {
+          chrome.tabs.sendMessage(tabs[0].id, {'currentDb':
+            [SavedInfo.db().filter({importance:1}).get(),
+            SavedInfo.db().filter({importance:2}).get(),
+            SavedInfo.db().get()[0].annotation]});
+        });
+      });});});});});});});});});
     });
 
   });
@@ -76,7 +80,21 @@ chrome.runtime.onMessage.addListener(
       chrome.tabs.update(request.changeUrl[0], {selected:true}, function() {
         if (chrome.runtime.lastError) chrome.tabs.create({'url': request.changeUrl[1]});
       });
-    }  
+    } else if (request.changedNote) {
+      chrome.tabs.query({}, function(tabs) { // changed a tab's note - tell others
+        tabs.forEach(function(tab) {
+          chrome.tabs.sendMessage(tab.id, {newNote: request.changedNote});
+        });
+        sendResponse({farewell:'new note'});
+      });
+    } else if (request.changedColor) { // changed a tab's color - tell others
+      chrome.tabs.query({}, function(tabs) {
+        tabs.forEach(function(tab) {
+          chrome.tabs.sendMessage(tab.id, {newColor: request.changedColor});
+        });
+        sendResponse({farewell:'new color'});
+      });
+    }
   	/* TODO: automatic scroll down on a page that's re-opened	
 		else if (request.scrollDown != 0) {
 			setTimeout(function() {
@@ -119,7 +137,17 @@ function add(importance) {
 
     tab.time = Date.now();
     tab.timeElapsed = 0;
-    tab.loc = SavedInfo.db().filter({importance:importance}).get().length;
+
+    // Find first empty spot to place tab
+    var db = SavedInfo.db().filter({importance:importance}).get();
+    var locs = [];
+    for (var i = 0; i < db.length; i++) {
+      locs.push(db[i].loc);
+    }
+    tab.loc = 0;
+    for (i in locs.sort()) {
+      if (locs[i] == tab.loc) tab.loc++;
+    }
 
     tab.tabId = chromeTab.id;
     tab.favicon = chromeTab.favIconUrl;

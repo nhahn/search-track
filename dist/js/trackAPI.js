@@ -136,7 +136,7 @@ window.dbMethods = (function() {
         _exec = function() {
           return onDBChange(_this);
         };
-        return throttle = setTimeout(_exec, 1500);
+        return throttle = setTimeout(_exec, 500);
       }
     };
     chrome.storage.onChanged.addListener(function(changes, areaName) {

@@ -100,7 +100,7 @@ window.dbMethods = (() ->
         clearTimeout(throttle)
         _this = this
         _exec = () -> onDBChange(_this)
-        throttle = setTimeout(_exec, 1500)
+        throttle = setTimeout(_exec, 500)
         
     #Grab the info from localStorage and lets update it
     chrome.storage.onChanged.addListener (changes, areaName) ->
