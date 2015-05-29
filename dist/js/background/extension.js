@@ -125,6 +125,7 @@ chrome.commands.onCommand.addListener(function(command) {
 
 // user marks tab as "for later"
 function add(importance) {
+  console.log(SavedInfo.db().get());
   var tab = {};
   chrome.tabs.query({currentWindow: true, active: true}, function(tabs) {
     var chromeTab = tabs[0];

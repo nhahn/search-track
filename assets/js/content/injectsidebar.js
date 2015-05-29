@@ -3,29 +3,30 @@
  * interact with.
  */
 
-// TODO: reload button - remove event listener doesn't work??
+// TODO: reload button
 // TODO: change button colors on hover
-// TODO: operations on buckets: name each, merge, save somewhere else, hide 
+// TODO: operations on buckets: name each, merge, save somewhere else, hide - use context menus! 
 // TODO: better annotations - display on tab instead of hover
 // TODO: can do stuff with only checked tabs
 // TODO: auto-size buckets - "groups"
 // TODO: add search, base off of AngularUI - search multiple pages!!
 // TODO: task database! a better way to manage tasks. sidebar is like WM for one task
+// TODO: HTML2Canvas for "screenshots"
 // TODO: minimize manipulation!
-// TODO: perhaps use an iframe instead? look at vimium bar
+// TODO: perhaps use an iframe instead? look at vimium bar. or could even use devtools panel!
+// TODO: use keyword extraction service, mechanism to extract /meaning/
 // TODO: mouse over to see whole title
 // TODO: can do things with dragging with shift key!
-// TODO: integrate wtih search-track
+// TODO: add options page
+// TODO: topsites?
+// TODO: how does the Great Suspender work? it changes tab color!
 // TODO: make it useable, speed up. I disabled the time elapsed function since it seems to be the laggiest
+// It gets exponentially slower because of chrome.storage!!
 // BUG: throttling occasionally messes with db saving. Not everything seems to be on the same page. 
 // Figure out best throttle interval.
-/* "chrome.storage is not a big truck. It's a series of tubes. And if you don't understand,
- * those tubes can be filled, and if they are filled when you put your message in, it gets in line, 
- * and it's going to be delayed by anyone that puts into that tube enormous amounts of material."
- */
 // BUG: Uncaught TypeError: Cannot read property 'clientWidth' of null
 // BUG: doesn't work on first injection after extension loads, for many different errors (maybe due to race conditions)
-// CWO: bug testing. actually use it and find use cases
+// CWO: integrate wtih search-track. inject sidebar when you open a link in a new tab (not an update)
 
 var listApp = angular.module('listApp', ['ui.tree'], function($compileProvider) {
 // content security to display favicons
@@ -207,13 +208,6 @@ $.get(chrome.extension.getURL('/html/sidebar.html'), function(data) {
 
     /* 
     // "Reload" button
-    // Remove event listeners by cloning and replacing
-    var old_reload = document.getElementById('esotericreload');
-    var new_reload = old_reload.cloneNode(true);
-    console.log(old_reload.parentNode)
-    old_reload.parentNode.replaceChild(new_reload,old_reload);
-    // JQuery won't select by id?
-    $(".esotericreload").off();
     $(".esotericreload").click(function() {
       console.log('afa');
     });
@@ -290,7 +284,7 @@ function newTab(tab) {
   if (document.getElementById(tab.time) == null) {
     console.log(tab.url);
     console.log(window.location.href);
-    if (tab.url == window.location.href || tab.tabId == TABID) 
+    if (tab.url == window.location.href || tab.tabId == TABID) // use tab.url.match and regex
       $('.esotericbordername').css('background','rgba(248,193,47,.85)');
 
     imp = tab.importance;

@@ -51,6 +51,7 @@ createOrUpdateSearchInfo = (tabId, tab, query) ->
 getContentAndTokenize = (tabId, tab, pageInfo) ->
   console.log "TOK:"
   console.log tab.url
+
   chrome.tabs.executeScript tabId, {code: 'window.document.documentElement.innerHTML'}, (results) ->
     html = results[0]
     if html? and html.length > 10
@@ -68,6 +69,55 @@ getContentAndTokenize = (tabId, tab, pageInfo) ->
         console.log 'fail tokenize'
         console.log t
 
+  # add to SavedInfo as well
+  console.log tab
+  newTab = {}
+  newTab.time = Date.now()
+  newTab.timeElapsed = 0
+  # Find first empty spot to place newTab
+  db = SavedInfo.db().filter(importance: 1).get()
+  locs = []
+  i = 0
+  while i < db.length
+    locs.push db[i].loc
+    i++
+  newTab.loc = 0
+  for i of locs.sort()
+    `i = i`
+    if locs[i] == newTab.loc
+      newTab.loc++
+  newTab.newTabId = tab.id
+  newTab.favicon = tab.favIconUrl
+  ttl = tab.title
+  if ttl.length == 0
+    ttl = prompt('Please name this page', 'Untitled')
+  newTab.title = ttl
+  newTab.url = tab.url
+  newTab.note = ''
+  newTab.color = 'rgba(219,217,219,1)'
+  newTab.importance = 1
+  newTab.depth = window.scrollY
+  newTab.height = window.innerHeight
+  console.log 'My Depth: ' + newTab.depth
+  console.log 'Total Depth: ' + document.body.clientHeight
+  # for the drag-and-drop list (could be adapted for 2D manipulation)
+  newTab.position = SavedInfo.db().count()
+  # will be able to "favorite" newTabs
+  newTab.favorite = false
+  # is it a reference newTab?
+  newTab.ref = false
+  #TODO: TASK DB, then get the right task. Where do I record the current task? I'll have to send a message?
+  newTab.task = ''
+  # add to DB.
+  annotation = SavedInfo.db().get()[0].annotation
+  SavedInfo.db.insert newTab
+  # Tell newTabs
+  chrome.tabs.query {}, (tabs) ->
+    tabs.forEach (t) ->
+      chrome.tabs.sendMessage t.id, newTab: newTab
+      return
+    return
+  return
 
 chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
   # TODO what if the page keeps loading while the user is reading it?
@@ -86,6 +136,7 @@ chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
       createOrUpdateSearchInfo(tabId, tab, query)
 
   else
+    console.log('added')
     pageInfo = PageInfo.db({tab: tabId}).order("date desc").first()
     if pageInfo
       # check for dup here

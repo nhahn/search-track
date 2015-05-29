@@ -99,9 +99,10 @@ createOrUpdateSearchInfo = function(tabId, tab, query) {
 };
 
 getContentAndTokenize = function(tabId, tab, pageInfo) {
+  var annotation, db, i, locs, newTab, ttl;
   console.log("TOK:");
   console.log(tab.url);
-  return chrome.tabs.executeScript(tabId, {
+  chrome.tabs.executeScript(tabId, {
     code: 'window.document.documentElement.innerHTML'
   }, function(results) {
     var html;
@@ -135,6 +136,54 @@ getContentAndTokenize = function(tabId, tab, pageInfo) {
       });
     }
   });
+  console.log(tab);
+  newTab = {};
+  newTab.time = Date.now();
+  newTab.timeElapsed = 0;
+  db = SavedInfo.db().filter({
+    importance: 1
+  }).get();
+  locs = [];
+  i = 0;
+  while (i < db.length) {
+    locs.push(db[i].loc);
+    i++;
+  }
+  newTab.loc = 0;
+  for (i in locs.sort()) {
+    i = i;
+    if (locs[i] === newTab.loc) {
+      newTab.loc++;
+    }
+  }
+  newTab.newTabId = tab.id;
+  newTab.favicon = tab.favIconUrl;
+  ttl = tab.title;
+  if (ttl.length === 0) {
+    ttl = prompt('Please name this page', 'Untitled');
+  }
+  newTab.title = ttl;
+  newTab.url = tab.url;
+  newTab.note = '';
+  newTab.color = 'rgba(219,217,219,1)';
+  newTab.importance = 1;
+  newTab.depth = window.scrollY;
+  newTab.height = window.innerHeight;
+  console.log('My Depth: ' + newTab.depth);
+  console.log('Total Depth: ' + document.body.clientHeight);
+  newTab.position = SavedInfo.db().count();
+  newTab.favorite = false;
+  newTab.ref = false;
+  newTab.task = '';
+  annotation = SavedInfo.db().get()[0].annotation;
+  SavedInfo.db.insert(newTab);
+  chrome.tabs.query({}, function(tabs) {
+    tabs.forEach(function(t) {
+      chrome.tabs.sendMessage(t.id, {
+        newTab: newTab
+      });
+    });
+  });
 };
 
 chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
@@ -151,6 +200,7 @@ chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
       return createOrUpdateSearchInfo(tabId, tab, query);
     }
   } else {
+    console.log('added');
     pageInfo = PageInfo.db({
       tab: tabId
     }).order("date desc").first();
