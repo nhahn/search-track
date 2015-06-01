@@ -6,7 +6,7 @@ searchTrack = {}
 searchTrack.addPageRelation = (url, query, tabId) ->
   #something here
 searchTrack.removeTab = (searchInfo, tabId) ->
-  idx = searchInfo.indexOf(tabId)
+  idx = searchInfo.tabs.indexOf(tabId)
   searchInfo.tabs.splice(idx, 1) if idx > -1
   searchInfo.save()
   

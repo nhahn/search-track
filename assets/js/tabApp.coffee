@@ -1,4 +1,4 @@
-app = angular.module('tabApp', ['ui.router', 'ui.bootstrap', 'angular-underscore'])
+app = angular.module('tabApp', ['ui.router', 'ui.bootstrap', 'angular-underscore', 'ngDexieBind', 'angular.filter'])
 
 app.run ($rootScope, $state, $stateParams) ->
   $rootScope.$state = $state
@@ -57,8 +57,8 @@ app.controller 'MainCtrl', ($scope, $rootScope, $state) ->
 app.controller 'removeModal', ($scope, $modalInstance) ->
   
   $scope.ok = () ->
-    PageInfo.clearDB()
-    SearchInfo.clearDB()
+    db.PageInfo.clear()
+    db.SearchInfo.clear()
     $modalInstance.close('cleared')
     
   $scope.cancel = () ->

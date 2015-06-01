@@ -49,6 +49,8 @@ html(lang='en', ng-csp, ng-app='tabApp')
       // Placed at the end of the document so the pages load faster
       script(src='/vendor/jquery/dist/jquery.min.js')
       script(src='/vendor/bootstrap/dist/js/bootstrap.min.js')
+      script(src='/vendor/js-logger/src/logger.min.js')
+      
       //Angular Scripts
       script(src="/vendor/angular/angular.min.js")
       script(src="/vendor/underscore/underscore-min.js")
@@ -56,10 +58,13 @@ html(lang='en', ng-csp, ng-app='tabApp')
       script(src="/vendor/angular-bootstrap/ui-bootstrap.min.js")
       script(src="/vendor/angular-bootstrap/ui-bootstrap-tpls.min.js")
       script(src="/vendor/angular-underscore/angular-underscore.min.js")
+      script(src='/vendor/angular-dexie-bind/dist/angular-dexie-bind.js')
+      script(src='/vendor/angular-filter/dist/angular-filter.min.js')
       script(src='/vendor/uri.js/src/URI.min.js')
       
       //Scripts to access the tab information
-      script(src='/vendor/taffydb/taffy-min.js')
+      script(src='/vendor/dexie/dist/latest/Dexie.min.js')
+      script(src='/vendor/dexie/addons/Dexie.Observable/Dexie.Observable.js')
       script(src='/js/trackAPI.js')
       
       //Load the D3 Stuff for the tree layout

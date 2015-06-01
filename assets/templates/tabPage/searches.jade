@@ -1,8 +1,8 @@
-.panel.panel-default(ng-repeat="(query, data) in pages")
+.panel.panel-default(ng-repeat="(query, data) in pages | groupBy: 'query'")
   .panel-heading {{'Query: ' + query}}
   .panel-body
     accordion
-      accordion-group(ng-repeat="(url, records) in data.records")
+      accordion-group(ng-repeat="(url, records) in data | groupBy: 'url'")
         accordion-heading
           span(style='color: #320095; font-weight: normal;')
             | {{records[0].title}} 

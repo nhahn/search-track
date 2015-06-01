@@ -147,8 +147,8 @@ db.open()
 #      when 3 #DELETED
 #        db_changes.postMessage({type: 'deleted', table: change.table, key: change.key, obj: change.oldObj})
 
-Dexie.Promise.on 'error', (err) ->
-  Logger.error("Uncaught error: " + err)
+#Dexie.Promise.on 'error', (err) ->
+#  Logger.error("Uncaught error: " + err)
 
 Logger.useDefaults()
 
