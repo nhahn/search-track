@@ -73,31 +73,84 @@ window.dbMethods = (() ->
 #
 ###
 db_changes = chrome.runtime.connect {name: 'db_changes'}
-window.db = new Dexie('searchTrack').version(1)
-.stores({
-  SearchInfo: '$$id,&name'
+window.db = new Dexie('searchTrack')
+db.version(1).stores({
+  SearchInfo: '$$id,&name,*tabs'
   PageInfo: '$$id,url,query,tab'
   PageEvents: '$$id,&page'
   TabInfo: '$$id,tab'
 })
-.on 'changes', (changes) ->
-  db_changes.postMessage
-  for change in changes
-    switch change.type
-      when 1 #CREATED
-        db_changes.postMessage({type: 'created', table: change.table, key: change.key, obj: change.obj})
-      when 2 #UPDATED
-        db_changes.postMessage({type: 'updated', table: change.table, key: change.key, obj: change.obj})
-      when 3 #DELETED
-        db_changes.postMessage({type: 'deleted', table: change.table, key: change.key, obj: change.oldObj})
-.open()
 
-Dexie.Proise.on 'error', (err) ->
+window.SearchInfo = (params) -> 
+  properties = _.extend({
+    name: ''
+    tabs: []
+    date: Date.now()
+    visits: 1
+  }, params);
+  this.name = properties.name
+  this.tabs = properties.tabs
+  this.date = properties.date
+  this.visits = properties.visits
+
+window.SearchInfo.prototype.save = () ->
+  self = this
+  db.SearchInfo.put(this).then (id) ->
+    self.id = id
+    return self
+
+window.PageInfo = (params) -> 
+  properties = _.extend({
+    isSERP: false
+    url: ''
+    query: ''
+    tab: -1
+    date: Date.now()
+    visits: 1
+    referrer: null
+    title: ''
+    vector: {} 
+    topics: ''
+    topic_vector: []
+    size: 0
+  }, params);
+  this.isSERP = properties.isSERP
+  this.query = properties.query
+  this.url = properties.url
+  this.tab = properties.tab
+  this.date = properties.date
+  this.visits = properties.visits
+  this.title = properties.title 
+  this.referrer = properties.referrer
+  this.vector = properties.vector
+  this.topics = properties.topics
+  this.topic_vector = properties.topic_vector
+  this.size = properties.size
+
+PageInfo.prototype.save = () ->
+  self = this
+  db.PageInfo.put(this).then (id) ->
+    self.id = id
+    return self
+
+db.PageInfo.mapToClass(window.PageInfo)
+db.SearchInfo.mapToClass(window.SearchInfo)
+
+db.open()
+#db.on 'changes', (changes) ->
+#  for change in changes
+#    switch change.type
+#      when 1 #CREATED
+#        db_changes.postMessage({type: 'created', table: change.table, key: change.key, obj: change.obj})
+#      when 2 #UPDATED
+#        db_changes.postMessage({type: 'updated', table: change.table, key: change.key, obj: change.obj})
+#      when 3 #DELETED
+#        db_changes.postMessage({type: 'deleted', table: change.table, key: change.key, obj: change.oldObj})
+
+Dexie.Promise.on 'error', (err) ->
   Logger.error("Uncaught error: " + err)
 
 Logger.useDefaults()
-AppSettings.on 'logLevel', 'ready', (settings) ->
-  Logger.setLevel(settings.logLevel)
 
 window.AppSettings = (() ->
   obj = {}
@@ -121,8 +174,9 @@ window.AppSettings = (() ->
           hsh['setting-'+setting] = value
           obj['setting-'+setting] = value
           chrome.storage.local.set hsh, () ->
-            for handler in handlers.setting
-              handler.call(obj)
+            if handlers[setting]
+              for handler in handlers[setting]
+                handler.call()
             
         get: () ->
           return obj['setting-'+setting]
@@ -147,3 +201,6 @@ window.AppSettings = (() ->
     
   return obj
 )()
+
+AppSettings.on 'logLevel', 'ready', (settings) ->
+  Logger.setLevel(AppSettings.logLevel)
