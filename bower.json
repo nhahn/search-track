@@ -31,6 +31,9 @@
     "dexie": "~1.0.4",
     "angular-dexie-bind": "nhahn/angular-dexie-bind",
     "js-logger": "~1.0.0",
-    "angular-filter": "~0.5.4"
+    "angular-filter": "~0.5.4",
+    "angular-ui-tree": "~2.4.0",
+    "interact": "~1.2.4",
+    "jquery-hoverintent": "~1.8.1"
   }
 }

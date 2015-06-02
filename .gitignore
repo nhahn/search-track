@@ -40,3 +40,8 @@ dist/
 
 #private key
 *.pem
+=======
+
+# packed extensions
+tabmanager.crx
+tabmanager.pem

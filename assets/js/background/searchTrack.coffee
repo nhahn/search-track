@@ -49,7 +49,6 @@ createOrUpdateSearchInfo = (tabId, tab, query) ->
   .catch (err) ->
     Logger.error("Error updating searchInfo: " + err)
 
-
 getContentAndTokenize = (tabId, pageInfo) ->
   chrome.tabs.get tabId, (tab) ->
     Logger.debug "TOK:\n" + tab.url
@@ -69,7 +68,39 @@ getContentAndTokenize = (tabId, pageInfo) ->
             Logger.error err
         ).fail (a, t, e) ->
           Logger.debug "fail tokenize\n" + t
+  
+  return Promise.all([
+    db.SavedInfo.where('importance').equals(1)
+    db.SavedInfo.toCollection().count()
+    db.SavedInfo.toCollection().first()])
+  .spread (loc_res, pos, annon) ->
+    # add to SavedInfo as well
+    newTab = new SavedInfo({
+      loc: 0
+      favicon: tab.favIconUrl
+      newTabId: tab.id
+      title: if tab.title.length == 0 then tab.title else prompt('Please name this page', 'Untitled')
+      url: tab.url
+      depth: window.scrollY
+      height: window.innerHeight # for the drag-and-drop list (could be adapted for 2D manipulation)
+      position: pos#TODO
+    })
+    # Find first empty spot to place newTab
+    locs = []
+    locs.push(loc) for loc in loc_res
+    for i of locs.sort()
+      `i = i`
+      if locs[i] == newTab.loc
+        newTab.loc++
 
+    # add to DB.
+    annotation = annon.annotation
+    newTab.save()
+    # Tell newTabs
+  .then (newTab) ->
+    chrome.tabs.query {}, (tabs) ->
+      tabs.forEach (t) ->
+        chrome.tabs.sendMessage t.id, newTab: newTab
 
 ####
 #

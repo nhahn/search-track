@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
 
-  "name": "Search Track",
+  "name": "Tab Manager",
   "description": "Helps you track, manage, and learn from your web searches",
   "version": "0.1",
   "permissions": [
@@ -11,20 +11,71 @@
     "notifications",
     "history",
     "webNavigation",
+    "<all_urls>",
     "http://*/",
     "https://*/"
   ],
   "background": {
     "page": "html/background.html",
-    "persistent": false
-  },
-  "browser_action": {
-    "default_icon": "img/structify_medium.png"
-  },
+    "persistent": true
+  },  
+  "web_accessible_resources": ["html/popup.html",
+  "/vendor/bootstrap/dist/js/bootstrap.min.js",
+  "/vendor/angular/angular.js",
+  "/js/angular-ui-tree-master/dist/angular-ui-tree.min.js",
+  "/vendor/taffydb/taffy-min.js",
+  "/vendor/underscore/underscore-min.map",
+  "/vendor/underscore/underscore-min.js",
+  "/js/trackAPI.js.map",
+  "/js/trackAPI.js",
+  "/vendor/jquery/dist/jquery.min.map",
+	"/vendor/bootstrap-less/.js",
+  "/vendor/jquery/dist/jquery.min.js",
+  "/js/interact.min.js",
+	"/vendor/bootstrap/less/bootstrap.less",
+  "/html/sidebar.html",
+  "/js/content/injectsidebar.js"],
   "icons": {
     "16": "img/structify_small.png",
     "48": "img/structify_medium.png",
     "128": "img/structify.png"
+  },
+  "commands": {
+    "add-importance-1": {
+      "suggested_key": {
+        "default": "Ctrl+Period",
+        "mac": "Command+I"
+      },
+      "description": "Saves the current tab to box 1"
+    },
+    "add-importance-2": {
+      "suggested_key": {
+        "default": "Ctrl+Comma",
+        "mac": "Command+K"
+      },
+      "description": "Saves the current tab to box 2"
+    },
+    "add-importance-3": {
+      "suggested_key": {
+        "default": "Ctrl+I",
+        "mac": "Command+J"
+      },
+      "description": "Saves the current tab to box 3"
+    },
+    "open": {
+      "suggested_key": {
+        "default": "Ctrl+B",
+        "mac": "Command+Period"
+      },
+			"description": "Opens the sidebar"
+    }
+  },
+  /* "chrome_url_overrides": {
+    "newtab": "html/visual.html"
+  },
+  */
+  "browser_action": {
+    "default_icon": "img/structify_medium.png"
   }
 
 }

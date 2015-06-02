@@ -1,5 +1,5 @@
 doctype html
-html
+html(ng-csp)
   head
     script(src='/vendor/jquery/dist/jquery.min.js')
     script(src='/vendor/uri.js/src/URI.min.js')
@@ -9,8 +9,11 @@ html
     script(src='/vendor/dexie/addons/Dexie.Observable/Dexie.Observable.js')
     script(src='/vendor/dexie/addons/Dexie.Syncable/Dexie.Syncable.js')
     script(src='/vendor/js-logger/src/logger.min.js')
-    
     script(src='/js/trackAPI.js')
     script(src='/js/background/searchTrack.js')
+    script(src='/js/background/tabTrack.js')
     script(src='/js/background/newTab.js')
+    script(src='/js/background/extension.js')
+    script(src='/js/visual.js')
+    
   body

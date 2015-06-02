@@ -10,6 +10,7 @@
 # be interacted with 
 #
 ###
+throttle = null
 window.dbMethods = (() -> 
 
   obj = {}
@@ -62,7 +63,6 @@ window.dbMethods = (() ->
         msg = 'Unknown Error'
 
     console.log('Error: ' + msg)
-  
   return obj
 )()
 
@@ -79,6 +79,8 @@ db.version(1).stores({
   PageInfo: '$$id,url,query,tab'
   PageEvents: '$$id,&page'
   TabEvents: '$$id,tab,action'
+  TaskInfo: '$$id,name' #table of tasks
+  SavedInfo: '$$id,importance,time' # database for information that user marks as "for later"
 })
 
 window.SearchInfo = (params) ->
@@ -96,6 +98,63 @@ window.SearchInfo = (params) ->
 window.SearchInfo.prototype.save = () ->
   self = this
   db.SearchInfo.put(this).then (id) ->
+    self.id = id
+    return self
+
+window.SavedInfo = (params) ->
+  properties = _.extend({
+    timeElapsed: 0
+    time: Date.now()
+    loc: 0
+    favicon: ''
+    newTabId: -1
+    title: ''
+    url: ''
+    note: ''
+    color: 'rgba(219,217,219,1)'
+    importance: 1
+    depth: 0
+    height: 0 # for the drag-and-drop list (could be adapted for 2D manipulation)
+    position: -1 #TODO
+    favorite: false   # will be able to "favorite" newTabs
+    ref: false   # is it a reference newTab?
+    task: ''
+  }, params)
+  this.timeElapsed = properties.timeElapsed
+  this.time = properties.time
+  this.loc = properties.loc
+  this.favicon = properties.favicon
+  this.newTabId = properties.newTabId
+  this.title = properties.title
+  this.note = properties.note
+  this.color = properties.color
+  this.importance = properties.importance
+  this.depth = properties.depth
+  this.height = properties.height
+  this.position = properties.position
+  this.favorite = properties.favorite
+  this.ref = properties.ref
+  this.task = properties.task
+
+window.SavedInfo.prototype.save = () ->
+  self = this
+  db.SavedInfo.put(this).then (id) ->
+    self.id = id
+    return self
+
+window.TaskInfo = (params) ->
+  properties = _.extend({
+    name: ''
+    dateCreated: Date.now()
+    order: 999
+  }, params)
+  this.name = properties.name
+  this.dateCreated = properties.dateCreated
+  this.order = properties.order
+
+window.TaskInfo.prototype.save = () ->
+  self = this
+  db.TaskInfo.put(this).then (id) ->
     self.id = id
     return self
 
@@ -135,6 +194,8 @@ PageInfo.prototype.save = () ->
 
 db.PageInfo.mapToClass(window.PageInfo)
 db.SearchInfo.mapToClass(window.SearchInfo)
+db.SavedInfo.mapToClass(window.SavedInfo)
+db.Task.mapToClass(window.TaskInfo)
 
 db.open()
 #db.on 'changes', (changes) ->

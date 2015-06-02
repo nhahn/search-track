@@ -1,0 +1,227 @@
+<!-- INJECTED SIDEBAR CODE - FORAGER --> 
+<html ng-csp>
+
+<body ng-app="listApp" ng-controller="MainCtrl">
+
+<div class="esotericsidebarname no-print">
+<div class="esotericbordername">
+  <!-- <span class='esotericreload' id='esotericreload'>Reload</span> -->
+  <span class='esotericremove' id='esotericremove'>Remove</span>
+</div>
+<div class="semitrans"></div>
+
+<div class="ontop">
+<br>
+
+<div class="row" id="esotericrowname">
+
+	<!-- Column 1 -->
+	<div class="col-md-4 col-xs-4"><div id="esotericcolumn1" >
+    <div class="col-md-4 col-xs-4 esotericinnercol" colid="0"></div>
+    <div class="col-md-4 col-xs-4 esotericinnercol" colid="1"></div>
+    <div class="col-md-4 col-xs-4 esotericinnercol" colid="2"></div>
+    <div class="col-md-4 col-xs-4 esotericinnercol" colid="3"></div>
+    <div class="col-md-4 col-xs-4 esotericinnercol" colid="4"></div>
+    <div class="col-md-4 col-xs-4 esotericinnercol" colid="5"></div>
+    <div class="col-md-4 col-xs-4 esotericinnercol" colid="6"></div>
+    <div class="col-md-4 col-xs-4 esotericinnercol" colid="7"></div>
+    <div class="col-md-4 col-xs-4 esotericinnercol" colid="8"></div>
+    <!-- Bootstrap glyphicons don't work -->
+    <div class='col-md-3 col-xs-3 btn esotericbuttonname esotericmassdelete'>Delete All</div>
+    <div class='col-md-3 col-xs-3 btn esotericbuttonname'>Hide</div>
+    <div class='col-md-3 col-xs-3 btn esotericbuttonname'>Search</div>
+    <div class='col-md-3 col-xs-3 btn esotericbuttonname esotericbucketname'><b>Bucket 1</b></div>
+	</div></div>
+
+	<!-- Column 2 -->
+	<div class="col-md-4 col-xs-4"><div id="esotericcolumn2">
+    <div class="col-md-4 col-xs-4 esotericinnercol" colid="0"></div>
+    <div class="col-md-4 col-xs-4 esotericinnercol" colid="1"></div>
+    <div class="col-md-4 col-xs-4 esotericinnercol" colid="2"></div>
+    <div class="col-md-4 col-xs-4 esotericinnercol" colid="3"></div>
+    <div class="col-md-4 col-xs-4 esotericinnercol" colid="4"></div>
+    <div class="col-md-4 col-xs-4 esotericinnercol" colid="5"></div>
+    <div class="col-md-4 col-xs-4 esotericinnercol" colid="6"></div>
+    <div class="col-md-4 col-xs-4 esotericinnercol" colid="7"></div>
+    <div class="col-md-4 col-xs-4 esotericinnercol" colid="8"></div>
+    <div class='col-md-3 col-xs-3 btn esotericbuttonname esotericmassdelete'>Delete All</div>
+    <div class='col-md-3 col-xs-3 btn esotericbuttonname'>Hide</div>
+    <div class='col-md-3 col-xs-3 btn esotericbuttonname'>Search</div>
+    <div class='col-md-3 col-xs-3 btn esotericbuttonname esotericbucketname'><b>Bucket 2</b></div>
+	</div></div> 
+
+	<!-- Column 3 -->
+	<div class="col-md-4 col-xs-4"><div id="esotericcolumn3">
+  <textarea id="esoterictextbox"></textarea>
+	</div></div>
+
+</div>
+</div>
+
+<style>
+@media print
+{    
+  .no-print, .no-print *
+  {
+    display: none !important;
+  }
+}
+
+#esotericcolumn1 {
+  height: 240px !important;
+  width: 100%;
+  background-color: rgba(240,248,255,0.92);
+  border: 1.5px solid lightgray;
+}
+#esotericcolumn2 {
+  height: 240px !important;
+  width: 100%;
+  background-color: rgba(240,248,255,0.92);
+  border: 1.5px solid lightgray;
+}
+#esotericcolumn3 {
+  height: 240px !important;
+  background-color: rgba(240,248,255,0.92);
+  border: 1.5px solid lightgray;
+}
+#esoterictextbox {
+  height: 100%;
+  width: 100%;
+  resize: none;
+  border: 0px;
+  background-color: rgba(0,0,0,0);
+  font-size: 14px !important;
+  font-size: 1.25vw !important;
+  padding: 5px;
+  font-family: arial;
+}
+.esotericinnercol {
+  height: 33.33333333%;
+  border: 1px solid rgba(199,199,199,0.85);
+}
+#esotericfavicon {
+  height: 1.15vw;
+}
+.esotericdelete {
+  cursor: pointer;
+  height:4px !important;
+  width:13px !important;
+}
+.esotericbuttonname {
+  font-size: 0.8vw !important;
+  padding: 0 !important;
+	background: rgba(222,219,221,0.85);
+  border-radius: 0px !important;
+  border: 1px solid rgba(199,199,199,0.85) !important;
+  font-color: black !important;
+  font-weight: normal !important; 
+}
+
+/* Dragging style */
+.draggable {
+  width: 22%;
+  height: 25%;
+  /* margin-left: 4%;
+  margin-top: 4%; */
+  background-color: rgba(219,217,219,1);
+	font-size: 8px;
+	font-size: 1vw;
+	line-height: 1.15vw;
+  color: black; 
+  border: 1.5px solid lightgray;
+  padding: 2%;
+  position: absolute;
+  vertical-align: top;
+	/* display: inline-block; */
+  float: left;
+  clear: left;
+	word-wrap: break-word;
+  /* -webkit-transform: translate(0px, 0px);
+          transform: translate(0px, 0px); */
+}
+.draggable:after{
+  clear: left;
+}
+.drop-active {
+  border-color: #aaa;
+}
+
+.drop-target {
+  background-color: #29e;
+  border-color: #fff;
+  border-style: solid;
+}
+/*
+.draggable.can-drop {
+  color: #000;
+  background-color: #4e4;
+}
+*/
+
+/* General sidebar style 
+ * Adapted from software-made.blogspot.com 
+ */
+.esotericsidebarname a {
+  font-weight: normal !important;
+  padding-right: 2px;
+}
+.esotericsidebarname {
+  font: arial !important;
+	height:275px;  
+	/*margin:0;*/
+	position: fixed; 
+	width: 100%;
+	z-index: 10000;
+	bottom:-260px;
+ /* For IE 8 */
+ -ms-filter: "progid:DXImageTransform.Microsoft.Shadow(Strength=4, Direction=135, Color='#000000')";
+}
+.esotericsidebarname a {
+	color: black;
+}
+.esotericbordername {
+	height:20px;
+	width:100%;
+	background: rgba(222,219,221,0.85);
+  border-top: 1px solid rgba(163,163,163,1);
+  border-bottom: 1px solid rgba(163,163,163,1);
+  font-size: 12px;
+  text-align: right;
+  padding: 0 !important;
+  font-size:1.1vw;
+  vertical-align: top !important;
+  color: black !important;
+}
+.esotericbordername span {
+  padding-right: 3px;
+  cursor: pointer;
+}
+
+.semitrans {
+	/*This was to account for some websites having lower bottoms: */
+	/*border-top:30px solid #cccccc; */
+	width: 100%; 
+	background: rgba(234,234,234,0.9);
+	height: 275px;
+}
+ 
+.ontop{
+	/*padding-top:30px;*/
+  z-index: 10001;
+	opacity: 1 !important;
+	height: 100% !important;
+	padding-left: 5%;
+	padding-right: 5%;
+	width: 100%;
+	position: absolute;
+	color: black;
+	top:15px;
+}
+
+</style>
+
+</body>
+
+</html>
+
+<!-- END SIDEBAR -->
