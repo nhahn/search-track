@@ -78,16 +78,16 @@ db.version(1).stores({
   SearchInfo: '$$id,&name,*tabs'
   PageInfo: '$$id,url,query,tab'
   PageEvents: '$$id,&page'
-  TabInfo: '$$id,tab'
+  TabEvents: '$$id,tab,action'
 })
 
-window.SearchInfo = (params) -> 
+window.SearchInfo = (params) ->
   properties = _.extend({
     name: ''
     tabs: []
     date: Date.now()
     visits: 1
-  }, params);
+  }, params)
   this.name = properties.name
   this.tabs = properties.tabs
   this.date = properties.date
@@ -99,7 +99,7 @@ window.SearchInfo.prototype.save = () ->
     self.id = id
     return self
 
-window.PageInfo = (params) -> 
+window.PageInfo = (params) ->
   properties = _.extend({
     isSERP: false
     url: ''
@@ -113,14 +113,14 @@ window.PageInfo = (params) ->
     topics: ''
     topic_vector: []
     size: 0
-  }, params);
+  }, params)
   this.isSERP = properties.isSERP
   this.query = properties.query
   this.url = properties.url
   this.tab = properties.tab
   this.date = properties.date
   this.visits = properties.visits
-  this.title = properties.title 
+  this.title = properties.title
   this.referrer = properties.referrer
   this.vector = properties.vector
   this.topics = properties.topics
