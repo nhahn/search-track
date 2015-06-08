@@ -1,0 +1,60 @@
+doctype html
+html
+  head
+    // Bootstrap!
+    // Latest compiled and minified CSS
+    link(rel='stylesheet', href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css')
+    // Optional theme
+    link(rel='stylesheet', href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap-theme.min.css')
+    // Latest compiled and minified JavaScript
+    script(src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/js/bootstrap.min.js')
+  title Tab Manager  
+  body
+    p Enter a new task:
+    .row
+      .col-sm-6
+        form#newSearch(method='POST', action='#')
+          .input-group
+            input#query.form-control(type='text')
+            |             
+            span.input-group-btn
+              button.btn.btn-default(type='submit') Go!
+          // /input-group
+      // /.col-lg-6
+    br
+    | Tasks 
+    p
+      #tasklist.list-group
+    #hint  Use &amp;#8984{1-9} to switch to a task. 
+  style.
+    body {
+    /*overflow-x: hidden; */
+    line-height: 100%;
+    font-size = 12px;
+    padding-top: 10px;
+    padding-right: 10px;
+    padding-bottom: 5%;
+    padding-left: 10px;
+    background-color: #FFFFFF;
+    min-width: 250px;
+    max-width: 100%;
+    }
+    a {
+    color: black;
+    }
+    .close {
+    color: black;
+    font-size: 18px;
+    }
+    hr {
+    color: black;
+    }
+    #hint {
+    font-size: 10px;
+    text-align: right;
+    }
+  script(src='/vendor/taffydb/taffy-min.js')
+  script(src='/vendor/underscore/underscore-min.js')
+  script(src='/js/trackAPI.js')
+  script(src='/js/shortcut.js')
+  script(src='/js/popup.js')
