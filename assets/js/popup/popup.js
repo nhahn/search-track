@@ -29,8 +29,8 @@ window.addEventListener('load', function(evt) {
         console.log(response.farewell);
       });
 
-      TaskInfo.db().insert(
-        {'name':text,'dateCreated':Date.now(),'order':TaskInfo.db().length}).callback(
+      Task.db().insert(
+        {'name':text,'dateCreated':Date.now(),'order':Task.db().length}).callback(
         function() {
           window.close();
         });
@@ -40,7 +40,7 @@ window.addEventListener('load', function(evt) {
 
 // Update the list of todo items.
 function refreshVisual() {
-    var tasks = TaskInfo.db().order("order").get();
+    var tasks = Task.db().order("order").get();
 
     document.getElementById('query').placeholder = "Current task: " + currentTask;
 
@@ -103,7 +103,7 @@ function refreshVisual() {
 
       x.addEventListener('click', function(e) {
         var id = parseInt(e.target.getAttribute('data-id'));
-        TaskInfo.db().filter({'name':title}).remove().callback(function() {
+        Task.db().filter({'name':title}).remove().callback(function() {
           refreshVisual();
         })
       });

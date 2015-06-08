@@ -2,8 +2,8 @@
     #Get our list of queries
     queryUpdate = () ->
       $scope.$apply () ->
-        $scope.queries = SearchInfo.db().get()
-    $scope.queries = SearchInfo.db().get()
+        $scope.queries = Search.db().get()
+    $scope.queries = Search.db().get()
     $scope.query = $scope.queries[0]
     #Initialize everything for d3
     d3_tree.init_vis()
@@ -13,9 +13,9 @@
         d3_tree.toggle(d)
 
     updateFn = () ->
-      page_info = PageInfo.db({query: $scope.query.name}, {referrer: {isNull: false}}).get()
+      page_info = Page.db({query: $scope.query.name}, {referrer: {isNull: false}}).get()
       #Root is the one without the referrer
-      d3_tree.root = PageInfo.db({query: $scope.query.name}, {referrer: {isNull: true}}).first()
+      d3_tree.root = Page.db({query: $scope.query.name}, {referrer: {isNull: true}}).first()
       d3_tree.root.children = [] 
       d3_tree.root.x0 = d3_tree.h/2
       d3_tree.root.y0 = 0
@@ -39,7 +39,7 @@
       d3_tree.update d3_tree.root  
 
     updateFn()
-    SearchInfo.updateFunction(queryUpdate)
-    PageInfo.updateFunction(updateFn)
+    Search.updateFunction(queryUpdate)
+    Page.updateFunction(updateFn)
     $scope.$watch 'query', (newVal, oldVal) ->
       updateFn()

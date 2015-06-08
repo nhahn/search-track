@@ -23,15 +23,15 @@ extractGoogleRedirectURL = (url) ->
   return url
 
 
-createOrUpdateSearchInfo = (tabId, tab, query) ->
-  db.SearchInfo.where('name').equalsIgnoreCase(query).sortBy("date").then (res) ->
+createOrUpdateSearch = (tabId, tab, query) ->
+  db.Search.where('name').equalsIgnoreCase(query).sortBy("date").then (res) ->
     searchInfo = res[0]
     if !searchInfo
       #First time finding this
       Logger.debug 'creating for: ' + tab.url
-      searchInfo = new SearchInfo({name: query, tabs: [tabId], date: Date.now()})
+      searchInfo = new Search({name: query, tabs: [tabId], date: Date.now()})
       return searchInfo.save().then (searchInfo) ->
-        pageInfo = new PageInfo({isSERP: true, url: tab.url, query: searchInfo.name, tab: tabId, date: Date.now(), referrer: null, visits: 1, title: tab.title})
+        pageInfo = new Page({isSERP: true, url: tab.url, query: searchInfo.name, tab: tabId, date: Date.now(), referrer: null, visits: 1, title: tab.title})
         pageInfo.save()
     else
       searchInfo.date = Date.now()
@@ -39,7 +39,7 @@ createOrUpdateSearchInfo = (tabId, tab, query) ->
       searchInfo.tabs.push(tabId) if searchInfo.tabs.indexOf(tabId) < 0
       Logger.debug "search found #{searchInfo.name} \n adding tab id #{tabId}"
       return searchInfo.save().then (searchInfo) ->
-        db.PageInfo.where('query').equals(query).and((val) -> val.isSERP).first()
+        db.Page.where('query').equals(query).and((val) -> val.isSERP).first()
       .then (pageInfo) ->
         console.log(pageInfo)
         pageInfo.visits += 1
@@ -109,7 +109,7 @@ getContentAndTokenize = (tabId, pageInfo) ->
 ####
 chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
   # TODO what if the page keeps loading while the user is reading it?
-  # if SearchInfo is created after some link is clicked, the page is not tracked
+  # if Search is created after some link is clicked, the page is not tracked
   if changeInfo.status != 'complete'
     return
   Logger.debug "onUpdated #{tabId} \n #{changeInfo}"
@@ -119,7 +119,7 @@ chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
   if matches != null
     query = decodeURIComponent(matches[1].replace(/\+/g, ' '))
     if query != ""
-      createOrUpdateSearchInfo(tabId, tab, query)
+      createOrUpdateSearch(tabId, tab, query)
 
 ####
 #
@@ -142,13 +142,13 @@ chrome.webNavigation.onCommitted.addListener (details) ->
   Logger.info "committed nav: #{details.tabId} -> #{details.url}"
   details.url = extractGoogleRedirectURL details.url
   return Promise.all([
-    db.SearchInfo.where('tabs').equals(details.tabId).sortBy("date")
-    db.PageInfo.where("tab").equals(details.tabId).sortBy("date")
+    db.Search.where('tabs').equals(details.tabId).sortBy("date")
+    db.Page.where("tab").equals(details.tabId).sortBy("date")
   ]).spread (res1, res2) ->
     searchInfo = res1[0]
     pageInfo = res2[0]
     if searchInfo
-      db.PageInfo.where('url').equals(details.url).and((val) -> val.query == searchInfo.name).first().then (dup_pageInfo) ->
+      db.Page.where('url').equals(details.url).and((val) -> val.query == searchInfo.name).first().then (dup_pageInfo) ->
         # check for dup here
         if dup_pageInfo
           if details.transitionQualifiers.indexOf("forward_back") >= 0
@@ -163,7 +163,7 @@ chrome.webNavigation.onCommitted.addListener (details) ->
           else if details.transitionQualifiers.indexOf("forward_back") >= 0
             searchTrack.removeTab(searchInfo, details.tabId)
           else if details.transitionType != "reload"
-            data = new PageInfo({isSERP: false, url: details.url, query: searchInfo.name, tab: details.tabId, date: Date.now(), referrer: (if pageInfo then pageInfo.id else null), visits: 1, title: ''})
+            data = new Page({isSERP: false, url: details.url, query: searchInfo.name, tab: details.tabId, date: Date.now(), referrer: (if pageInfo then pageInfo.id else null), visits: 1, title: ''})
             data.save().then (data) ->
               Logger.info "add tab for: \n #{data} \n to: \n #{searchInfo}"
               getContentAndTokenize(details.tabId, data)
@@ -179,13 +179,13 @@ chrome.webNavigation.onCreatedNavigationTarget.addListener (details) ->
   Logger.info 'newTab nav: ' + details.sourceTabId + ' -> ' + details.tabId
   details.url = extractGoogleRedirectURL details.url
   chrome.tabs.get details.sourceTabId, (sourceTab) ->
-    db.PageInfo.where('url').equals(sourceTab.url).sortBy("date").then (res) ->
+    db.Page.where('url').equals(sourceTab.url).sortBy("date").then (res) ->
       pageInfo = res[0]
-      return Promise.all([pageInfo,db.SearchInfo.where('name').equals(pageInfo.query).sortBy("date")]).spread (pageInfo,res) ->
+      return Promise.all([pageInfo,db.Search.where('name').equals(pageInfo.query).sortBy("date")]).spread (pageInfo,res) ->
         searchInfo = res[0]
         if searchInfo
           # add referrer here
-          data = new PageInfo({isSERP: false, url: details.url, query: searchInfo.name, tab: details.tabId, date: Date.now(), referrer: pageInfo.id, visits: 1, title: ''})
+          data = new Page({isSERP: false, url: details.url, query: searchInfo.name, tab: details.tabId, date: Date.now(), referrer: pageInfo.id, visits: 1, title: ''})
           return Promise.all([data.save(), searchTrack.addTab(searchInfo, details.tabId)]).spread (pageInfo, searchInfo) ->
             getContentAndTokenize(details.tabId, data)
             Logger.info("Created pageInfo entry \n#{pageInfo} for searchInfo \n#{searchInfo}")

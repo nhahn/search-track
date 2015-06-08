@@ -156,7 +156,7 @@ app.controller 'graphController', ($scope, $state) ->
   render = () ->
     i = 0
     graph = {nodes: [], links: []}
-    queries = SearchInfo.db({name: {'!is': ''}}).get()
+    queries = Search.db({name: {'!is': ''}}).get()
     console.log queries
     dot = (v1, v2) ->
       v = _.map _.zip(v1, v2), (xy) -> xy[0] * xy[1]
@@ -180,7 +180,7 @@ app.controller 'graphController', ($scope, $state) ->
 
     getLDAVector = (query) ->
       console.log 'getLDAVector(query)'
-      pages = _.map query.tabs, (___id) -> PageInfo.db({___id: ___id}).first()
+      pages = _.map query.tabs, (___id) -> Page.db({___id: ___id}).first()
       console.log pages
       pages = _.filter pages, (page) -> not page.isSERP
       console.log pages
@@ -203,7 +203,7 @@ app.controller 'graphController', ($scope, $state) ->
     _.each queries, (query) ->
       lda_vector = getLDAVector(query)
       if lda_vector != null
-        graph.nodes.push {name: query.name, group: i++, lda_vector: lda_vector, size: PageInfo.db({query: query.name, isSERP: false}).get().length}
+        graph.nodes.push {name: query.name, group: i++, lda_vector: lda_vector, size: Page.db({query: query.name, isSERP: false}).get().length}
 
 
     _.each graph.nodes, (node1) ->
@@ -273,4 +273,4 @@ app.controller 'graphController', ($scope, $state) ->
     render()
     force.start()
   updateFn()
-#SearchInfo.updateFunction(updateFn)
+#Search.updateFunction(updateFn)
