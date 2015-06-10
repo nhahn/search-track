@@ -4,58 +4,57 @@
 #
 ###
 
-window.Page = (params) ->
-  properties = _.extend({
-    loc: 0
-    favicon: ''
-    timeElapsed: 0
-    isSERP: false
-    url: ''
-    query: ''
-    tab: -1
-    date: Date.now()
-    visits: 1
-    referrer: null
-    title: ''
-    vector: {} 
-    topics: ''
-    topic_vector: []
-    size: 0
-    note: ''
-    color: 'rgba(219,217,219,1)'
-    importance: 1
-    depth: 0
-    height: 0 # for the drag-and-drop list (could be adapted for 2D manipulation)
-    position: -1 #TODO
-    favorite: false   # will be able to "favorite" newTabs
-    ref: false   # is it a reference newTab?
-  }, params)
-  this.loc = properties.loc
-  this.favicon = properties.favicon
-  this.timeElapsed = properties.timeElapsed
-  this.isSERP = properties.isSERP
-  this.query = properties.query
-  this.url = properties.url
-  this.tab = properties.tab
-  this.date = properties.date
-  this.visits = properties.visits
-  this.title = properties.title
-  this.referrer = properties.referrer
-  this.vector = properties.vector
-  this.topics = properties.topics
-  this.topic_vector = properties.topic_vector
-  this.size = properties.size
-  this.note = properties.note
-  this.color = properties.color
-  this.importance = properties.importance
-  this.depth = properties.depth
-  this.height = properties.height
-  this.position = properties.position
-  this.favorite = properties.favorite
-  this.ref = properties.ref
+class Page
+  constructor: (params) ->
+    properties = _.extend({
+      loc: 0
+      favicon: ''
+      timeElapsed: 0
+      isSERP: false
+      url: ''
+      query: ''
+      tab: '' #Tab ID we are associated with
+      date: Date.now()
+      visits: 1
+      referrer: null
+      title: ''
+      vector: {} 
+      topics: ''
+      topic_vector: []
+      size: 0
+      note: ''
+      color: 'rgba(219,217,219,1)'
+      importance: 1
+      depth: 0
+      height: 0 # for the drag-and-drop list (could be adapted for 2D manipulation)
+      position: -1 #TODO
+      favorite: false   # will be able to "favorite" newTabs
+      ref: false   # is it a reference newTab?
+    }, params)
+    @loc = properties.loc
+    @favicon = properties.favicon
+    @timeElapsed = properties.timeElapsed
+    @isSERP = properties.isSERP
+    @query = properties.query
+    @url = properties.url
+    @tab = properties.tab
+    @date = properties.date
+    @visits = properties.visits
+    @title = properties.title
+    @referrer = properties.referrer
+    @vector = properties.vector
+    @topics = properties.topics
+    @topic_vector = properties.topic_vector
+    @size = properties.size
+    @note = properties.note
+    @color = properties.color
+    @importance = properties.importance
+    @depth = properties.depth
+    @height = properties.height
+    @position = properties.position
+    @favorite = properties.favorite
+    @ref = properties.ref
 
-Page.prototype.save = () ->
-  self = this
-  db.Page.put(this).then (id) ->
-    self.id = id
-    return self
+  save: () ->
+    db.Page.put(this).then (id) =>
+      return this
