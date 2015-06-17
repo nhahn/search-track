@@ -1,7 +1,7 @@
 ###
 #
-# Sets-up our DB tables (using Dexie.js). There are 5 different tables, specified below # (along with their definitions). For each table, there is an additional section
-# that describes an object it maps to. 
+# Sets-up our DB tables (using Dexie.js). There are 5 different tables, specified below (along with their definitions). 
+# For each table, there is an additional section that describes an object it maps to. 
 #
 ###
    
@@ -78,9 +78,9 @@ document.addEventListener "DOMContentLoaded", (event) ->
     Search: '$$id,&name,*tabs,task' #Searches from Google we are tracking
     Task: '$$id,name,*pages' #table of tasks
     Page: '$$id,url,tab' #Pages we are keeping info on
-    Tab: '$$id,tabId,task' # Tabs we are watching
-    PageEvent: '$$id,page' #Events in a page we are recording
-    TabEvent: '$$id,tab,action' #Tab-specific events
+    Tab: '$$id,tab,task' # Tabs we are watching
+    PageEvent: '$$id,page,type,time' #Events in a page we are recording
+    TabEvent: '$$id,tab,type,time' #Tab-specific events
     # SavedInfo: '$$id,importance,time' # database for information that user marks as "for later"
   })
 
@@ -89,6 +89,7 @@ document.addEventListener "DOMContentLoaded", (event) ->
   db.Task.mapToClass(window.Task)
   db.Tab.mapToClass(window.Tab)
   db.TabEvent.mapToClass(window.TabEvent)
+  db.PageEvent.mapToClass(window.PageEvent)
 
   db.open()
   
@@ -98,10 +99,24 @@ document.addEventListener "DOMContentLoaded", (event) ->
 #
 ###
 
-Promise.promisifyAll(chrome.windows)
-Promise.promisifyAll(chrome.tabs)
-Promise.promisifyAll(chrome.sessions)
-Promise.promisifyAll(chrome.history)
+promisifyChrome = (api) ->
+  _.each _.functions(api), (func) ->
+    chrome.tabs[func+"Async"] = (params...) ->
+      return new Promise (resolve, reject) ->
+        cb = (res...) ->
+          resolve(res...)
+        params.push(cb)
+        api[func].apply(null, params)
+
+promisifyChrome(chrome.windows)
+promisifyChrome(chrome.tabs)
+promisifyChrome(chrome.sessions)
+promisifyChrome(chrome.history)
+
+class RecordMissingError extends Error
+  constructor: (@message) ->
+    @name = 'RecordMissingError'
+    Error.captureStackTrace(this, RecordMissingError)
 
 #db.on 'changes', (changes) ->
 #  for change in changes

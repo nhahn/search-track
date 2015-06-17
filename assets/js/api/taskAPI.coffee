@@ -1,20 +1,17 @@
 #closes other tasks open in the current window, drags the tabs from other windows into this one, 
 
-class Task 
+class Task extends Base
   constructor: (params) ->
     properties = _.extend({
       name: ''
       dateCreated: Date.now()
       order: 999
+      hidden: false
     }, params)
     @name = properties.name
     @dateCreated = properties.dateCreated
     @order = properties.order
 
-  save: () ->
-    db.Task.put(this).then (id) =>
-      @id = id
-      return this
 
   ###
   # Removes a page from this task. 

@@ -1,43 +1,33 @@
-takeSnapshot = (action) ->
-  snapshotId = generateUUID()
-  time = Date.now()
-  chrome.tabs.query {windowType: 'normal'}, (tabs) ->
-    console.log '========== BEGIN SNAPSHOT =========='
-    console.log 'track - ' + action
-    saveTabs = []
-    for tab in tabs
-      tabInfo = new TabInfo(_.extend({
-        action: action
-        domain: URI(tab.url).domain()
-        urlHash: CryptoJS.MD5(tab.url).toString(CryptoJS.enc.Base64)
-        domainHash: CryptoJS.MD5(tab.domain).toString(CryptoJS.enc.Base64)
-        tabId: tab.id
-        snapshotId: snapshotId
-      }, tab))
-      
-      saveTabs.push tabInfo
-
-    compare = (x, y) ->
-      if (x == y)
-        return 0
-      return x > y ? 1 : -1;
-    saveTabs.sort (x, y) ->
-      if x.windowId == y.windowId
-        return compare x.index, y.index
-      return compare x.windowId, y.windowId
-    globalIndex = 0
-    for tab in saveTabs
-      tab.globalIndex = globalIndex++
-    console.log saveTabs
-
-    tab.save() for tab in saveTabs
-    console.log saveTabs
-    console.log '========== END   SNAPSHOT =========='
-
 recordAction = (tab, action, from, to) ->
-  db.Tab.where('tabId').equald(tabId).and((val) -> val.status is 'active').first().then (tab) ->
-    data = new TabEvent({action: action, tabId: tab.id, from: from, to: to})
-    data.save()
+  data = new TabEvent({type: action, tab: tab.id, from: from, to: to})
+  data.save()
+
+createTabEntry = (tab) ->
+  #We opened this from another tab -- associate it with that task
+  resolve = []
+  tab = new Tab({
+    tab: tab.id
+    windowId: tab.windowId
+    position: tab.index
+  })
+  if (tab.openerTabId >= 0)
+    resolve.push Tab.findByTabId(tab.openerTabId).then (existingTab) ->
+      throw new RecordMissingError("Can't find tab for id #{tab.openerTabId}") if !tab
+      return existingTab.task
+  else
+    resolve.push tab.generateTask().then (task) ->
+      return task.id
+      
+  Promise.all(resolve).spread (task) ->
+    tab.task = task
+    tab.save()
+  .then (tab) ->
+    recordAction(tab, 'created', tab.openerTabId, '')
+  .catch RecordMissingError, (err) ->
+    Logger.warn(err)
+  .catch (err) ->
+    Logger.error("Error adding new tab #{err}")
+
 
 # Update this in searchTrack?? TODO
 #chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
@@ -58,7 +48,8 @@ recordAction = (tab, action, from, to) ->
 
 chrome.tabs.onAttached.addListener (tabId, attachInfo) ->
   oldWindow = ''
-  db.Tab.where('tabId').equald(tabId).and((val) -> val.status is 'active').first().then (tab) ->
+  Tab.findByTabId(tabId).then (tab) ->
+    throw new RecordMissingError("Can't find tab for id #{tabId}") if !tab
     oldPosition = tab.position
     oldWindow = tab.windowId
     tab.windowId = attachInfo.newWindowId 
@@ -66,47 +57,102 @@ chrome.tabs.onAttached.addListener (tabId, attachInfo) ->
     tab.save()
   .then (tab) ->
     recordAction(tab, 'attached', oldWindow, attachInfo.newWindowId)
+  .catch RecordMissingError, (err) ->
+    Logger.warn(err)
+  .catch (err) ->
+    Logger.error("Error recording tab move to new window #{err}")
 
 chrome.tabs.onMoved.addListener (tabId, moveInfo) ->
-  db.Tab.where('tabId').equald(tabId).and((val) -> val.status is 'active').first().then (tab) ->
+  Tab.findByTabId(tabId).then (tab) ->
+    throw new RecordMissingError("Can't find tab for id #{tabId}") if !tab
     oldPosition = tab.position
     tab.position = attachInfo.toIndex
     tab.save()
   .then (tab) ->
     recordAction(tab, 'moved', tab.fromIndex, tab.position)
+  .catch RecordMissingError, (err) ->
+    Logger.warn(err)
+  .catch (err) ->
+    Logger.error("Error recording tab move #{err}")
 
 chrome.tabs.onRemoved.addListener (tabId, removeInfo) ->
-  db.Tab.where('tabId').equald(tabId).and((val) -> val.status is 'active').first().then (tab) ->
+  Tab.findByTabId(tabId).then (tab) ->
+    throw new RecordMissingError("Can't find tab for id #{tabId}") if !tab
     tab.windowId = -1
-    tab.tabId = -1
+    tab.tab = -1
     tab.status = 'closed'
     tab.save()
   .then (tab) ->
-    recordAction(tab, 'removed', tab.tabId, -1)
+    recordAction(tab, 'removed', tab.tab, -1)
+  .catch RecordMissingError, (err) ->
+    Logger.warn(err)
+  .catch (err) ->
+    Logger.error("Error recording tab removal #{err}")
 
 chrome.tabs.onActivated.addListener (activeInfo) ->
-  trackFocus('tabChange', activeInfo.windowId, activeInfo.tabId)
+  Promise.all([
+    Tab.findByTabId(activeInfo.tabId)
+    db.TabEvent.orderBy('time').reverse().and((val) -> val.action == 'focus').first()
+  ]).spread (newTab, oldTab) ->
+    throw new RecordMissingError("Can't find tab for id #{activeInfo.tabId}") if !newTab
+    oldTab = {id: -1} if !oldTab
+    if newTab.id != oldTab.id
+      recordAction(newTab, 'tabFocus', oldTab.id, newTab.id).then () ->
+        
+  .catch RecordMissingError, (err) ->
+    Logger.warn(err)
+  .catch (err) ->
+    Logger.error("Error recording focus change #{err}")
 
 chrome.windows.onFocusChanged.addListener (windowId) ->
-  chrome.tabs.query {active: true, windowId: windowId, currentWindow: true}, (tabs) ->
-    if tabs.length > 0
-      tab = tabs[0]
-      trackFocus('windowChange', windowId, tab.id)
+  #Chrome has lost focus -- record that?
+  if windowId == chrome.windows.WINDOW_ID_NONE
+    db.TabEvent.orderBy('time').reverse().and((val) -> val.action == 'focus').first().then (oldTab) ->
+      throw new RecordMissingError("No older focus events") if !oldTab
+      recordAction({id: -1}, 'windowFocus', oldTab.to, -1)
+    .catch RecordMissingError, (err) ->
+      Logger.warn(err)
+    .catch (err) ->
+      Logger.error("Error watching window change #{err}")
+  else
+    chrome.tabs.queryAsync({active: true, windowId: windowId, currentWindow: true}).then (tabs) ->
+      if tabs.length > 0
+        Promise.all([
+          db.TabEvent.orderBy('time').reverse().and((val) -> val.action == 'focus').first()
+          Tab.findByTabId(tabs[0].id)
+        ]).spread (oldFocus, tab) ->
+          throw new RecordMissingError("Can't find tab for id #{tabs[0].id}") if !tab
+          oldFocus = {to: -1} if !oldFocus
+          recordAction(tab, 'windowFocus', oldFocus.to, windowId)
+    .catch RecordMissingError, (err) ->
+      Logger.warn(err)
+    .catch (err) ->
+      Logger.error("Error watching window change #{JSON.stringify(err)}")
 
-chrome.tabs.onCreated (tab) ->
-  #We opened this from another tab -- associate it with that task
-  resolve = []
-  tab = new Tab({
-    tabId: tab.id
-    windowId: tab.windowId
-    position: tab.index
-  })
-  if (openerTabId)
-    resolve.push db.Tab.where('tabId').equald(tabId).and((val) -> val.status is 'active').first().then (existingTab) ->
-      tab.task = existingTab.task
+chrome.tabs.onCreated.addListener (tab) ->
+  createTabEntry(tab)
   
-  Promise.all(resolve).then () ->
-    tab.save()
+# Record all of the currently open tabs that we haven't mentioned before.
+chrome.runtime.onInstalled.addListener () ->
+  startupCheck()
+chrome.runtime.onStartup.addListener () ->
+  console.log('extension started!')
+  startupCheck()
+document.addEventListener "DOMContentLoaded", (event) ->
+  startupCheck()
+  
+startupCheck = () ->
+  chrome.tabs.queryAsync({}).then (tabs) ->
+    Promise.map tabs, (tab) ->
+      Tab.findByTabId(tab.id).then (existingTab) ->
+        if existingTab
+          return existing Tab
+        else
+          createTabEntry(tab)
+    .then (tabs) ->
+      #Do something with the newly created tabs here
+    
+
 
 #chrome.tabs.onReplaced.addListener (addedTabId, removedTabId) ->
 #  trackReplace(removedTabId, addedTabId)

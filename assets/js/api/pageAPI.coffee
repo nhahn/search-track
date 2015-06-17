@@ -4,7 +4,7 @@
 #
 ###
 
-class Page
+class Page extends Base
   constructor: (params) ->
     properties = _.extend({
       loc: 0
@@ -54,7 +54,3 @@ class Page
     @position = properties.position
     @favorite = properties.favorite
     @ref = properties.ref
-
-  save: () ->
-    db.Page.put(this).then (id) =>
-      return this
