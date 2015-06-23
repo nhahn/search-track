@@ -49,58 +49,6 @@ createOrUpdateSearch = (tabId, tab, query) ->
   .catch (err) ->
     Logger.error("Error updating searchInfo: " + err)
 
-getContentAndTokenize = (tabId, pageInfo) ->
-  chrome.tabs.get tabId, (tab) ->
-    Logger.debug "TOK:\n" + tab.url
-    chrome.tabs.executeScript tabId, {code: 'window.document.documentElement.innerHTML'}, (results) ->
-      html = results[0]
-      if html? and html.length > 10
-        $.ajax(
-          type: 'POST',
-          url: 'http://104.131.7.171/lda',
-          data: { 'data': JSON.stringify( {'html': html} ) }
-        ).success( (results) ->
-          Logger.debug 'lda'
-          results = JSON.parse results
-          vector = results['vector']
-          pageInfo = _.extend(pageInfo,{title: tab.title, url: tab.url, vector: results['vector'], topics: results['topics'], topic_vector: results['topic_vector'], size: results['size']})
-          pageInfo.save().catch (err) ->
-            Logger.error err
-        ).fail (a, t, e) ->
-          Logger.debug "fail tokenize\n" + t
-  
-  return Promise.all([
-    db.SavedInfo.where('importance').equals(1)
-    db.SavedInfo.toCollection().count()
-    db.SavedInfo.toCollection().first()])
-  .spread (loc_res, pos, annon) ->
-    # add to SavedInfo as well
-    newTab = new SavedInfo({
-      loc: 0
-      favicon: tab.favIconUrl
-      newTabId: tab.id
-      title: if tab.title.length == 0 then tab.title else prompt('Please name this page', 'Untitled')
-      url: tab.url
-      depth: window.scrollY
-      height: window.innerHeight # for the drag-and-drop list (could be adapted for 2D manipulation)
-      position: pos#TODO
-    })
-    # Find first empty spot to place newTab
-    locs = []
-    locs.push(loc) for loc in loc_res
-    for i of locs.sort()
-      `i = i`
-      if locs[i] == newTab.loc
-        newTab.loc++
-
-    # add to DB.
-    annotation = annon.annotation
-    newTab.save()
-    # Tell newTabs
-  .then (newTab) ->
-    chrome.tabs.query {}, (tabs) ->
-      tabs.forEach (t) ->
-        chrome.tabs.sendMessage t.id, newTab: newTab
 
 ####
 #
@@ -134,10 +82,10 @@ chrome.webNavigation.onCompleted.addListener (details) ->
 
 #####
 #
-# When a history element is created, we want to track that
+# When a page is "loaded" enought, we put it in our history management
 #
 #####
-chrome.webNavigation.onCommitted.addListener (details) ->
+chrome.webNavigation.onDOMContentLoaded.addListener (details) ->
   return if details.frameId != 0
   Logger.info "committed nav: #{details.tabId} -> #{details.url}"
   details.url = extractGoogleRedirectURL details.url

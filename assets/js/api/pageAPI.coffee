@@ -4,53 +4,41 @@
 #
 ###
 
+# TODO define some of these parameters????? 
+
 class Page extends Base
   constructor: (params) ->
     properties = _.extend({
-      loc: 0
       favicon: ''
-      timeElapsed: 0
-      isSERP: false
-      url: ''
+      isSearch: false
       query: ''
-      tab: '' #Tab ID we are associated with
-      date: Date.now()
-      visits: 1
-      referrer: null
+      url: ''
+      domain: ''
+      time: Date.now()
       title: ''
       vector: {} 
       topics: ''
       topic_vector: []
       size: 0
-      note: ''
+      notes: ''
       color: 'rgba(219,217,219,1)'
-      importance: 1
       depth: 0
       height: 0 # for the drag-and-drop list (could be adapted for 2D manipulation)
-      position: -1 #TODO
       favorite: false   # will be able to "favorite" newTabs
-      ref: false   # is it a reference newTab?
     }, params)
-    @loc = properties.loc
     @favicon = properties.favicon
-    @timeElapsed = properties.timeElapsed
-    @isSERP = properties.isSERP
+    @isSearch = properties.isSearch
     @query = properties.query
     @url = properties.url
-    @tab = properties.tab
-    @date = properties.date
-    @visits = properties.visits
+    @domain = properties.domain
+    @time = properties.time
     @title = properties.title
-    @referrer = properties.referrer
     @vector = properties.vector
     @topics = properties.topics
     @topic_vector = properties.topic_vector
     @size = properties.size
-    @note = properties.note
+    @notes = properties.notes
     @color = properties.color
-    @importance = properties.importance
     @depth = properties.depth
     @height = properties.height
-    @position = properties.position
     @favorite = properties.favorite
-    @ref = properties.ref

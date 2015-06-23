@@ -1,6 +1,6 @@
 ###
 #
-# Table for tracking page level events. 
+# Table for tracking page level events. We associated this with a pageVisit -- b/c someone could be using a page differently # between different visits 
 #
 ###
 
@@ -8,11 +8,11 @@ class PageEvent extends Base
   constructor: (params) ->
     properties = _.extend({
       type: 'scrollPostion' # Enum of ['scrollPosition']
-      page: '' # Page this is associated with 
+      pageVisit: '' # The particular visit to a page we are recording events for 
       data: '' #Field depends on the above type
       time: Date.now()
     }, params)
     @type = properties.type
-    @page = properties.page
+    @pageVisit = properties.pageVisit
     @data = properties.data
     @time = properties.time

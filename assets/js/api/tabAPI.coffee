@@ -9,12 +9,12 @@ class Tab extends Base
     properties = _.extend({
       tab: -1
       windowId: -1
-      openerTabId: -1
+      openerTab: -1
       position: 0
       session: '' #the 
-      page: '' #The page ID of the current page it is on
+      pageVisit: '' #The pageVisit that is currently active
       status: 'active' # This is an enum: ['active', 'stored', 'closed']
-      task: '' #The ID of the task this tab is associated with
+      task: '' #The ID of the task this tab is associated with (TODO blank is newTab page i guess??)
       date: Date.now()
     }, params)
     @tab = properties.tab
@@ -34,11 +34,8 @@ class Tab extends Base
       
   @findByTabId: (tabId) ->
     db.Tab.where('tab').equals(tabId).and((val) -> val.status is 'active').first()
-    
-  #TODO have more complex heuristics, etc for getting an existing task
-  generateTask: () ->
-    task = new Task({name: 'Unknown'+Math.random()*10000, hidden: true})
-    task.save()
+   
+  
   
     
     

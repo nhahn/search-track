@@ -30,3 +30,6 @@ class Base
       
   @fillAssociations: (objs, name) ->
     Promise.map(objs, (obj) -> obj.fillAssociation(name))
+    
+  delete: () ->
+    this.table().delete(@id)

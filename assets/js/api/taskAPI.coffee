@@ -31,6 +31,11 @@ class Task extends Base
     return db.Task.put(this).then (id) =>
       return this
 
+    #TODO have more complex heuristics, etc for getting an existing task
+  @generateTask: () ->
+    task = new Task({name: 'Unknown'+Math.random()*10000, hidden: true})
+    task.save()
+
   cleanUp: () ->
     chrome.windows.getCurrentAsync({populate: true}).then (window) =>
       # Record the position of each tab in the window

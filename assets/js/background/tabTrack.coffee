@@ -2,27 +2,28 @@ recordAction = (tab, action, from, to) ->
   data = new TabEvent({type: action, tab: tab.id, from: from, to: to})
   data.save()
 
-createTabEntry = (tab) ->
+createTabEntry = (chromeTab) ->
   #We opened this from another tab -- associate it with that task
   resolve = []
   tab = new Tab({
-    tab: tab.id
-    windowId: tab.windowId
-    position: tab.index
+    tab: chromeTab.id
+    windowId: chromeTab.windowId
+    position: chromeTab.index
   })
-  if (tab.openerTabId >= 0)
-    resolve.push Tab.findByTabId(tab.openerTabId).then (existingTab) ->
-      throw new RecordMissingError("Can't find tab for id #{tab.openerTabId}") if !tab
+  if (chromeTab.openerTabId >= 0)
+    resolve.push Tab.findByTabId(chromeTab.openerTabId).then (existingTab) ->
+      throw new RecordMissingError("Can't find tab for id #{chromeTab.openerTabId}") if !tab
+      tab.openerTab = existingTab.id
       return existingTab.task
   else
-    resolve.push tab.generateTask().then (task) ->
+    resolve.push Task.generateTask().then (task) ->
       return task.id
       
   Promise.all(resolve).spread (task) ->
     tab.task = task
     tab.save()
   .then (tab) ->
-    recordAction(tab, 'created', tab.openerTabId, '')
+    recordAction(tab, 'created', tab.openerTab, tab.id)
   .catch RecordMissingError, (err) ->
     Logger.warn(err)
   .catch (err) ->
@@ -66,7 +67,7 @@ chrome.tabs.onMoved.addListener (tabId, moveInfo) ->
   Tab.findByTabId(tabId).then (tab) ->
     throw new RecordMissingError("Can't find tab for id #{tabId}") if !tab
     oldPosition = tab.position
-    tab.position = attachInfo.toIndex
+    tab.position = moveInfo.toIndex
     tab.save()
   .then (tab) ->
     recordAction(tab, 'moved', tab.fromIndex, tab.position)
@@ -92,13 +93,12 @@ chrome.tabs.onRemoved.addListener (tabId, removeInfo) ->
 chrome.tabs.onActivated.addListener (activeInfo) ->
   Promise.all([
     Tab.findByTabId(activeInfo.tabId)
-    db.TabEvent.orderBy('time').reverse().and((val) -> val.action == 'focus').first()
+    db.TabEvent.orderBy('time').reverse().and((val) -> val.type == 'tabFocus').first()
   ]).spread (newTab, oldTab) ->
     throw new RecordMissingError("Can't find tab for id #{activeInfo.tabId}") if !newTab
-    oldTab = {id: -1} if !oldTab
-    if newTab.id != oldTab.id
-      recordAction(newTab, 'tabFocus', oldTab.id, newTab.id).then () ->
-        
+    oldTab = {to: -1} if !oldTab
+    if newTab.id != oldTab.to
+      recordAction(newTab, 'tabFocus', oldTab.to, newTab.id).then () ->
   .catch RecordMissingError, (err) ->
     Logger.warn(err)
   .catch (err) ->
@@ -107,7 +107,7 @@ chrome.tabs.onActivated.addListener (activeInfo) ->
 chrome.windows.onFocusChanged.addListener (windowId) ->
   #Chrome has lost focus -- record that?
   if windowId == chrome.windows.WINDOW_ID_NONE
-    db.TabEvent.orderBy('time').reverse().and((val) -> val.action == 'focus').first().then (oldTab) ->
+    db.TabEvent.orderBy('time').reverse().and((val) -> val.type == 'windowFocus').first().then (oldTab) ->
       throw new RecordMissingError("No older focus events") if !oldTab
       recordAction({id: -1}, 'windowFocus', oldTab.to, -1)
     .catch RecordMissingError, (err) ->
@@ -118,11 +118,12 @@ chrome.windows.onFocusChanged.addListener (windowId) ->
     chrome.tabs.queryAsync({active: true, windowId: windowId, currentWindow: true}).then (tabs) ->
       if tabs.length > 0
         Promise.all([
-          db.TabEvent.orderBy('time').reverse().and((val) -> val.action == 'focus').first()
+          db.TabEvent.orderBy('time').reverse().and((val) -> val.type == 'windowFocus').first()
           Tab.findByTabId(tabs[0].id)
         ]).spread (oldFocus, tab) ->
           throw new RecordMissingError("Can't find tab for id #{tabs[0].id}") if !tab
           oldFocus = {to: -1} if !oldFocus
+          return if windowId == oldFocus.to # This happens if we devtools
           recordAction(tab, 'windowFocus', oldFocus.to, windowId)
     .catch RecordMissingError, (err) ->
       Logger.warn(err)
@@ -146,7 +147,7 @@ startupCheck = () ->
     Promise.map tabs, (tab) ->
       Tab.findByTabId(tab.id).then (existingTab) ->
         if existingTab
-          return existing Tab
+          return existingTab
         else
           createTabEntry(tab)
     .then (tabs) ->

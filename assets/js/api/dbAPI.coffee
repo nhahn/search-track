@@ -77,9 +77,10 @@ document.addEventListener "DOMContentLoaded", (event) ->
   db.version(1).stores({
     Search: '$$id,&name,*tabs,task' #Searches from Google we are tracking
     Task: '$$id,name,*pages' #table of tasks
-    Page: '$$id,url,tab' #Pages we are keeping info on
+    Page: '$$id,url' #Pages we are keeping info on
+    PageVisit: '$$id,tab,task,page,referrer' #Visits to individual pages
+    PageEvent: '$$id,pageVisit,type,time' #Events for a specific visit to a page
     Tab: '$$id,tab,task' # Tabs we are watching
-    PageEvent: '$$id,page,type,time' #Events in a page we are recording
     TabEvent: '$$id,tab,type,time' #Tab-specific events
     # SavedInfo: '$$id,importance,time' # database for information that user marks as "for later"
   })
@@ -90,6 +91,7 @@ document.addEventListener "DOMContentLoaded", (event) ->
   db.Tab.mapToClass(window.Tab)
   db.TabEvent.mapToClass(window.TabEvent)
   db.PageEvent.mapToClass(window.PageEvent)
+  db.PageVisit.mapToClass(window.PageVisit)
 
   db.open()
   
