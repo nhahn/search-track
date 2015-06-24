@@ -40,10 +40,10 @@ All external packages are downloaded and placed in the `vendor` directory using 
 
 ### Style
 
-The application features, and heavily uses, Promies per the [Bluebird](https://github.com/petkaantonov/bluebird) library. This means that most functions built out in this application return a promise for their operations, rather than featuring a callback. Additionally, many of the Chrome APIs have been wrapper, and feature promisified versions (specifically, [tabs](https://developer.chrome.com/extensions/tabs), [sessions](https://developer.chrome.com/extensions/sessions), [history](https://developer.chrome.com/extensions/history), and [windows](https://developer.chrome.com/extensions/windows)). For more information on how to use promises, please see the [Bluebird API documentation](https://github.com/petkaantonov/bluebird/blob/master/API.md). 
+The application features, and heavily uses, Promies per the [Bluebird](https://github.com/petkaantonov/bluebird) library. This means that most functions built out in this application return a promise for their operations, rather than featuring a callback. Additionally, many of the Chrome APIs have been wrapped, and feature promisified versions (specifically, [tabs](https://developer.chrome.com/extensions/tabs), [sessions](https://developer.chrome.com/extensions/sessions), [history](https://developer.chrome.com/extensions/history), and [windows](https://developer.chrome.com/extensions/windows)). For more information on how to use promises, please see the [Bluebird API documentation](https://github.com/petkaantonov/bluebird/blob/master/API.md). 
 
 ### Pieces
-The application is divided into two working parts. A background service that manages the searches, and a front-end companion that provides some real-time information from the service. 
+The application is divided into two working parts. A background service that manages the tabs, pages, searches, etc., and a front-end companion that provides some real-time information from the service. 
 
 #### DB APIs
  In order to manage the large amount of information this application records, we use a flavor of [IndexDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) called Dexie.js. All of the files associated with the db api can be found in the `assets/js/api` folder. The various tables and keys are setup in `dbApi.coffee` file. Additionally, for each table, there is a Javascript class defined, with various instance and class methods. These are:
@@ -76,7 +76,4 @@ Dependencies
 This application relies on a couple of dependencies. The core functionality depends on [Dexie.js](http://www.dexie.org) as an IndexDB wrapper and
 [Bluebird](https://github.com/petkaantonov/bluebird) for Promises. 
 
-The front-end application uses [AngularJS](https://angularjs.org) to create a real-time application and 
-[Underscore.js](http://underscorejs.org/) to perform some data processing on the results returned from the back-end service.
-There are some additional dependencies that provide the tree graphic ([D3](http://d3js.org)), integration with Twitter Bootstrap ([Angular-Bootstrap](http://angular-ui.github.io/bootstrap/)),
-URI processing ([URI.js](http://medialize.github.io/URI.js/)) and, of course, [jQuery](http://jquery.com). 
+The front-end application uses [AngularJS](https://angularjs.org) to create a real-time application and [Underscore.js](http://underscorejs.org/) to perform some data processing on the results returned from the back-end service. There are some additional dependencies that provide the tree graphic ([D3](http://d3js.org)), integration with Twitter Bootstrap ([Angular-Bootstrap](http://angular-ui.github.io/bootstrap/)), URI processing ([URI.js](http://medialize.github.io/URI.js/)) and, of course, [jQuery](http://jquery.com). 

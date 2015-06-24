@@ -28,7 +28,7 @@
     "riveted" : "*",
     "screentime": "robflaherty/screentime",
     "cryptojslib": "*",
-    "dexie": "~1.0.4",
+    "dexie": "~1.1",
     "angular-dexie-bind": "nhahn/angular-dexie-bind",
     "js-logger": "~1.0.0",
     "angular-filter": "~0.5.4",

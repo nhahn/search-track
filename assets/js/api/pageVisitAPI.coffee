@@ -12,8 +12,9 @@ class PageVisit extends Base
       tab: '' # The tab this page was visited from
       task: '' #The "task" this particular visit was associated with. A page could be associated with different tasks!!
       referrer: '' #If a another page "referred" us here, we record the previous pageEvent that did so (so we keep track of tasks)
-      type: '' #Enum of navigation ['forward', 'back', 'link', 'typed']
+      type: '' #Enum of navigation ['forward', 'back', 'link', 'typed', 'navigation']
       time: Date.now() #When this visit occured
+      fragment: '' #The hash(#) fragment we 
     }, params)
     @page = properties.page
     @tab = properties.tab
@@ -21,6 +22,7 @@ class PageVisit extends Base
     @referrer = properties.referrer
     @type = properties.type
     @time = properties.time
+    @fragment = properties.fragment
     
   @forPage: (pageId) ->
     db.PageVisit.where('page').equals(pageId)

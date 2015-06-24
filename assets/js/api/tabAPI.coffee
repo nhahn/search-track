@@ -22,6 +22,7 @@ class Tab extends Base
     @openerTabId = properties.openerTabId
     @position = properties.position
     @session = properties.session
+    @pageVisit = properties.pageVisit
     @status = properties.status
     @date = properties.date
     

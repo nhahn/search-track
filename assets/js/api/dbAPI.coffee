@@ -71,29 +71,28 @@ dbMethods = (() ->
 #
 ###
 
-document.addEventListener "DOMContentLoaded", (event) ->
-  db_changes = chrome.runtime.connect {name: 'db_changes'}
-  window.db = new Dexie('searchTrack')
-  db.version(1).stores({
-    Search: '$$id,&name,*tabs,task' #Searches from Google we are tracking
-    Task: '$$id,name,*pages' #table of tasks
-    Page: '$$id,url' #Pages we are keeping info on
-    PageVisit: '$$id,tab,task,page,referrer' #Visits to individual pages
-    PageEvent: '$$id,pageVisit,type,time' #Events for a specific visit to a page
-    Tab: '$$id,tab,task' # Tabs we are watching
-    TabEvent: '$$id,tab,type,time' #Tab-specific events
-    # SavedInfo: '$$id,importance,time' # database for information that user marks as "for later"
-  })
+db_changes = chrome.runtime.connect {name: 'db_changes'}
+window.db = new Dexie('searchTrack')
+db.version(1).stores({
+  Search: '$$id,&name,*tabs,task' #Searches from Google we are tracking
+  Task: '$$id,name,*pages' #table of tasks
+  Page: '$$id,url' #Pages we are keeping info on
+  PageVisit: '$$id,tab,task,page,referrer' #Visits to individual pages
+  PageEvent: '$$id,pageVisit,type,time' #Events for a specific visit to a page
+  Tab: '$$id,tab,task' # Tabs we are watching
+  TabEvent: '$$id,tab,type,time' #Tab-specific events
+  # SavedInfo: '$$id,importance,time' # database for information that user marks as "for later"
+})
 
-  db.Page.mapToClass(window.Page)
-  db.Search.mapToClass(window.Search)
-  db.Task.mapToClass(window.Task)
-  db.Tab.mapToClass(window.Tab)
-  db.TabEvent.mapToClass(window.TabEvent)
-  db.PageEvent.mapToClass(window.PageEvent)
-  db.PageVisit.mapToClass(window.PageVisit)
+db.Page.mapToClass(window.Page)
+db.Search.mapToClass(window.Search)
+db.Task.mapToClass(window.Task)
+db.Tab.mapToClass(window.Tab)
+db.TabEvent.mapToClass(window.TabEvent)
+db.PageEvent.mapToClass(window.PageEvent)
+db.PageVisit.mapToClass(window.PageVisit)
 
-  db.open()
+db.open()
   
 ###
 #
