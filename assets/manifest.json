@@ -6,7 +6,7 @@
   "version": "0.1",
   "permissions": [
     "tabs",
-    "storage",
+    // "storage",
     "activeTab",
     "notifications",
     "history",
@@ -19,12 +19,11 @@
   "background": {
     "page": "html/background.html",
     "persistent": true
-  }, 
-  "content_security_policy": "script-src 'self' https://ajax.googleapis.com https://cdn.rawgit.com https://cdnjs.cloudflare.com https://maxcdn.bootstrapcdn.com; object-src 'self'",
+  },
+  // "content_security_policy": "script-src 'self' https://ajax.googleapis.com https://cdn.rawgit.com https://cdnjs.cloudflare.com https://maxcdn.bootstrapcdn.com; object-src 'self'",
   "content_scripts": [{
     "matches": ["http://*/*", "https://*/*"],
     "js": ["/vendor/jquery/dist/jquery.min.js","/vendor/angular/angular.min.js","/js/content/injectsidebar.js"],
-    "all_frames":true,
     "run_at": "document_start"
   }],
   "web_accessible_resources": ["html/popup.html",

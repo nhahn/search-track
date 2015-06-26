@@ -20,20 +20,74 @@
 // Figure out best throttle interval.
 // BUG: Uncaught TypeError: Cannot read property 'clientWidth' of null
 // BUG: doesn't work on first injection after extension loads, for many different errors (maybe due to race conditions)
-// CWO: integrate wtih search-track. inject sidebar when you open a link in a new tab (not an update)
+// CWO: integrate wtih search-track. 
 
-
-var listApp = angular.module('listApp', ['ui.tree'], function($compileProvider) {
-// content security to display favicons
+var listApp = angular.module('listApp', ['ngDraggable'], function($compileProvider) {
+/* content security to display favicons, is this needed?
 $compileProvider.imgSrcSanitizationWhitelist(/^\s*(http?|ftp|file|chrome-extension):|data:image\//);
 $compileProvider.aHrefSanitizationWhitelist(/^\s*(http?|ftp|mailto|file|chrome-extension):/);
 $compileProvider.imgSrcSanitizationWhitelist(/^\s*(https?|ftp|file|chrome-extension):|data:image\//);
 $compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|file|chrome-extension):/);
+*/
 });
 
-console.log($('#column1'));
-console.log(document.getElementById('column1'));
+listApp.controller('ColCtrl1', function ($scope) {
+  $scope.draggableObjects = [
+    {name: 'one'},
+    {name: 'two'},
+    {name: 'three'},
+    {name: 'four'},
+    {name: 'five'},
+    {name: 'six'},
+    {name: 'seven'},
+    {name: 'eight'},
+    {name: 'nine'}
+  ],
+ 
+  $scope.onDropComplete = function(index, obj, evt){
+    var otherObj = $scope.draggableObjects[index];
+    var otherIndex = $scope.draggableObjects.indexOf(obj);
+    $scope.draggableObjects[index] = obj;
+    $scope.draggableObjects[otherIndex] = otherObj;
+  }
+});
 
+listApp.controller('ColCtrl2', function ($scope) {
+  $scope.draggableObjects = [
+    {name: 'one'},
+    {name: 'two'},
+    {name: 'three'},
+    {name: 'four'},
+    {name: 'five'},
+    {name: 'six'},
+    {name: 'seven'},
+    {name: 'eight'},
+    {name: 'nine'}
+  ],
+ 
+  $scope.onDropComplete = function(index, obj, evt){
+    var otherObj = $scope.draggableObjects[index];
+    var otherIndex = $scope.draggableObjects.indexOf(obj);
+    $scope.draggableObjects[index] = obj;
+    $scope.draggableObjects[otherIndex] = otherObj;
+  }
+});
+
+listApp.controller('BorderCtrl', function ($scope) {
+  $scope.draggableObjects = [
+    {name: 'one'},
+    {name: 'two'},
+    {name: 'three'},
+    {name: 'four'}
+  ],
+ 
+  $scope.onDropComplete = function(index, obj, evt){
+    var otherObj = $scope.draggableObjects[index];
+    var otherIndex = $scope.draggableObjects.indexOf(obj);
+    $scope.draggableObjects[index] = obj;
+    $scope.draggableObjects[otherIndex] = otherObj;
+  }
+});
 
 
 /* OLD STUFF, may need later */
