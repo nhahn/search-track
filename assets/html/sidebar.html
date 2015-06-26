@@ -1,120 +1,143 @@
-<!-- INJECTED SIDEBAR CODE - FORAGER --> 
 <html ng-csp>
 
-<body ng-app="listApp" ng-controller="MainCtrl">
+<head>
+ <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css"></script>
+ <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+ <script src="https://cdn.rawgit.com/dfahlander/Dexie.js/master/dist/latest/Dexie.min.js"></script>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/bluebird/2.9.30/bluebird.min.js"></script>
+ <script src="https://cdn.rawgit.com/jonnyreeves/js-logger/master/src/logger.min.js"></script>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+ <script src="/js/trackAPI.js"></script>
+ <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular.min.js"></script>
+ <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+</head>
 
-<div class="esotericsidebarname no-print">
-<div class="esotericbordername">
-  <!-- <span class='esotericreload' id='esotericreload'>Reload</span> -->
-  <span class='esotericremove' id='esotericremove'>Remove</span>
+<body ng-app="listApp" ng-controller="MainCtrl" class="no-print">
+
+<div class="border">
+  <!-- <span class='reload' id='reload'>Reload</span> -->
+  <!-- <span class='remove' id='remove'>Remove</span> -->
 </div>
+
 <div class="semitrans"></div>
 
 <div class="ontop">
-<br>
+<div class="row" id="row">
+  <!-- Column 1 -->
+  <div class="col-md-4 col-xs-4"><div id="column1" class="column">
+    <div class="wrapper">
+      <div class='col-md-8 col-xs-8 bucketname'>Bucket 1</div>
+      <div class='col-md-1 col-xs-1 btn massdelete'><span class="glyphicon glyphicon-remove" aria-hidden="true"></div>
+      <div class='col-md-1 col-xs-1 btn save'><span class="glyphicon glyphicon-camera" aria-hidden="true"></div>
+      <div class='col-md-1 col-xs-1 btn search'><span class="glyphicon glyphicon-search" aria-hidden="true"></span></div>
+      <div class='col-md-1 col-xs-1 btn share'><span class="glyphicon glyphicon-share" aria-hidden="true"></div>
+    </div>
+    <div class="col-md-4 col-xs-4 innercol" colid="0"></div>
+    <div class="col-md-4 col-xs-4 innercol" colid="1"></div>
+    <div class="col-md-4 col-xs-4 innercol" colid="2"></div>
+    <div class="col-md-4 col-xs-4 innercol" colid="3"></div>
+    <div class="col-md-4 col-xs-4 innercol" colid="4"></div>
+    <div class="col-md-4 col-xs-4 innercol" colid="5"></div>
+    <div class="col-md-4 col-xs-4 innercol" colid="6"></div>
+    <div class="col-md-4 col-xs-4 innercol" colid="7"></div>
+    <div class="col-md-4 col-xs-4 innercol" colid="8"></div>
+  </div></div>
 
-<div class="row" id="esotericrowname">
+  <!-- Column 3 -->
+  <div class="col-md-4 col-xs-4"><div id="column3" class="column">
+    <textarea id="textbox"></textarea>
+  </div></div>
 
-	<!-- Column 1 -->
-	<div class="col-md-4 col-xs-4"><div id="esotericcolumn1" >
-    <div class="col-md-4 col-xs-4 esotericinnercol" colid="0"></div>
-    <div class="col-md-4 col-xs-4 esotericinnercol" colid="1"></div>
-    <div class="col-md-4 col-xs-4 esotericinnercol" colid="2"></div>
-    <div class="col-md-4 col-xs-4 esotericinnercol" colid="3"></div>
-    <div class="col-md-4 col-xs-4 esotericinnercol" colid="4"></div>
-    <div class="col-md-4 col-xs-4 esotericinnercol" colid="5"></div>
-    <div class="col-md-4 col-xs-4 esotericinnercol" colid="6"></div>
-    <div class="col-md-4 col-xs-4 esotericinnercol" colid="7"></div>
-    <div class="col-md-4 col-xs-4 esotericinnercol" colid="8"></div>
-    <!-- Bootstrap glyphicons don't work -->
-    <div class='col-md-3 col-xs-3 btn esotericbuttonname esotericmassdelete'>Delete All</div>
-    <div class='col-md-3 col-xs-3 btn esotericbuttonname'>Hide</div>
-    <div class='col-md-3 col-xs-3 btn esotericbuttonname'>Search</div>
-    <div class='col-md-3 col-xs-3 btn esotericbuttonname esotericbucketname'><b>Bucket 1</b></div>
-	</div></div>
-
-	<!-- Column 2 -->
-	<div class="col-md-4 col-xs-4"><div id="esotericcolumn2">
-    <div class="col-md-4 col-xs-4 esotericinnercol" colid="0"></div>
-    <div class="col-md-4 col-xs-4 esotericinnercol" colid="1"></div>
-    <div class="col-md-4 col-xs-4 esotericinnercol" colid="2"></div>
-    <div class="col-md-4 col-xs-4 esotericinnercol" colid="3"></div>
-    <div class="col-md-4 col-xs-4 esotericinnercol" colid="4"></div>
-    <div class="col-md-4 col-xs-4 esotericinnercol" colid="5"></div>
-    <div class="col-md-4 col-xs-4 esotericinnercol" colid="6"></div>
-    <div class="col-md-4 col-xs-4 esotericinnercol" colid="7"></div>
-    <div class="col-md-4 col-xs-4 esotericinnercol" colid="8"></div>
-    <div class='col-md-3 col-xs-3 btn esotericbuttonname esotericmassdelete'>Delete All</div>
-    <div class='col-md-3 col-xs-3 btn esotericbuttonname'>Hide</div>
-    <div class='col-md-3 col-xs-3 btn esotericbuttonname'>Search</div>
-    <div class='col-md-3 col-xs-3 btn esotericbuttonname esotericbucketname'><b>Bucket 2</b></div>
-	</div></div> 
-
-	<!-- Column 3 -->
-	<div class="col-md-4 col-xs-4"><div id="esotericcolumn3">
-  <textarea id="esoterictextbox"></textarea>
-	</div></div>
-
+  <!-- Column 2 -->
+  <div class="col-md-4 col-xs-4"><div id="column2" class="column">
+    <div class="wrapper">
+      <div class='col-md-8 col-xs-8 bucketname'>Bucket 2</div>
+      <div class='col-md-1 col-xs-1 btn massdelete'><span class="glyphicon glyphicon-remove" aria-hidden="true"></div>
+      <div class='col-md-1 col-xs-1 btn save'><span class="glyphicon glyphicon-camera" aria-hidden="true"></div>
+      <div class='col-md-1 col-xs-1 btn search'><span class="glyphicon glyphicon-search" aria-hidden="true"></span></div>
+      <div class='col-md-1 col-xs-1 btn share'><span class="glyphicon glyphicon-share" aria-hidden="true"></div>
+    </div>
+    <div class="col-md-4 col-xs-4 innercol" colid="0"></div>
+    <div class="col-md-4 col-xs-4 innercol" colid="1"></div>
+    <div class="col-md-4 col-xs-4 innercol" colid="2"></div>
+    <div class="col-md-4 col-xs-4 innercol" colid="3"></div>
+    <div class="col-md-4 col-xs-4 innercol" colid="4"></div>
+    <div class="col-md-4 col-xs-4 innercol" colid="5"></div>
+    <div class="col-md-4 col-xs-4 innercol" colid="6"></div>
+    <div class="col-md-4 col-xs-4 innercol" colid="7"></div>
+    <div class="col-md-4 col-xs-4 innercol" colid="8"></div>
+  </div></div> 
 </div>
-</div>
+
+
+<script src="/js/content/sidebar.js"></script>
 
 <style>
 @media print
 {    
   .no-print, .no-print *
   {
-    display: none !important;
+    display: none ;
   }
 }
 
-#esotericcolumn1 {
-  height: 240px !important;
+body {
+  margin: 0;
+  overflow: hidden;
+}
+.row {
+  margin-top: 20px;
+}
+.wrapper {
+  height: 24px;
+  border-top-right-radius: 5px;
+  border-top-left-radius: 5px;
+}
+.btn, .bucketname {
+  padding: 0;
+}
+.bucketname {
+  padding-left: 4px;
+}
+.column {
+  height: 150px;
   width: 100%;
   background-color: rgba(240,248,255,0.92);
-  border: 1.5px solid lightgray;
+  border: 1px solid rgb(153,151,154);
+  border-top-right-radius: 5px;
+  border-top-left-radius: 5px;
 }
-#esotericcolumn2 {
-  height: 240px !important;
-  width: 100%;
-  background-color: rgba(240,248,255,0.92);
-  border: 1.5px solid lightgray;
+#column3 {
+  border-bottom-right-radius: 5px;
+  border-bottom-left-radius: 5px;
 }
-#esotericcolumn3 {
-  height: 240px !important;
-  background-color: rgba(240,248,255,0.92);
-  border: 1.5px solid lightgray;
-}
-#esoterictextbox {
+#textbox {
   height: 100%;
   width: 100%;
   resize: none;
   border: 0px;
   background-color: rgba(0,0,0,0);
-  font-size: 14px !important;
-  font-size: 1.25vw !important;
+  font-size: 14px;
   padding: 5px;
   font-family: arial;
 }
-.esotericinnercol {
-  height: 33.33333333%;
-  border: 1px solid rgba(199,199,199,0.85);
+.innercol {
+  height: 42px;
+  /* border: 1px solid rgb(153,151,154); */
 }
-#esotericfavicon {
-  height: 1.15vw;
-}
-.esotericdelete {
+.delete {
   cursor: pointer;
-  height:4px !important;
-  width:13px !important;
+  height:4px;
+  width:13px;
 }
-.esotericbuttonname {
-  font-size: 0.8vw !important;
-  padding: 0 !important;
+.button {
+  font-size: 0.8vw ;
+  padding: 0 ;
 	background: rgba(222,219,221,0.85);
-  border-radius: 0px !important;
-  border: 1px solid rgba(199,199,199,0.85) !important;
-  font-color: black !important;
-  font-weight: normal !important; 
+  border-radius: 0px ;
+  border: 1px solid rgba(199,199,199,0.85) ;
+  font-color: black ;
+  font-weight: normal ; 
 }
 
 /* Dragging style */
@@ -126,7 +149,7 @@
   background-color: rgba(219,217,219,1);
 	font-size: 8px;
 	font-size: 1vw;
-	line-height: 1.15vw;
+	line-height: 15px;
   color: black; 
   border: 1.5px solid lightgray;
   padding: 2%;
@@ -161,38 +184,19 @@
 /* General sidebar style 
  * Adapted from software-made.blogspot.com 
  */
-.esotericsidebarname a {
-  font-weight: normal !important;
-  padding-right: 2px;
-}
-.esotericsidebarname {
-  font: arial !important;
-	height:275px;  
-	/*margin:0;*/
-	position: fixed; 
-	width: 100%;
-	z-index: 10000;
-	bottom:-260px;
- /* For IE 8 */
- -ms-filter: "progid:DXImageTransform.Microsoft.Shadow(Strength=4, Direction=135, Color='#000000')";
-}
-.esotericsidebarname a {
-	color: black;
-}
-.esotericbordername {
+.border {
 	height:20px;
 	width:100%;
-	background: rgba(222,219,221,0.85);
-  border-top: 1px solid rgba(163,163,163,1);
-  border-bottom: 1px solid rgba(163,163,163,1);
+	background: rgba(234,232,234,1);
+  border-bottom: 1px solid rgb(153,151,154);
   font-size: 12px;
   text-align: right;
-  padding: 0 !important;
+  padding: 0 ;
   font-size:1.1vw;
-  vertical-align: top !important;
-  color: black !important;
+  vertical-align: top ;
+  color: black ;
 }
-.esotericbordername span {
+.border span {
   padding-right: 3px;
   cursor: pointer;
 }
@@ -201,21 +205,21 @@
 	/*This was to account for some websites having lower bottoms: */
 	/*border-top:30px solid #cccccc; */
 	width: 100%; 
-	background: rgba(234,234,234,0.9);
-	height: 275px;
+	/* background: rgba(234,234,234,0.9); */
+	background: rgb(221,219,221);
+	height: 170px;
 }
  
 .ontop{
 	/*padding-top:30px;*/
   z-index: 10001;
-	opacity: 1 !important;
-	height: 100% !important;
+	opacity: 1 ;
+	width: 100%;
 	padding-left: 5%;
 	padding-right: 5%;
-	width: 100%;
 	position: absolute;
 	color: black;
-	top:15px;
+	top:10px;
 }
 
 </style>
@@ -224,4 +228,3 @@
 
 </html>
 
-<!-- END SIDEBAR -->
