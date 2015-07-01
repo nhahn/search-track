@@ -39,9 +39,6 @@ listApp.controller('ColCtrl1', function ($scope) {
     {name: 'four'},
     {name: 'five'},
     {name: 'six'},
-    {name: 'seven'},
-    {name: 'eight'},
-    {name: 'nine'}
   ],
  
   $scope.onDropComplete = function(index, obj, evt){
@@ -60,9 +57,6 @@ listApp.controller('ColCtrl2', function ($scope) {
     {name: 'four'},
     {name: 'five'},
     {name: 'six'},
-    {name: 'seven'},
-    {name: 'eight'},
-    {name: 'nine'}
   ],
  
   $scope.onDropComplete = function(index, obj, evt){

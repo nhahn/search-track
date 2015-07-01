@@ -4,7 +4,7 @@
 
 if (typeof injected === 'undefined') {
   // Inject HTML for sidebar if it hasn't been injected already
-  var $app = $('<!-- INJECTED SIDEBAR --> <iframe id="injectedsidebar" style="position:fixed;z-index:2147483645;height:195px;bottom:0;width:100%;font-family:arial;padding:0;background-color:rgba(221,219,221,0.9);border:none;border-top:1px solid rgb(103,103,103);" sandbox="allow-same-origin allow-scripts allow-popups" src="' + chrome.extension.getURL('/html/sidebar.html') + '"></iframe> <!-- END SIDEBAR-->').appendTo('html');
+  var $app = $('<!-- INJECTED SIDEBAR --> <iframe id="injectedsidebar" style="position:fixed;z-index:2147483645;height:153px;bottom:0;width:100%;font-family:arial;padding:0;background-color:rgba(221,219,221,0.9);border:none;border-top:1px solid rgb(103,103,103);" sandbox="allow-same-origin allow-scripts allow-popups" src="' + chrome.extension.getURL('/html/sidebar.html') + '"></iframe> <!-- END SIDEBAR-->').appendTo('html');
 	injected = true;
 
   // Listeners from forager.js
@@ -12,9 +12,9 @@ if (typeof injected === 'undefined') {
     function(request, sender, sendResponse) {
       if (request.open) {
         if ($('#injectedsidebar').css('bottom') == '0px') {
-          $('#injectedsidebar').animate({"bottom": "-=160px"});
+          $('#injectedsidebar').animate({"bottom": "-=118px"});
         } else {
-          $('#injectedsidebar').animate({"bottom": "+=160px"}); 
+          $('#injectedsidebar').animate({"bottom": "+=118px"}); 
         }
       }
   });
