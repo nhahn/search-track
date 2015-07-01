@@ -89,6 +89,17 @@ listApp.controller('BorderCtrl', function ($scope) {
   }
 });
 
+$(document).ready(function() {
+  $('#blacklist').click(function() {
+    // add this page to blacklist, because we're sandboxed we have to tell background page
+    chrome.runtime.sendMessage({blacklist:true}); 
+    chrome.runtime.sendMessage({removeSidebar:true}); 
+  });
+
+  $('#remove').click(function() {
+    chrome.runtime.sendMessage({removeSidebar:true}); 
+  });
+});
 
 /* OLD STUFF, may need later */
 /*

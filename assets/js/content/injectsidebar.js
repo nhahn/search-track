@@ -12,9 +12,9 @@ if (typeof injected === 'undefined') {
     function(request, sender, sendResponse) {
       if (request.open) {
         if ($('#injectedsidebar').css('bottom') == '0px') {
-          $('#injectedsidebar').animate({"bottom": "-=165px"});
+          $('#injectedsidebar').animate({"bottom": "-=160px"});
         } else {
-          $('#injectedsidebar').animate({"bottom": "+=165px"}); 
+          $('#injectedsidebar').animate({"bottom": "+=160px"}); 
         }
       }
   });
