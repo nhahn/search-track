@@ -39,7 +39,7 @@ class Base
   capitalize = (s) ->
     s.charAt(0).toUpperCase() + s.substring(1).toLowerCase()
   
-  @forId: (id) ->
+  @find: (id) ->
     return this.table().get(id).then (obj) ->
       return obj
   
@@ -51,7 +51,7 @@ class Base
 #
 ###
 
-# TODO define some of these parameters????? 
+# TODO define some of these parameters?
 
 class Page extends Base
   constructor: (params) ->
@@ -61,6 +61,7 @@ class Page extends Base
       query: ''
       url: ''
       domain: ''
+      fragmentless: ''
       time: Date.now()
       title: ''
       vector: {} 
@@ -78,6 +79,7 @@ class Page extends Base
     @query = properties.query
     @url = properties.url
     @domain = properties.domain
+    @fragmentless = properties.fragmentless
     @time = properties.time
     @title = properties.title
     @vector = properties.vector
@@ -89,6 +91,19 @@ class Page extends Base
     @depth = properties.depth
     @height = properties.height
     @favorite = properties.favorite
+
+  @generatePage: (url) ->
+    uri = new URI(url)
+    fragment = uri.fragment()
+    uri.fragment("")
+    query = ''
+    #Check if it is a Google search
+    matches = url.match(/www\.google\.com\/.*q=(.*?)($|&)/)
+    if matches != null
+      query = decodeURIComponent(matches[1].replace(/\+/g, ' '))
+    
+    page = new Page({url: url, domain: uri.domain(), fragmentless: uri.toString(), query: query, isSearch: if query != "" then true else false})
+    page.save()
 
 ###
 #
@@ -124,7 +139,6 @@ class PageVisit extends Base
       referrer: '' #If a another page "referred" us here, we record the previous pageEvent that did so (so we keep track of tasks)
       type: '' #Enum of navigation ['forward', 'back', 'link', 'typed', 'navigation']
       time: Date.now() #When this visit occured
-      fragment: '' #The hash(#) fragment we 
     }, params)
     @page = properties.page
     @tab = properties.tab
@@ -132,7 +146,6 @@ class PageVisit extends Base
     @referrer = properties.referrer
     @type = properties.type
     @time = properties.time
-    @fragment = properties.fragment
     
   @forPage: (pageId) ->
     db.PageVisit.where('page').equals(pageId)
@@ -253,7 +266,7 @@ class Tab extends Base
       position: 0
       session: '' #the 
       pageVisit: '' #The pageVisit that is currently active
-      status: 'active' # This is an enum: ['active', 'stored', 'closed']
+      status: 'active' # This is an enum: ['active', 'stored', 'closed', 'temp']
       task: '' #The ID of the task this tab is associated with (TODO blank is newTab page i guess??)
       date: Date.now()
     }, params)
@@ -314,6 +327,7 @@ class Task extends Base
     @name = properties.name
     @dateCreated = properties.dateCreated
     @order = properties.order
+    @hidden = properties.hidden
 
 
   ###
@@ -334,10 +348,24 @@ class Task extends Base
     return db.Task.put(this).then (id) =>
       return this
 
-    #TODO have more complex heuristics, etc for getting an existing task
-  @generateTask: () ->
-    task = new Task({name: 'Unknown'+Math.random()*10000, hidden: true})
-    task.save()
+  #TODO have more complex heuristics, etc for getting an existing task
+  ###
+  # Generate or reuse a task based on the page, tab, etc.
+  # param tab - a Tab object that we want to find / or create a task for
+  # param page - the Page object we want to find / or create a task for
+  # param foce - Forcible generate a new task for the page and tab
+  ###
+  @generateTask: (tab, page, force) ->
+    if page and page.isSearch
+      return db.Task.where('name').equals(page.query).first().then (task) ->
+        return task if task
+        task = new Task({name: page.query, hidden: false})
+        return task.save()
+    else if force or !tab or !tab.task
+      task = new Task({name: 'Unknown'+Math.random()*10000, hidden: true})
+      return task.save()
+    else
+      return Task.find(tab.task)
 
   cleanUp: () ->
     chrome.windows.getCurrentAsync({populate: true}).then (window) =>
@@ -450,7 +478,7 @@ db_changes = chrome.runtime.connect {name: 'db_changes'}
 window.db = new Dexie('searchTrack')
 db.version(1).stores({
   Search: '$$id,&name,*tabs,task' #Searches from Google we are tracking
-  Task: '$$id,name,*pages' #table of tasks
+  Task: '$$id,name' #table of tasks
   Page: '$$id,url' #Pages we are keeping info on
   PageVisit: '$$id,tab,task,page,referrer' #Visits to individual pages
   PageEvent: '$$id,pageVisit,type,time' #Events for a specific visit to a page
@@ -480,9 +508,11 @@ promisifyChrome = (api) ->
     chrome.tabs[func+"Async"] = (params...) ->
       return new Promise (resolve, reject) ->
         cb = (res...) ->
+          reject(new ChromeError(chrome.runtime.lastError.message)) if chrome.runtime.lastError
           resolve(res...)
         params.push(cb)
         api[func].apply(null, params)
+
 
 promisifyChrome(chrome.windows)
 promisifyChrome(chrome.tabs)
@@ -492,6 +522,11 @@ promisifyChrome(chrome.history)
 class RecordMissingError extends Error
   constructor: (@message) ->
     @name = 'RecordMissingError'
+    Error.captureStackTrace(this, RecordMissingError)
+
+class ChromeError extends Error
+  constructor: (@message) ->
+    @name = 'ChromeError'
     Error.captureStackTrace(this, RecordMissingError)
 
 #db.on 'changes', (changes) ->

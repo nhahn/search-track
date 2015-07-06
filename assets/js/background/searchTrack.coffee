@@ -62,13 +62,6 @@ chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
     return
   Logger.debug "onUpdated #{tabId} \n #{changeInfo}"
 
-  matches = tab.url.match(/www\.google\.com\/.*q=(.*?)($|&)/)
-
-  if matches != null
-    query = decodeURIComponent(matches[1].replace(/\+/g, ' '))
-    if query != ""
-      createOrUpdateSearch(tabId, tab, query)
-
 ####
 #
 # Check for any webNavication complete events

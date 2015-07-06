@@ -4,7 +4,7 @@
 #
 ###
 
-# TODO define some of these parameters????? 
+# TODO define some of these parameters?
 
 class Page extends Base
   constructor: (params) ->
@@ -14,6 +14,7 @@ class Page extends Base
       query: ''
       url: ''
       domain: ''
+      fragmentless: ''
       time: Date.now()
       title: ''
       vector: {} 
@@ -31,6 +32,7 @@ class Page extends Base
     @query = properties.query
     @url = properties.url
     @domain = properties.domain
+    @fragmentless = properties.fragmentless
     @time = properties.time
     @title = properties.title
     @vector = properties.vector
@@ -42,3 +44,16 @@ class Page extends Base
     @depth = properties.depth
     @height = properties.height
     @favorite = properties.favorite
+
+  @generatePage: (url) ->
+    uri = new URI(url)
+    fragment = uri.fragment()
+    uri.fragment("")
+    query = ''
+    #Check if it is a Google search
+    matches = url.match(/www\.google\.com\/.*q=(.*?)($|&)/)
+    if matches != null
+      query = decodeURIComponent(matches[1].replace(/\+/g, ' '))
+    
+    page = new Page({url: url, domain: uri.domain(), fragmentless: uri.toString(), query: query, isSearch: if query != "" then true else false})
+    page.save()
