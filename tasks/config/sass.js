@@ -19,7 +19,7 @@ module.exports = function(grunt) {
         },
         files: [{
           expand: true,
-          cwd: 'assets/styles/',
+          cwd: 'assets/css/',
           src: ['*.scss', '*.sass'],
           dest: 'dist/css/',
           ext: '.css'
@@ -32,7 +32,7 @@ module.exports = function(grunt) {
         },
         files: [{
           expand: true,
-          cwd: 'assets/styles/',
+          cwd: 'assets/css/',
           src: ['*.scss', '*.sass'],
           dest: 'dist/css/',
           ext: '.css'

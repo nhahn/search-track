@@ -20,6 +20,16 @@
     "page": "html/background.html",
     "persistent": true
   },  
+  "chrome_url_overrides" : {
+    "newtab": "html/newTab.html"
+  },
+  "content_scripts": [
+    {
+       "matches": ["<all_urls>"],
+       "js": ["js/bottom_bar/injectBar.js]",
+      "run_at": "document_start"
+    }
+  ],
   "web_accessible_resources": ["html/popup.html",
   "/vendor/bootstrap/dist/js/bootstrap.min.js",
   "/vendor/angular/angular.js",
@@ -76,7 +86,9 @@
   },
   */
   "browser_action": {
-    "default_icon": "img/structify_medium.png"
+    "default_icon": "img/structify_medium.png",
+    "default_title": "TabManager",
+    "default_popup": "html/popup.html"
   }
 
 }

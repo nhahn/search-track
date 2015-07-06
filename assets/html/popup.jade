@@ -14,8 +14,18 @@ html(lang='en', ng-csp, ng-app='tabApp')
       link(href='/css/popup.css', rel='stylesheet')   
 
 
-    body(ng-controller="MainCtrl")
-    
+    body
+      .container
+        ul.nav.nav-pills
+          li(role="presentation")
+            a(href="") Link
+          li(role="presentation")
+            a(href="") Link
+          li(role="presentation")
+            a(href="") Link
+      .row
+        .col-sm-12(ui-view="")
+            
       //
         Bootstrap core JavaScript
         ==================================================
@@ -27,6 +37,7 @@ html(lang='en', ng-csp, ng-app='tabApp')
       //Angular Scripts
       script(src="/vendor/angular/angular.min.js")
       script(src="/vendor/underscore/underscore-min.js")
+      script(src="/vendor/angular-ui-router/release/angular-ui-router.min.js")
       script(src="/vendor/angular-bootstrap/ui-bootstrap.min.js")
       script(src="/vendor/angular-bootstrap/ui-bootstrap-tpls.min.js")
       script(src="/vendor/angular-underscore/angular-underscore.min.js")
