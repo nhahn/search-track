@@ -1,60 +1,58 @@
 doctype html
-html
+html(lang='en', ng-csp, ng-app='tabApp')
   head
-    // Bootstrap!
-    // Latest compiled and minified CSS
-    link(rel='stylesheet', href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css')
-    // Optional theme
-    link(rel='stylesheet', href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap-theme.min.css')
-    // Latest compiled and minified JavaScript
-    script(src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/js/bootstrap.min.js')
-  title Tab Manager  
-  body
-    p Enter a new task:
-    .row
-      .col-sm-6
-        form#newSearch(method='POST', action='#')
-          .input-group
-            input#query.form-control(type='text')
-            |             
-            span.input-group-btn
-              button.btn.btn-default(type='submit') Go!
-          // /input-group
-      // /.col-lg-6
-    br
-    | Tasks 
-    p
-      #tasklist.list-group
-    #hint  Use &amp;#8984{1-9} to switch to a task. 
-  style.
-    body {
-    /*overflow-x: hidden; */
-    line-height: 100%;
-    font-size = 12px;
-    padding-top: 10px;
-    padding-right: 10px;
-    padding-bottom: 5%;
-    padding-left: 10px;
-    background-color: #FFFFFF;
-    min-width: 250px;
-    max-width: 100%;
-    }
-    a {
-    color: black;
-    }
-    .close {
-    color: black;
-    font-size: 18px;
-    }
-    hr {
-    color: black;
-    }
-    #hint {
-    font-size: 10px;
-    text-align: right;
-    }
-  script(src='/vendor/taffydb/taffy-min.js')
-  script(src='/vendor/underscore/underscore-min.js')
-  script(src='/js/trackAPI.js')
-  script(src='/js/shortcut.js')
-  script(src='/js/popup.js')
+      meta(charset='utf-8')
+      meta(http-equiv='X-UA-Compatible', content='IE=edge')
+      meta(name='viewport', content='width=device-width, initial-scale=1')
+      meta(name='description', content='')
+      meta(name='author', content='')
+      //link(rel='icon', href='../../favicon.ico')
+      title Navbar Template for Bootstrap
+      // Bootstrap core CSS
+      link(href='/vendor/bootstrap/dist/css/bootstrap.min.css', rel='stylesheet')
+      // Custom styles for this template
+      link(href='/css/popup.css', rel='stylesheet')   
+
+
+    body
+      .container
+        ul.nav.nav-pills
+          li(role="presentation")
+            a(href="") Link
+          li(role="presentation")
+            a(href="") Link
+          li(role="presentation")
+            a(href="") Link
+      .row
+        .col-sm-12(ui-view="")
+            
+      //
+        Bootstrap core JavaScript
+        ==================================================
+      // Placed at the end of the document so the pages load faster
+      script(src='/vendor/jquery/dist/jquery.min.js')
+      script(src='/vendor/bootstrap/dist/js/bootstrap.min.js')
+      script(src='/vendor/js-logger/src/logger.min.js')
+      
+      //Angular Scripts
+      script(src="/vendor/angular/angular.min.js")
+      script(src="/vendor/underscore/underscore-min.js")
+      script(src="/vendor/angular-ui-router/release/angular-ui-router.min.js")
+      script(src="/vendor/angular-bootstrap/ui-bootstrap.min.js")
+      script(src="/vendor/angular-bootstrap/ui-bootstrap-tpls.min.js")
+      script(src="/vendor/angular-underscore/angular-underscore.min.js")
+      script(src='/vendor/angular-dexie-bind/dist/angular-dexie-bind.js')
+      script(src='/vendor/angular-filter/dist/angular-filter.min.js')
+      script(src='/vendor/uri.js/src/URI.min.js')
+      
+      //Scripts to access the tab information
+      script(src='/vendor/dexie/dist/latest/Dexie.min.js')
+      script(src='/vendor/dexie/addons/Dexie.Observable/Dexie.Observable.js')
+      script(src='/js/trackAPI.js')
+      
+      //Finally Load the Angular App and Controllers
+      script(src='/js/popup/popup.js')
+
+
+      
+      

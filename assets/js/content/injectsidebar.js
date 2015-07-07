@@ -3,20 +3,22 @@
  */
 
 if (typeof injected === 'undefined') {
-  // Inject HTML for sidebar if it hasn't been injected already
-  var $app = $('<!-- INJECTED SIDEBAR --> <iframe id="injectedsidebar" style="position:fixed;z-index:2147483645;height:153px;bottom:0;width:100%;font-family:arial;padding:0;background-color:rgba(221,219,221,0.9);border:none;border-top:1px solid rgb(103,103,103);" sandbox="allow-same-origin allow-scripts allow-popups" src="' + chrome.extension.getURL('/html/sidebar.html') + '"></iframe> <!-- END SIDEBAR-->').appendTo('html');
-	injected = true;
+  $(document).ready(function() {
+    $('body').css('margin-top', "28px");
 
-  // Listeners from forager.js
-  chrome.runtime.onMessage.addListener(
-    function(request, sender, sendResponse) {
-      if (request.open) {
-        if ($('#injectedsidebar').css('bottom') == '0px') {
-          $('#injectedsidebar').animate({"bottom": "-=118px"});
-        } else {
-          $('#injectedsidebar').animate({"bottom": "+=118px"}); 
-        }
-      }
+    // Fix Google page issues that result from pushing content down. TODO if google
+    $('#searchform').css('position', 'inherit');
+    console.log($('a:contains(Screen reader users, click here to turn off Google Instant.)'));
+    $('a:contains(Screen reader users, click here to turn off Google Instant.)').css('position', 'inherit');
+    $('#cnt').css('padding-top', '0');
+    $('#sform').css('height', '0');
+    // $('.jhp>#gb').css('top','-267px');
+    $('#viewport').css('top','28px');
   });
+
+  // Inject HTML for sidebar if it hasn't been injected already
+  var $app = $('<!-- INJECTED SIDEBAR --> <iframe id="injectedsidebar" style="position:fixed;z-index:2147483645;height:28px;top:0;width:100%;font-family:arial;padding:0;background-color:rgba(221,219,221,0.85);border:none;" sandbox="allow-same-origin allow-scripts allow-popups" src="' + chrome.extension.getURL('/html/sidebar.html') + '"></iframe> <!-- END SIDEBAR -->').appendTo('html');
+  // $('body').css('padding-bottom', 28px);
+	injected = true;
 }
 

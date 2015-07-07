@@ -13,7 +13,7 @@ class Tab extends Base
       position: 0
       session: '' #the 
       pageVisit: '' #The pageVisit that is currently active
-      status: 'active' # This is an enum: ['active', 'stored', 'closed']
+      status: 'active' # This is an enum: ['active', 'stored', 'closed', 'temp']
       task: '' #The ID of the task this tab is associated with (TODO blank is newTab page i guess??)
       date: Date.now()
     }, params)

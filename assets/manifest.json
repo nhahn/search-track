@@ -1,6 +1,5 @@
 {
   "manifest_version": 2,
-
   "name": "Tab Manager",
   "description": "Helps you track, manage, and learn from your web searches",
   "version": "0.1",
@@ -20,8 +19,10 @@
   "background": {
     "page": "html/background.html",
     "persistent": true
+  },  
+  "chrome_url_overrides" : {
+    "newtab": "html/newTab.html"
   },
-  // "content_security_policy": "script-src 'self' https://ajax.googleapis.com https://cdn.rawgit.com https://cdnjs.cloudflare.com https://maxcdn.bootstrapcdn.com; object-src 'self'",
   "content_scripts": [{
     "matches": ["http://*/*", "https://*/*"],
     "js": ["/vendor/jquery/dist/jquery.min.js","/js/content/injectsidebar.js"],
@@ -60,12 +61,10 @@
 			"description": "Opens the sidebar"
     }
   },
-  /* "chrome_url_overrides": {
-    "newtab": "html/visual.html"
-  },
-  */
   "browser_action": {
-    "default_icon": "img/structify_medium.png"
+    "default_icon": "img/structify_medium.png",
+    "default_title": "TabManager",
+    "default_popup": "html/popup.html"
   }
 
 }

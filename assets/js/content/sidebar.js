@@ -22,13 +22,54 @@
 // BUG: doesn't work on first injection after extension loads, for many different errors (maybe due to race conditions)
 // CWO: integrate wtih search-track. 
 
-var listApp = angular.module('listApp', ['ngDraggable'], function($compileProvider) {
+var listApp = angular.module('listApp', ['ngDraggable', 'ngDexieBind'], function($compileProvider) {
 /* content security to display favicons, is this needed?
 $compileProvider.imgSrcSanitizationWhitelist(/^\s*(http?|ftp|file|chrome-extension):|data:image\//);
 $compileProvider.aHrefSanitizationWhitelist(/^\s*(http?|ftp|mailto|file|chrome-extension):/);
 $compileProvider.imgSrcSanitizationWhitelist(/^\s*(https?|ftp|file|chrome-extension):|data:image\//);
 $compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|file|chrome-extension):/);
 */
+});
+
+listApp.controller('RootCtrl', function ($scope) {
+  $scope.minimized = true;
+
+  $scope.minimize = function () {
+    if ($scope.minimized) {
+      chrome.runtime.sendMessage({maximize: true})
+    } else {
+      chrome.runtime.sendMessage({minimize: true})
+    }
+    $scope.minimized = !$scope.minimized;
+    $scope.$apply();
+  };
+
+  chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+    if (request.changeSize) 
+      $scope.minimize();
+  });
+
+  $scope.blacklist = function() {
+    chrome.runtime.sendMessage({blacklist:true}); 
+    chrome.runtime.sendMessage({removeSidebar:true});  
+  };
+  
+  $scope.remove = function() {
+    chrome.runtime.sendMessage({removeSidebar:true}); 
+  }
+});
+
+listApp.controller('MinimizedCtrl', function ($scope, $dexieBind) {
+  chrome.runtime.sendMessage({getCurrentTab: true}, function(msg) {
+    Tab.findByTabId(msg[0].id).then(function (tab) {
+      $scope.tab = tab;
+      return Task.find(tab.task);
+    }).then(function(task) {
+      $scope.$apply(function() {
+        $scope.task = task;
+      });
+    });
+  });
 });
 
 listApp.controller('ColCtrl1', function ($scope) {
@@ -81,18 +122,6 @@ listApp.controller('BorderCtrl', function ($scope) {
     $scope.draggableObjects[index] = obj;
     $scope.draggableObjects[otherIndex] = otherObj;
   }
-});
-
-$(document).ready(function() {
-  $('#blacklist').click(function() {
-    // add this page to blacklist, because we're sandboxed we have to tell background page
-    chrome.runtime.sendMessage({blacklist:true}); 
-    chrome.runtime.sendMessage({removeSidebar:true}); 
-  });
-
-  $('#remove').click(function() {
-    chrome.runtime.sendMessage({removeSidebar:true}); 
-  });
 });
 
 /* OLD STUFF, may need later */

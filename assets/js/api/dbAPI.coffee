@@ -75,7 +75,7 @@ db_changes = chrome.runtime.connect {name: 'db_changes'}
 window.db = new Dexie('searchTrack')
 db.version(1).stores({
   Search: '$$id,&name,*tabs,task' #Searches from Google we are tracking
-  Task: '$$id,name,*pages' #table of tasks
+  Task: '$$id,name' #table of tasks
   Page: '$$id,url' #Pages we are keeping info on
   PageVisit: '$$id,tab,task,page,referrer' #Visits to individual pages
   PageEvent: '$$id,pageVisit,type,time' #Events for a specific visit to a page
@@ -105,9 +105,11 @@ promisifyChrome = (api) ->
     chrome.tabs[func+"Async"] = (params...) ->
       return new Promise (resolve, reject) ->
         cb = (res...) ->
+          reject(new ChromeError(chrome.runtime.lastError.message)) if chrome.runtime.lastError
           resolve(res...)
         params.push(cb)
         api[func].apply(null, params)
+
 
 promisifyChrome(chrome.windows)
 promisifyChrome(chrome.tabs)
@@ -117,6 +119,11 @@ promisifyChrome(chrome.history)
 class RecordMissingError extends Error
   constructor: (@message) ->
     @name = 'RecordMissingError'
+    Error.captureStackTrace(this, RecordMissingError)
+
+class ChromeError extends Error
+  constructor: (@message) ->
+    @name = 'ChromeError'
     Error.captureStackTrace(this, RecordMissingError)
 
 #db.on 'changes', (changes) ->

@@ -1,6 +1,5 @@
 recordAction = (tab, action, from, to) ->
   data = new TabEvent({type: action, tab: tab.id, from: from, to: to})
-  console.log(data)
   data.save()
 
 # Update this in searchTrack?? TODO
@@ -115,7 +114,7 @@ chrome.tabs.onCreated.addListener (chromeTab) ->
     task = ''
     if (chromeTab.openerTabId > 0)
       task = Tab.findByTabId(chromeTab.openerTabId).then (existingTab) ->
-        throw new RecordMissingError("Can't find tab for id #{chromeTab.openerTabId}") if !tab
+        throw new RecordMissingError("Can't find tab for id #{chromeTab.openerTabId}") if !existingTab
         tab.openerTab = existingTab.id
         return existingTab.task
     else
@@ -134,17 +133,15 @@ chrome.tabs.onCreated.addListener (chromeTab) ->
     
 
 
-chrome.tabs.onReplaced.addListener (addedTabId, removedTabId) ->
-  db.transaction 'rw', db.Tab, () ->
-    Tab.findByTabId(removedTabId).then (existingTab) ->
-      throw new RecordMissingError("Can't find tab for id #{tabId}") if !tab
-      tab.tab = addedTabId
-      tab.save()
-  .then (tab) ->
-    recordAction(tab, 'replaced', removedTabId, addedTabId) #Not sure if we really care about this
-  .catch RecordMissingError, (err) ->
-    Logger.warn(err)
-  .catch (err) ->
-    Logger.error(err)
-
-#  trackReplace(removedTabId, addedTabId)
+#chrome.tabs.onReplaced.addListener (addedTabId, removedTabId) ->
+#  db.transaction 'rw', db.Tab, () ->
+#    Tab.findByTabId(removedTabId).then (tab) ->
+#      throw new RecordMissingError("Can't find tab for id #{tabId}") if !tab
+#      tab.tab = addedTabId
+#      tab.save()
+#  .then (tab) ->
+#    recordAction(tab, 'replaced', removedTabId, addedTabId) #Not sure if we really care about this
+#  .catch RecordMissingError, (err) ->
+#    Logger.warn(err)
+#  .catch (err) ->
+#    Logger.error(err)

@@ -32,10 +32,15 @@ module.exports = function(grunt) {
 		build: {
 			files: [{
 				expand: true,
-				cwd: '.tmp/public',
-				src: ['**/*'],
-				dest: 'www'
-			}]
+				cwd: './assets',
+				src: ['**/*.!(coffee|jade|sass|scss)'],
+				dest: 'dist/'
+			}, {
+              expand: true,
+              cwd: './vendor',
+              src: ['**/*.!(md|coffee|jade|scss|sass)'],
+              dest: 'dist/vendor/'
+            }]
 		}
 	});
 

@@ -19,21 +19,36 @@
   startupCheck = () ->
     chrome.tabs.queryAsync({}).then (tabs) ->
       Promise.map tabs, (tab) ->
-        Tab.findByTabId(tab.id).then (existingTab) ->
-          return Promise.resolve(if existingTab then existingTab else createTabEntry(tab)).then (tab) ->
-            checkPageVisit(tab) 
+        Promise.all([
+          db.Page.where('url').equals(tab.url).first().then (page) -> #First we find (or create) the page 
+            return page if page
+            uri = new URI(tab.url)
+            fragment = uri.fragment()
+            uri.fragment("")
+            query = ''
+            #Check if it is a Google search
+            matches = tab.url.match(/www\.google\.com\/.*q=(.*?)($|&)/)
+            if matches != null
+              query = decodeURIComponent(matches[1].replace(/\+/g, ' '))
+            page = new Page({url: tab.url, domain: uri.domain(), fragmentless: uri.toString(), query: query, isSearch: if query != "" then true else false})
+            if uri.protocol() == "chrome" then Logger.debug("Chrome internal page -- ignorning") else getContentAndTokenize(tab, page)
+            return page.save()
+          Tab.findByTabId(tab.id)
+        ]).spread (page, existingTab) ->
+          return Promise.resolve(if existingTab then existingTab else createTabEntry(tab, page)).then (tab) ->
+            checkPageVisit(tab, page) 
       .then (tabs) ->
         #Do something with the newly created tabs here
         
   #Create an entry for a tab that isn't being tracked yet
-  createTabEntry = (chromeTab) ->
+  createTabEntry = (chromeTab, page) ->
     resolve = []
     tab = new Tab({
       tab: chromeTab.id
       windowId: chromeTab.windowId
       position: chromeTab.index
     })
-    resolve.push Task.generateTask().then (task) ->
+    resolve.push Task.generateTask(tab, page, true).then (task) ->
       return task.id
 
     Promise.all(resolve).spread (task) ->
@@ -46,34 +61,21 @@
       Logger.warn(err)
 
   #Check if we have the most up-to-date PageVisit associated with our tab
-  checkPageVisit = (tab) ->
+  checkPageVisit = (tab, page) ->
     chrome.tabs.getAsync(Number.parseInt(tab.tab)).then (chromeTab) ->
-      uri = new URI(chromeTab.url)
-      fragment = uri.fragment()
-      uri.fragment("")
       if tab.pageVisit
-        Promise.resolve(PageVisit.forId(tab.pageVisit)).then (pageVisit) ->
-          [pageVisit, Page.forId(pageVisit.page)]
-        .spread (pageVisit, page) ->
+        Promise.resolve(PageVisit.find(tab.pageVisit)).then (pageVisit) ->
           #check if we are on the right page
-          if page.url != uri.toString() or pageVisit.fragment != fragment
-            createPageVisit(tab, chromeTab, uri, fragment)
+          if page.url != chromeTab.url
+            createPageVisit(tab, chromeTab, page)
       else
-        createPageVisit(tab, chromeTab, uri, fragment)
+        createPageVisit(tab, chromeTab, page)
 
   #Create PageVisits for any tabs that aren't up to date
-  createPageVisit = (tab, chromeTab, uri, fragment) ->
-    Promise.resolve(db.Page.where('url').equals(uri.toString()).first()).then (page) -> #First we find (or create) the page 
-      return page if page
-      page = new Page({url: uri.toString(), domain: uri.domain()})
-      if uri.protocol() == "chrome" then Logger.debug("Chrome internal page -- ignorning") else getContentAndTokenize(chromeTab, page)
-      return page.save()
-    .then (page) ->
-      throw new RecordMissingError("Can't find Tab record for id #{tabId}") if !tab
-      #Assume navigation and referrer, and correct it if we are wrong
-      pageVisit = new PageVisit({page: page.id, tab: tab.id, task: tab.task, fragment: fragment, type: 'navigation'})
-      return [tab, pageVisit.save()]
-    .spread (tab, pageVisit) ->
+  createPageVisit = (tab, chromeTab, page) ->
+    #Assume navigation and typed
+    pageVisit = new PageVisit({page: page.id, tab: tab.id, task: tab.task, type: 'typed'})
+    pageVisit.save().then (pageVisit) ->
       Logger.info "Visited #{chromeTab.url} in tab #{tab.id}"
       tab.pageVisit = pageVisit.id
       tab.save()

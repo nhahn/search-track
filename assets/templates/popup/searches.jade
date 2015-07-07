@@ -1,0 +1,4 @@
+ul#tasks
+  li(ng-repeat="task in tasks | orderBy:'-dateCreated'", ng-class="{selected: (curTask == task.id)}", ng-click="taskSelect(task)") 
+    span.glyphicon.glyphicon-ok(ng-if="curTask == task.id")
+    div {{task.name}}

@@ -7,12 +7,13 @@ class Task extends Base
       dateCreated: Date.now()
       order: 999
       hidden: false
-      tabs: [] # used to maintain searches
+      isSearch: false
     }, params)
     @name = properties.name
     @dateCreated = properties.dateCreated
     @order = properties.order
-    @tabs = properties.tabs
+    @hidden = properties.hidden
+    @isSearch = properties.isSearch
 
 
   ###
@@ -33,10 +34,24 @@ class Task extends Base
     return db.Task.put(this).then (id) =>
       return this
 
-    #TODO have more complex heuristics, etc for getting an existing task
-  @generateTask: () ->
-    task = new Task({name: 'Unknown'+Math.random()*10000, hidden: true})
-    task.save()
+  #TODO have more complex heuristics, etc for getting an existing task
+  ###
+  # Generate or reuse a task based on the page, tab, etc.
+  # param tab - a Tab object that we want to find / or create a task for
+  # param page - the Page object we want to find / or create a task for
+  # param foce - Forcible generate a new task for the page and tab
+  ###
+  @generateTask: (tab, page, force) ->
+    if page and page.isSearch
+      return db.Task.where('name').equals(page.query).first().then (task) ->
+        return task if task
+        task = new Task({name: page.query, hidden: false, isSearch: true})
+        return task.save()
+    else if force or !tab or !tab.task
+      task = new Task({name: 'Unknown'+Math.random()*10000, hidden: true})
+      return task.save()
+    else
+      return Task.find(tab.task)
 
   cleanUp: () ->
     chrome.windows.getCurrentAsync({populate: true}).then (window) =>

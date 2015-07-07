@@ -33,7 +33,7 @@ class Base
   capitalize = (s) ->
     s.charAt(0).toUpperCase() + s.substring(1).toLowerCase()
   
-  @forId: (id) ->
+  @find: (id) ->
     return this.table().get(id).then (obj) ->
       return obj
   

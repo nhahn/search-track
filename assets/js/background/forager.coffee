@@ -17,7 +17,7 @@ open = ->
   console.log 'triggered'
   # Opens or closes the sidebar in the current page.
   chrome.tabs.query {currentWindow:true, active:true}, (tabs) ->
-    chrome.tabs.sendMessage tabs[0].id, {open: true}
+    chrome.tabs.sendMessage tabs[0].id, {changeSize: true}
 
 addToBlacklist = (url) ->
   uri = new URI(url)
@@ -34,9 +34,7 @@ addToBlacklist = (url) ->
 removeFromBlacklist = (url) ->
   uri = new URI(url)
   base = uri.protocol() + "://" + uri.host() + "/" + uri.pathname().split("/")[0]
-  console.log base
   chrome.storage.sync.get('blacklist', (items) ->
-    console.log items.blacklist
     if items.blacklist.indexOf(base) == -1
       return
     else
@@ -62,55 +60,55 @@ chrome.contextMenus.create({contexts: ['browser_action'], title: "Remove this si
 
 chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
   # Check if page is on blacklist
-  chrome.storage.sync.get("blacklist", (items) ->
-    console.log items
-    if typeof items.blacklist == 'undefined'
-      return
+  chrome.storage.sync.get "blacklist", (items) ->
+    return if typeof items.blacklist == 'undefined'
     # can't figure out how to do this with a comprehension
-    i = 0
-    while i < items.blacklist.length
-      if tab.url.includes(items.blacklist[i])
+    for item in items.blacklist
+      if tab.url.includes(item)
         # race condition?
         chrome.tabs.executeScript(tabId, {code: "$('#injectedsidebar').hide(); delete injected", runAt: "document_start"})
-      i++
-  )
 
-  # Remove bar if not in fullscreen mode
+  # Make bar full size if in fullscreen mode
   chrome.windows.getCurrent({}, (window) ->
     console.log window.state
-    if window.state != 'fullscreen'
-      # race condition with the injected script?
-      chrome.tabs.executeScript(tabId, {code: "$('#injectedsidebar').hide(); delete injected", runAt: "document_start"})
+    if window.state == 'fullscreen'
+      chrome.tabs.query {currentWindow:true, active:true}, (tabs) ->
+        # TODO this is too slow!
+        chrome.tabs.sendMessage tabs[0].id, {changeSize: true}
   )
 
 chrome.tabs.onCreated.addListener (tabId, changeInfo, tab) ->
   # Max at 9 tabs
-  # TODO doesn't work?
-  chrome.tabs.query { currentWindow: true }, (tabs) ->
-    if tabs.length > 9
-      alert 'Too many tabs! ' + tab.id
-      chrome.tabs.remove tab.id
+#  chrome.tabs.query { currentWindow: true }, (tabs) ->
+#    if tabs.length > 9
+#      alert 'Too many tabs! ' + tab.id
+#      chrome.tabs.remove tab.id
 
   # Check if page is on blacklist
-  chrome.storage.sync.get("blacklist", (items) ->
+  chrome.storage.sync.get "blacklist", (items) ->
     console.log items
-    # can't figure out how to do this with a comprehension
-    i = 0
-    while i < items.blacklist.length
-      console.log items.blacklist[i]
-      if tab.url.includes(items.blacklist[i])
-        # race condition with the injected script?
-        chrome.tabs.executeScript(tabId, {code: "$('#injectedsidebar').hide(); delete injected", runAt: "document_start"})
-      i++
-  )
 
-  # Remove bar if not in fullscreen mode
+    return if typeof items.blacklist == 'undefined'
+    for item in items.blacklist
+      if tab.url.includes(item)
+        # race condition?
+        chrome.tabs.executeScript(tabId, {code: "$('#injectedsidebar').hide(); delete injected", runAt: "document_start"})
+
+  # Make bar full size if in fullscreen mode
   chrome.windows.getCurrent({}, (window) ->
     console.log window.state
-    if window.state != 'fullscreen'
-      # race condition with the injected script?
-      chrome.tabs.executeScript(tabId, {code: "$('#injectedsidebar').hide(); delete injected", runAt: "document_start"})
+    if window.state == 'fullscreen'
+      chrome.tabs.query {currentWindow:true, active:true}, (tabs) ->
+        chrome.tabs.sendMessage tabs[0].id, {changeSize: true}
+
+      #shift page's content down further
+      
   )
+
+
+adjustHeight = (height, tabId) ->
+  chrome.tabs.executeScript(tabId, {code: "$('#injectedsidebar').height(#{height}); $('body').css('padding-bottom', #{height} + $('body').css('padding-bottom'));", runAt: "document_start"})
+  chrome.tabs.executeScript(tabId, {code: "$('body').css('margin-top', '#{height}px'); $('#viewport').css('top','#{height}px');", runAt: "document_start"})
 
 # Message passing from content scripts and new tab page
 chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
@@ -120,6 +118,17 @@ chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
     console.log "blacklisted " + sender.tab.url
   else if request.removeSidebar
     chrome.tabs.executeScript(sender.tab.id, {code: "$('#injectedsidebar').hide(); delete injected", runAt: "document_start"})
+  else if request.minimize
+    adjustHeight(28, sender.tab.id)
+  else if request.maximize
+    adjustHeight(153, sender.tab.id)
+  else if request.getCurrentTab
+    chrome.tabs.query({active: true, currentWindow: true}, (tabs) ->
+      sendResponse(tabs)
+    )
+    return true
+    
+ 
 ###
   if request.newTask
     task = request.task
