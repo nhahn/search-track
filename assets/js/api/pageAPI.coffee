@@ -11,6 +11,7 @@ class Page extends Base
     properties = _.extend({
       favicon: ''
       isSearch: false
+      blacklisted: false
       query: ''
       url: ''
       domain: ''
@@ -29,6 +30,7 @@ class Page extends Base
     }, params)
     @favicon = properties.favicon
     @isSearch = properties.isSearch
+    @blacklisted = properties.blacklisted
     @query = properties.query
     @url = properties.url
     @domain = properties.domain

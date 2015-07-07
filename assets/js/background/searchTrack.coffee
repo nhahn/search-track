@@ -15,13 +15,6 @@ searchTrack.addTab = (searchInfo, tabId) ->
   searchInfo.date = Date.now()
   searchInfo.save()
 
-extractGoogleRedirectURL = (url) ->
-  matches = url.match(/www\.google\.com\/.*url=(.*?)($|&)/)
-  if matches == null
-    return url
-  url = decodeURIComponent(matches[1].replace(/\+/g, ' '))
-  return url
-
 
 createOrUpdateSearch = (tabId, tab, query) ->
   db.Search.where('name').equalsIgnoreCase(query).sortBy("date").then (res) ->

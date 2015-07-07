@@ -34,9 +34,7 @@ addToBlacklist = (url) ->
 removeFromBlacklist = (url) ->
   uri = new URI(url)
   base = uri.protocol() + "://" + uri.host() + "/" + uri.pathname().split("/")[0]
-  console.log base
   chrome.storage.sync.get('blacklist', (items) ->
-    console.log items.blacklist
     if items.blacklist.indexOf(base) == -1
       return
     else
@@ -62,38 +60,32 @@ chrome.contextMenus.create({contexts: ['browser_action'], title: "Remove this si
 
 chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
   # Check if page is on blacklist
-  chrome.storage.sync.get("blacklist", (items) ->
-    console.log items
-    if typeof items.blacklist == 'undefined'
-      return
+  chrome.storage.sync.get "blacklist", (items) ->
+    return if typeof items.blacklist == 'undefined'
     # can't figure out how to do this with a comprehension
-    i = 0
-    while i < items.blacklist.length
-      if tab.url.includes(items.blacklist[i])
+    for item in items.blacklist
+      if tab.url.includes(item)
         # race condition?
         chrome.tabs.executeScript(tabId, {code: "$('#injectedsidebar').hide(); delete injected", runAt: "document_start"})
-      i++
-  )
-
+  
 chrome.tabs.onCreated.addListener (tabId, changeInfo, tab) ->
   # Max at 9 tabs
-  chrome.tabs.query { currentWindow: true }, (tabs) ->
-    if tabs.length > 9
-      alert 'Too many tabs! ' + tab.id
-      chrome.tabs.remove tab.id
+#  chrome.tabs.query { currentWindow: true }, (tabs) ->
+#    if tabs.length > 9
+#      alert 'Too many tabs! ' + tab.id
+#      chrome.tabs.remove tab.id
 
 # Check if page is on blacklist
-  chrome.storage.sync.get("blacklist", (items) ->
+  chrome.storage.sync.get "blacklist", (items) ->
     console.log items
-    # can't figure out how to do this with a comprehension
-    i = 0
-    while i < items.blacklist.length
-      console.log items.blacklist[i]
-      if tab.url.includes(items.blacklist[i])
+
+    return if typeof items.blacklist == 'undefined'
+    for item in items.blacklist
+      if tab.url.includes(item)
         # race condition?
         chrome.tabs.executeScript(tabId, {code: "$('#injectedsidebar').hide(); delete injected", runAt: "document_start"})
       i++
-  )
+  
   
 adjustHeight = (height, sender) ->
   chrome.tabs.executeScript(sender.tab.id, {code: "$('#injectedsidebar').height(#{height}); $('body').css('padding-bottom', #{height} + $('body').css('padding-bottom'));", runAt: "document_start"})

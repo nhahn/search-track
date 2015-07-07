@@ -37,11 +37,8 @@ node_modules/
 #dev folders
 vendor/
 dist/
+build/
 
 #private key
 *.pem
 =======
-
-# packed extensions
-build/*.crx
-build/*.zip

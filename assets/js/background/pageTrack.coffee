@@ -25,6 +25,16 @@ getContentAndTokenize = (tabId, page) ->
           Logger.debug "fail tokenize\n" + t
 
 ###
+# Extract the redirect URL from google results
+###
+extractGoogleRedirectURL = (url) ->
+  matches = url.match(/www\.google\.com\/.*url=(.*?)($|&)/)
+  if matches == null
+    return url
+  url = decodeURIComponent(matches[1].replace(/\+/g, ' '))
+  return url
+
+###
 # Updates the page information with callback info about the dom
 ###
 domInfo = (url, tab) ->
@@ -42,6 +52,7 @@ domInfo = (url, tab) ->
         page.favicon = tab.favIconUrl
         page.depth = depth
         page.height = height
+        page.title = tab.title
         page.save()
   .delay(500).then (page) ->
     getContentAndTokenize(tab.tab, page)
@@ -51,6 +62,7 @@ domInfo = (url, tab) ->
 ###
 chrome.webNavigation.onDOMContentLoaded.addListener (details) ->
   return if details.frameId != 0
+  details.url = extractGoogleRedirectURL(details.url)
   uri = new URI(details.url)
   return Logger.debug("Chrome internal page -- ignorning") if uri.protocol() == "chrome"
   Promise.resolve(Tab.findByTabId(details.tabId)).then (tab) ->
@@ -64,8 +76,8 @@ chrome.webNavigation.onDOMContentLoaded.addListener (details) ->
     Logger.error(err)
     
 chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
-#  console.log(changeInfo)
   return if !changeInfo.url
+  changeInfo.url = extractGoogleRedirectURL(changeInfo.url)
   Logger.debug "Visited #{changeInfo.url} in tab #{tab.id}"
   db.transaction 'rw', db.Tab, db.Page, db.PageVisit, db.Task, () ->
     db.Page.where('url').equals(changeInfo.url).first().then (page) -> #First we find (or create) the page 
@@ -100,22 +112,21 @@ chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
 chrome.webNavigation.onCommitted.addListener (details) ->
   return if details.frameId != 0
   Logger.debug "page nav: #{details.tabId} -> #{details.url}"
-  console.log(details)
-  
   addDetails(details)
     
+###
+# We also want to track fragment updates that result in the main frame changing
+###
 chrome.webNavigation.onReferenceFragmentUpdated.addListener (details) ->
   return if details.frameId != 0
   Logger.debug "fragment nav: #{details.tabId} -> #{details.url}"
   addDetails(details)
 
 #####
-#
 # Add additional details to the navigation event
-#
 #####
-
 addDetails = (details) ->
+  details.url = extractGoogleRedirectURL(details.url)
   db.transaction 'rw', db.PageVisit, db.Tab, db.Task, db.Page, () ->
     Dexie.Promise.all([
       Tab.findByTabId(details.tabId)
@@ -142,7 +153,7 @@ addDetails = (details) ->
       throw new RecordMissingError("Can't find Visit record for #{details.tab}") if !pageVisit or pageVisit.page is not page.id
       if details.transitionQualifiers.indexOf("forward_back") >= 0 #We used the navigation arrows -- simple visit
         #We probably want this to be the task it was before?? (the tab's task might have switched)
-        return PageVisit.find(pageVisit.referrer).then (oldVisit) ->
+        return PageVisit.forPage(page.id).filter((visit) -> visit.tab == tab.id).mostRecent().first().then (oldVisit) ->
           pageVisit.task = oldVisit.task
           #TODO figure out more specificially if we went back?
           pageVisit.type = "forward_back"
@@ -166,7 +177,11 @@ addDetails = (details) ->
               return Dexie.Promise.all([tab, pageVisit.save()])
           when "reload" #We really don't want to record this in this instance -- find the last page visit and record it
             #TODO manage reload here
-            console.log('reload?')
+            return pageVisit.delete().then (visit) ->
+              PageVisit.forPage(page.id).filter((visit) -> visit.tab == tab.id).mostRecent().first()
+            .then (visit) ->
+              tab.pageVisit = visit.id
+              Dexie.Promise.all([tab, pageVisit])
           when "start_page" #Don't record this.....
             throw new Promise.CancellationError('Detected start page -- ignoring')
           when "form_submit" #Not sure what to do here exactly... 
@@ -192,9 +207,7 @@ addDetails = (details) ->
     Logger.error(err)
     
 ####
-#
-# Fill in any information if we have visted 
-#
+# Fill in any information when an instant tab replaces and exisiting tab
 ####
 chrome.webNavigation.onTabReplaced.addListener (details) ->
   Logger.debug "Replacing tab #{details.replacedTabId} with #{details.tabId}"
