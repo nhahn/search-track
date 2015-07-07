@@ -75,14 +75,23 @@ chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
       i++
   )
 
+  # Remove bar if not in fullscreen mode
+  chrome.windows.getCurrent({}, (window) ->
+    console.log window.state
+    if window.state != 'fullscreen'
+      # race condition with the injected script?
+      chrome.tabs.executeScript(tabId, {code: "$('#injectedsidebar').hide(); delete injected", runAt: "document_start"})
+  )
+
 chrome.tabs.onCreated.addListener (tabId, changeInfo, tab) ->
   # Max at 9 tabs
+  # TODO doesn't work?
   chrome.tabs.query { currentWindow: true }, (tabs) ->
     if tabs.length > 9
       alert 'Too many tabs! ' + tab.id
       chrome.tabs.remove tab.id
 
-# Check if page is on blacklist
+  # Check if page is on blacklist
   chrome.storage.sync.get("blacklist", (items) ->
     console.log items
     # can't figure out how to do this with a comprehension
@@ -90,9 +99,17 @@ chrome.tabs.onCreated.addListener (tabId, changeInfo, tab) ->
     while i < items.blacklist.length
       console.log items.blacklist[i]
       if tab.url.includes(items.blacklist[i])
-        # race condition?
+        # race condition with the injected script?
         chrome.tabs.executeScript(tabId, {code: "$('#injectedsidebar').hide(); delete injected", runAt: "document_start"})
       i++
+  )
+
+  # Remove bar if not in fullscreen mode
+  chrome.windows.getCurrent({}, (window) ->
+    console.log window.state
+    if window.state != 'fullscreen'
+      # race condition with the injected script?
+      chrome.tabs.executeScript(tabId, {code: "$('#injectedsidebar').hide(); delete injected", runAt: "document_start"})
   )
 
 # Message passing from content scripts and new tab page

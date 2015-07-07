@@ -82,7 +82,7 @@ chrome.webNavigation.onCompleted.addListener (details) ->
 
 #####
 #
-# When a page is "loaded" enought, we put it in our history management
+# When a page is "loaded" enough, we put it in our history management
 #
 #####
 chrome.webNavigation.onDOMContentLoaded.addListener (details) ->

@@ -310,14 +310,16 @@ class Task extends Base
       dateCreated: Date.now()
       order: 999
       hidden: false
+      tabs: [] # used to maintain searches
     }, params)
     @name = properties.name
     @dateCreated = properties.dateCreated
     @order = properties.order
+    @tabs = properties.tabs
 
 
   ###
-  # Removes a page from this task. 
+  # Adds a page from this task. 
   ###
   addPage: (page_id) ->
     pos = @pages.indexOf(page_id)
@@ -327,7 +329,7 @@ class Task extends Base
       return this
 
   ###
-  # Adds a page to this task
+  # Removes a page from this task
   ###
   removePage: (page_id) ->
     @pages.push(page_id)
@@ -353,6 +355,7 @@ class Task extends Base
           return tab.store()
       
   
+
 #####
 #
 # Theses are shortcut scopes for managing tables

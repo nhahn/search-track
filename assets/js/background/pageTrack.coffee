@@ -26,7 +26,7 @@ getContentAndTokenize = (tabId, page) ->
 
 #####
 #
-# When a page is "loaded" enough, we can then perform any processing on it's content
+# When a page is "loaded" enough, we can then perform any processing on its content
 #
 #####
 chrome.webNavigation.onDOMContentLoaded.addListener (details) ->
@@ -72,6 +72,14 @@ chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
         return Dexie.Promise.all([Tab.findByTabId(tabId), page])
       else
         page = new Page({url: uri.toString(), domain: uri.domain()})
+        # Create new task if this is a search
+        matches = changeInfo.url.match(/www\.google\.com\/.*q=(.*?)($|&)/)
+        if matches != null # this is a search
+          query = decodeURIComponent(matches[1].replace(/\+/g, ' '))
+          if query != ""
+            Logger.debug 'creating for: ' + uri.toString()
+            newTask = new Task({name: query, tabs: [tabId]})
+            newTask.save()
         return Dexie.Promise.all([Tab.findByTabId(tabId), page.save()])
     .then (args) ->
       [tab, page] = args
@@ -81,7 +89,7 @@ chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
       if tab.pageVisit
         pageVisit.referrer = tab.pageVisit
         return Dexie.Promise.all([tab, pageVisit.save()])
-      else 
+      else
         return PageVisit.forTab(tab.openerTab).mostRecent().then (link) ->
           pageVisit.referrer = link.id
           return Dexie.Promise.all([tab, pageVisit.save()])
