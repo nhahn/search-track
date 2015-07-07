@@ -10,6 +10,7 @@
     "activeTab",
     "notifications",
     "history",
+    "contextMenus",
     "webNavigation",
     "sessions",
     "<all_urls>",
@@ -23,28 +24,16 @@
   "chrome_url_overrides" : {
     "newtab": "html/newTab.html"
   },
-  "content_scripts": [
-    {
-       "matches": ["<all_urls>"],
-       "js": ["js/bottom_bar/injectBar.js]",
-      "run_at": "document_start"
-    }
-  ],
+  // "content_security_policy": "script-src 'self' https://ajax.googleapis.com https://cdn.rawgit.com https://cdnjs.cloudflare.com https://maxcdn.bootstrapcdn.com; object-src 'self'",
+  "content_scripts": [{
+    "matches": ["http://*/*", "https://*/*"],
+    "js": ["/vendor/jquery/dist/jquery.min.js","/js/content/injectsidebar.js"],
+    "run_at": "document_start"
+  }],
   "web_accessible_resources": ["html/popup.html",
-  "/vendor/bootstrap/dist/js/bootstrap.min.js",
-  "/vendor/angular/angular.js",
-  "/js/angular-ui-tree-master/dist/angular-ui-tree.min.js",
-  "/vendor/taffydb/taffy-min.js",
-  "/vendor/underscore/underscore-min.map",
-  "/vendor/underscore/underscore-min.js",
-  "/js/trackAPI.js.map",
-  "/js/trackAPI.js",
-  "/vendor/jquery/dist/jquery.min.map",
-	"/vendor/bootstrap-less/.js",
-  "/vendor/jquery/dist/jquery.min.js",
-  "/js/interact.min.js",
-	"/vendor/bootstrap/less/bootstrap.less",
   "/html/sidebar.html",
+  "/vendor/angular/angular.min.js",
+  "/vendor/jquery/dist/jquery.min.js",
   "/js/content/injectsidebar.js"],
   "icons": {
     "16": "img/structify_small.png",
@@ -54,28 +43,21 @@
   "commands": {
     "add-importance-1": {
       "suggested_key": {
-        "default": "Ctrl+Period",
-        "mac": "Command+I"
+        "default": "Ctrl+J",
+        "mac": "Command+J"
       },
       "description": "Saves the current tab to box 1"
     },
     "add-importance-2": {
       "suggested_key": {
-        "default": "Ctrl+Comma",
+        "default": "Ctrl+K",
         "mac": "Command+K"
       },
       "description": "Saves the current tab to box 2"
     },
-    "add-importance-3": {
-      "suggested_key": {
-        "default": "Ctrl+I",
-        "mac": "Command+J"
-      },
-      "description": "Saves the current tab to box 3"
-    },
     "open": {
       "suggested_key": {
-        "default": "Ctrl+B",
+        "default": "Ctrl+Period",
         "mac": "Command+Period"
       },
 			"description": "Opens the sidebar"

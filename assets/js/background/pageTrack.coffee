@@ -23,12 +23,6 @@ getContentAndTokenize = (tabId, page) ->
             Logger.error err
         ).fail (a, t, e) ->
           Logger.debug "fail tokenize\n" + t
-          
-          
-# TODO ezhu what was this for??           
-#    chrome.tabs.query {}, (tabs) ->
-#      tabs.forEach (t) ->
-#        chrome.tabs.sendMessage t.id, newTab: newTab
 
 ###
 # Updates the page information with callback info about the dom
@@ -68,9 +62,6 @@ chrome.webNavigation.onDOMContentLoaded.addListener (details) ->
     Logger.info(err)
   .catch (err) ->
     Logger.error(err)
-    
-# TODO ezhu I removed a couple of parameters b/c I wasnt sure what they were for: loc, and position. Maybe
-# we can talk about it on slack?
     
 chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
 #  console.log(changeInfo)
@@ -240,7 +231,4 @@ chrome.webNavigation.onTabReplaced.addListener (details) ->
     Logger.warn "#{err}"
   .catch (err) ->
     Logger.error(err)
-    
-chrome.history.onVisited.addListener (item) ->
-  console.log(item)
     

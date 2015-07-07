@@ -35,6 +35,7 @@
     "angular-ui-tree": "~2.4.0",
     "interact": "~1.2.4",
     "jquery-hoverintent": "~1.8.1",
-    "jquery-ui": "~1.11.4"
+    "jquery-ui": "~1.11.4",
+    "ngDraggable": "~0.1.8"
   }
 }
