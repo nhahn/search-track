@@ -94,6 +94,9 @@ chrome.tabs.onCreated.addListener (tabId, changeInfo, tab) ->
         chrome.tabs.executeScript(tabId, {code: "$('#injectedsidebar').hide(); delete injected", runAt: "document_start"})
       i++
   )
+  
+adjustHeight = (height, sender) ->
+  chrome.tabs.executeScript(sender.tab.id, {code: "$('#injectedsidebar').height(#{height}); $('body').css('padding-bottom', #{height} + $('body').css('padding-bottom'));", runAt: "document_start"})
 
 # Message passing from content scripts and new tab page
 chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
@@ -103,6 +106,13 @@ chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
     console.log "blacklisted " + sender.tab.url
   else if request.removeSidebar
     chrome.tabs.executeScript(sender.tab.id, {code: "$('#injectedsidebar').hide(); delete injected", runAt: "document_start"})
+  else if request.minimize
+    adjustHeight(28, sender)
+  else if request.maximize
+    adjustHeight(153, sender)
+    
+    
+ 
 ###
   if request.newTask
     task = request.task
