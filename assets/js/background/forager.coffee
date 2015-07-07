@@ -110,7 +110,11 @@ chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
     adjustHeight(28, sender)
   else if request.maximize
     adjustHeight(153, sender)
-    
+  else if request.getCurrentTab
+    chrome.tabs.query({active: true, currentWindow: true}, (tabs) ->
+      sendResponse(tabs)
+    )
+    return true
     
  
 ###

@@ -91,6 +91,16 @@ body {
   padding: 0 ;
   font-size:1.1vw;
   color: black ;
+  
+  &.minimized {
+    margin-top: 10px; 
+  }
+  
+  .minimized {
+    padding-top: 7px;
+    padding-right: 2px;
+  }
+  
 }
 .border span {
   padding-right: 3px;

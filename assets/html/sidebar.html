@@ -1,7 +1,7 @@
 <html ng-csp>
 
   <body ng-app="listApp" class="no-print" ng-controller="RootCtrl">
-    <div class="border">
+    <div class="border" ng-class="{'minimized': minimized}">
       <div id="topleft">
        <span class='glyphicon' ng-class="{'glyphicon-save': !minimized, 'glyphicon-open': minimized}" title="Minimize Bar" ng-click='minimize()'></span>
        <span class='glyphicon glyphicon-remove' title="Remove from this page" ng-click='remove()'></span>
@@ -15,8 +15,8 @@
         </li>
       </ul>
       
-      <div class="borderHidden" ng-hide="!minimized" ng-controller="HiddenCtrl">
-      
+      <div class="minimized" ng-hide="!minimized" ng-controller="MinimizedCtrl">
+        <span class="label label-primary">{{task.name}}</span>
       </div>
 
     </div>
@@ -75,6 +75,7 @@
   <script src="/vendor/angular/angular.js"></script>
   <link rel="stylesheet" type="text/css" href="/vendor/angular/angular-csp.css"/>
   <script src="/vendor/ngDraggable/ngDraggable.js"></script>
+  <script src="/vendor/angular-dexie-bind/dist/angular-dexie-bind.min.js"></script>
   <script src="/js/trackAPI.js"></script>
   <script src="/js/content/sidebar.js"></script>
 

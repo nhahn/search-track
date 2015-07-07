@@ -22,7 +22,7 @@
 // BUG: doesn't work on first injection after extension loads, for many different errors (maybe due to race conditions)
 // CWO: integrate wtih search-track. 
 
-var listApp = angular.module('listApp', ['ngDraggable'], function($compileProvider) {
+var listApp = angular.module('listApp', ['ngDraggable', 'ngDexieBind'], function($compileProvider) {
 /* content security to display favicons, is this needed?
 $compileProvider.imgSrcSanitizationWhitelist(/^\s*(http?|ftp|file|chrome-extension):|data:image\//);
 $compileProvider.aHrefSanitizationWhitelist(/^\s*(http?|ftp|mailto|file|chrome-extension):/);
@@ -50,6 +50,19 @@ listApp.controller('RootCtrl', function ($scope) {
   $scope.remove = function() {
     chrome.runtime.sendMessage({removeSidebar:true}); 
   }
+});
+
+listApp.controller('MinimizedCtrl', function ($scope, $dexieBind) {
+  chrome.runtime.sendMessage({getCurrentTab: true}, function(msg) {
+    Tab.findByTabId(msg[0].id).then(function (tab) {
+      $scope.tab = tab;
+      return Task.find(tab.task);
+    }).then(function(task) {
+      $scope.$apply(function() {
+        $scope.task = task;
+      });
+    });
+  });
 });
 
 listApp.controller('ColCtrl1', function ($scope) {
