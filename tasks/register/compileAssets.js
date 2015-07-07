@@ -6,6 +6,8 @@ module.exports = function (grunt) {
     'jade:dev',
 		'sass:dev',
 		'copy:dev',
-		'coffee:dev'
+		'coffee:dev',
+    'update_json:bower',
+    'update_json:manifest'
 	]);
 };

@@ -25,7 +25,7 @@
     "taffydb": "nhahn/taffydb#master",
     "d3": "~3.5.4",
     "scroll-depth": "~0.7.1",
-    "riveted" : "*",
+    "riveted": "*",
     "screentime": "robflaherty/screentime",
     "cryptojslib": "*",
     "dexie": "~1.1",

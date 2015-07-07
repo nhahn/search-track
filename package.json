@@ -1,6 +1,6 @@
 {
   "name": "search-track",
-  "version": "0.0.1",
+  "version": "0.2",
   "description": "Helps you track, manage, and learn from your web searches",
   "main": "Gruntfile.js",
   "scripts": {
@@ -10,7 +10,7 @@
     "type": "git",
     "url": "https://github.com/nhahn/search-track.git"
   },
-  "dependencies": {
+  "devDependencies": {
     "browserify": "~8.1.3",
     "coffee-cache": "0.4.x",
     "coffee-script": "1.7.x",
@@ -25,9 +25,11 @@
     "grunt-contrib-jst": "~0.6.0",
     "grunt-contrib-uglify": "~0.4.0",
     "grunt-contrib-watch": "~0.5.3",
+    "grunt-crx": "~1.0.3",
     "grunt-sails-linker": "~0.9.5",
     "grunt-sass": "~0.14.0",
     "grunt-sync": "~0.0.4",
+    "grunt-update-json": "^0.2.1",
     "include-all": "^0.1.6",
     "jade": "~1.3.1",
     "natural": "~0.2.0"
