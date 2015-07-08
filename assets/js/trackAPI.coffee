@@ -58,6 +58,7 @@ class Page extends Base
     properties = _.extend({
       favicon: ''
       isSearch: false
+      blacklisted: false
       query: ''
       url: ''
       domain: ''
@@ -76,6 +77,7 @@ class Page extends Base
     }, params)
     @favicon = properties.favicon
     @isSearch = properties.isSearch
+    @blacklisted = properties.blacklisted
     @query = properties.query
     @url = properties.url
     @domain = properties.domain
@@ -323,11 +325,13 @@ class Task extends Base
       dateCreated: Date.now()
       order: 999
       hidden: false
+      isSearch: false
     }, params)
     @name = properties.name
     @dateCreated = properties.dateCreated
     @order = properties.order
     @hidden = properties.hidden
+    @isSearch = properties.isSearch
 
 
   ###
@@ -359,7 +363,7 @@ class Task extends Base
     if page and page.isSearch
       return db.Task.where('name').equals(page.query).first().then (task) ->
         return task if task
-        task = new Task({name: page.query, hidden: false})
+        task = new Task({name: page.query, hidden: false, isSearch: true})
         return task.save()
     else if force or !tab or !tab.task
       task = new Task({name: 'Unknown'+Math.random()*10000, hidden: true})

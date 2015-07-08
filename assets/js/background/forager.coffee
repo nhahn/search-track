@@ -103,11 +103,13 @@ chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
   else if request.maximize
     adjustHeight(153, sender)
   else if request.getCurrentTab
-    chrome.tabs.query({active: true, currentWindow: true}, (tabs) ->
+    chrome.tabs.query {active: true, currentWindow: true}, (tabs) ->
       sendResponse(tabs)
-    )
     return true
-    
+  else if request.toggleTasks
+    chrome.tabs.executeScript(sender.tab.id, {file:"/js/content/injectTaskSelector.js", runAt: "document_start"})
+  else if request.removeTasksBar
+    chrome.tabs.executeScript(sender.tab.id, {code: "$('#injectedTaskSelector').hide(); delete injectedTaskSelector", runAt: "document_start"})
  
 ###
   if request.newTask

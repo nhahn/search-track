@@ -19,6 +19,7 @@ getContentAndTokenize = (tabId, page) ->
           results = JSON.parse results
           vector = results['vector']
           page = _.extend(page,{vector: results['vector'], topics: results['topics'], topic_vector: results['topic_vector'], size: results['size']})
+          page.time = Date.now()
           page.save().catch (err) ->
             Logger.error err
         ).fail (a, t, e) ->
@@ -55,7 +56,8 @@ domInfo = (url, tab) ->
         page.title = tab.title
         page.save()
   .delay(500).then (page) ->
-    getContentAndTokenize(tab.tab, page)
+    if page.time > Date.now() - 3600000 #Dont bother getting the content if we have done this in the past hour
+      getContentAndTokenize(tab.tab, page)
     
 ###
 # When a page is "loaded" enough, we can then perform any processing on it's content
@@ -153,7 +155,8 @@ addDetails = (details) ->
       throw new RecordMissingError("Can't find Visit record for #{details.tab}") if !pageVisit or pageVisit.page is not page.id
       if details.transitionQualifiers.indexOf("forward_back") >= 0 #We used the navigation arrows -- simple visit
         #We probably want this to be the task it was before?? (the tab's task might have switched)
-        return PageVisit.forPage(page.id).filter((visit) -> visit.tab == tab.id).mostRecent().first().then (oldVisit) ->
+        return PageVisit.forPage(page.id).and((visit) -> visit.tab == tab.id).mostRecent().then (oldVisit) ->
+          throw new RecordMissingError("Missing old Visit for page #{page.id}") if !oldVisit
           pageVisit.task = oldVisit.task
           #TODO figure out more specificially if we went back?
           pageVisit.type = "forward_back"
@@ -178,10 +181,11 @@ addDetails = (details) ->
           when "reload" #We really don't want to record this in this instance -- find the last page visit and record it
             #TODO manage reload here
             return pageVisit.delete().then (visit) ->
-              PageVisit.forPage(page.id).filter((visit) -> visit.tab == tab.id).mostRecent().first()
+              PageVisit.forPage(page.id).and((visit) -> visit.tab == tab.id).mostRecent()
             .then (visit) ->
+              return Dexie.Promise.all([tab, pageVisit.save()]) if !visit
               tab.pageVisit = visit.id
-              Dexie.Promise.all([tab, pageVisit])
+              return Dexie.Promise.all([tab, visit])
           when "start_page" #Don't record this.....
             throw new Promise.CancellationError('Detected start page -- ignoring')
           when "form_submit" #Not sure what to do here exactly... 

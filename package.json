@@ -1,6 +1,6 @@
 {
   "name": "search-track",
-  "version": "0.2",
+  "version": "0.2.0",
   "description": "Helps you track, manage, and learn from your web searches",
   "main": "Gruntfile.js",
   "scripts": {

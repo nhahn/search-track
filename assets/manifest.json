@@ -25,6 +25,7 @@
   },
   "content_scripts": [{
     "matches": ["http://*/*", "https://*/*"],
+    "css": ["/css/injectedAnimations.css"],
     "js": ["/vendor/jquery/dist/jquery.min.js","/js/content/injectsidebar.js"],
     "run_at": "document_start"
   }],
@@ -32,7 +33,7 @@
   "/html/sidebar.html",
   "/vendor/angular/angular.min.js",
   "/vendor/jquery/dist/jquery.min.js",
-  "/js/content/injectsidebar.js"],
+  "/html/taskSelector.html"],
   "icons": {
     "16": "img/structify_small.png",
     "48": "img/structify_medium.png",

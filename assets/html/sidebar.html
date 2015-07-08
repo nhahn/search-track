@@ -16,7 +16,7 @@
       </ul>
       
       <div class="minimized" ng-hide="!minimized" ng-controller="MinimizedCtrl">
-        <span class="label label-primary">{{task.name}}</span>
+        <span class="label label-primary" ng-click="changeTask()">{{task[0].name}}</span>
       </div>
 
     </div>

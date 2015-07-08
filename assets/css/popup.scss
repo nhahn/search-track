@@ -62,17 +62,17 @@ ul#tasks li {
   border-radius: 5px;
 }
 
-ul#queries li.selected {
+ul#tasks li.selected {
  box-shadow: none;
  border: 1px solid rgb(230, 230, 230);
  padding: 0px;
 }
 
-ul#queries li.selected:hover {
+ul#tasks li.selected:hover {
   opacity: 1;
 }
 
-ul#queries li.selected span {
+ul#tasks li.selected span {
   background-color: blue;
   padding: 12px 10px 13px 10px;
   border-top-left-radius: 5px;
@@ -99,13 +99,13 @@ ul#queries li.selected span {
   }
 }
 
-ul#queries li.selected div {
+ul#tasks li.selected div {
   display: inline-block;
   padding-left: 5px;
   padding-bottom: 9px;
 }
 
-ul#queries li:hover {
+ul#tasks li:hover {
   opacity: 0.8;
   cursor: pointer;
 }

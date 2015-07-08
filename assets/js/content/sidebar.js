@@ -53,16 +53,32 @@ listApp.controller('RootCtrl', function ($scope) {
 });
 
 listApp.controller('MinimizedCtrl', function ($scope, $dexieBind) {
+
   chrome.runtime.sendMessage({getCurrentTab: true}, function(msg) {
-    Tab.findByTabId(msg[0].id).then(function (tab) {
+    return $dexieBind.bind(db, db.Tab.where('tab').equals(msg[0].id).and(function(val) {
+      return val.status === 'active';
+    }), $scope).then(function(tab) {
+      var watch;
       $scope.tab = tab;
-      return Task.find(tab.task);
-    }).then(function(task) {
-      $scope.$apply(function() {
-        $scope.task = task;
-      });
+      watch = function(newTab, oldTab) {
+        if (newTab.task === oldTab.task) {
+          return;
+        }
+        if ($scope.curTask) {
+          $scope.curTask.$unbind();
+        }
+        return $dexieBind.bind(db, db.Task.where('id').equals(newTab.task), $scope).then(function(task) {
+          return $scope.task = task;
+        });
+      };
+      $scope.$watchCollection('tab[0]', watch);
+      return watch($scope.tab[0], {});
     });
   });
+  
+  $scope.changeTask = function () {
+    chrome.runtime.sendMessage({toggleTasks:true});  
+  }
 });
 
 listApp.controller('ColCtrl1', function ($scope) {
