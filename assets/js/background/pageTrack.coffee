@@ -42,7 +42,7 @@ domInfo = (url, tab) ->
       chrome.tabs.getAsync tab.tab
       chrome.tabs.executeScriptAsync tab.tab, {code: 'window.scrollY'}
       chrome.tabs.executeScriptAsync tab.tab, {code: 'window.innerHeight'}
-  ]).spread (tab, depth, height) ->  
+  ]).spread (tab, depth, height) ->
     db.transaction 'rw', db.Page, () ->
       db.Page.where('url').equals(url).first().then (page) ->
         throw new RecordMissingError("Can't find page for url #{url}") if !page
@@ -90,7 +90,7 @@ chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
     .then (args) ->
       [task, tab, page] = args
       pageVisit = new PageVisit({page: page.id, tab: tab.id, task: task.id, type: 'navigation'})
-      if !tab.pageVisit and tab.openerTab 
+      if !tab.pageVisit and tab.openerTab
         return PageVisit.forTab(tab.openerTab).mostRecent().then (link) ->
           pageVisit.referrer = link.id
           return Dexie.Promise.all([tab, pageVisit.save()])
@@ -104,7 +104,7 @@ chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
   .catch RecordMissingError, (err) ->
     Logger.info(err)
   .catch (err) ->
-    Logger.error(err)   
+    Logger.error(err)
  
 ###
 # The user has made a navigation that is considered to a particular navigation -- we want to track this transition

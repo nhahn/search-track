@@ -8,13 +8,16 @@ class Task extends Base
       order: 999
       hidden: false
       isSearch: false
+      annotation: "Annotate Here. (Tip: Use Command+Period to minimize)"
+      pages: []
     }, params)
     @name = properties.name
     @dateCreated = properties.dateCreated
     @order = properties.order
     @hidden = properties.hidden
     @isSearch = properties.isSearch
-
+    @annotation = properties.annotation
+    @pages = properties.pages # pageVisit ids, indexed by time?
 
   ###
   # Adds a page from this task. 
@@ -34,6 +37,16 @@ class Task extends Base
     return db.Task.put(this).then (id) =>
       return this
 
+  # Doesn't work
+  changeName: (name) ->
+    console.log name
+    console.log @name
+    console.log this
+    console.log this.table
+    @name = name
+    return db.Task.put(this).then (id) =>
+      return this
+
   #TODO have more complex heuristics, etc for getting an existing task
   ###
   # Generate or reuse a task based on the page, tab, etc.
@@ -45,10 +58,10 @@ class Task extends Base
     if page and page.isSearch
       return db.Task.where('name').equals(page.query).first().then (task) ->
         return task if task
-        task = new Task({name: page.query, hidden: false, isSearch: true})
+        task = new Task({name: page.query, hidden: false, isSearch: true, annotation:"Annotate Here. (Tip: Use Command+Period to minimize)"})
         return task.save()
     else if force or !tab or !tab.task
-      task = new Task({name: 'Unknown'+Math.random()*10000, hidden: true})
+      task = new Task({name: 'Unknown'+Math.floor(Math.random()*10000), hidden: true, annotation:"Annotate Here. (Tip: Use Command+Period to minimize)"})
       return task.save()
     else
       return Task.find(tab.task)

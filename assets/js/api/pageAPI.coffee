@@ -18,7 +18,7 @@ class Page extends Base
       fragmentless: ''
       time: Date.now()
       title: ''
-      vector: {} 
+      vector: {}
       topics: ''
       topic_vector: []
       size: 0
@@ -26,7 +26,7 @@ class Page extends Base
       color: 'rgba(219,217,219,1)'
       depth: 0
       height: 0 # for the drag-and-drop list (could be adapted for 2D manipulation)
-      favorite: false   # will be able to "favorite" newTabs
+      favorite: false   # will be able to "favorite" tabs
     }, params)
     @favicon = properties.favicon
     @isSearch = properties.isSearch

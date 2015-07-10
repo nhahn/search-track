@@ -3,20 +3,29 @@
   <body ng-app="listApp" class="no-print" ng-controller="RootCtrl">
     <div class="border" ng-class="{'minimized': minimized}">
       <div id="topleft">
-       <span class='glyphicon' ng-class="{'glyphicon-save': minimized, 'glyphicon-open': !minimized}" title="Minimize Bar" ng-click='minimize()'></span>
+       <span class='glyphicon' ng-class="{'glyphicon-resize-full': minimized, 'glyphicon-resize-small': !minimized}" title="Resize Bar" ng-click='minimize()'></span>
        <span class='glyphicon glyphicon-remove' title="Remove from this page" ng-click='remove()'></span>
        <span class='glyphicon glyphicon-ban-circle' title="Blacklist this page" ng-click='blacklist()'></span>
+       <span class='glyphicon' ng-class="{'glyphicon-chevron-up': bottom, 'glyphicon-chevron-down': !bottom}" title="Change Location" ng-click='changeLocation()'></span>
         <!-- <span class='glyphicon glyphicon-cog' title='Access Forager Settings' id='options'></span> -->
       </div>
 
-      <ul class="borderlist" ng-controller="BorderCtrl" ng-hide="minimized">
-        <li ng-repeat="obj in draggableObjects" class="ng-scope borderdrop" ng-drop="true" ng-drop-success="onDropComplete($index,$data,$event)">
-          <div ng-drag="true" ng-drag-data="obj" ng-class="obj.name" class="borderdrag" ng-drag-success="onDragComplete($data,$event)">{{obj.name}}</div>
+      <ul class="borderlist"> <!-- ng-hide="minimized" -->
+        <li ng-repeat="task in tasks" class="ng-scope borderdrop" ng-drop="true" ng-drop-success="onBorderDropComplete($index,$data,$event)">
+        <div ng-drag="true" ng-drag-data="task" ng-attr-title="{{task.name}}" ng-class="task.name" class="borderdrag" ng-drag-success="onDragComplete($data,$event)">
+          <div class="taskname">
+            <div class="txt" ng-hide="task.editing" ng-click="task.editing=!task.editing">{{task.name}}</div>
+            <div class="input-group">
+              <input my-input type="text" ng-model="task.name" class="editTaskName form-control" ng-show="task.editing" ng-submit="task.editing=!task.editing; changeName();" value="{{task.name}}"></input>
+            </div>
+          </div>
+          <span class="glyphicon glyphicon-remove-sign pull-right" ng-click="remove()"></span>
+        </div>
         </li>
       </ul>
       
       <div class="minimized" ng-hide="!minimized" ng-controller="MinimizedCtrl">
-        <span class="label label-primary">{{task.name}}</span>
+        <span class="label label-primary" id="current-task">{{task.name}}</span>
       </div>
 
     </div>
@@ -26,16 +35,9 @@
     <div class="ontop">
     <div class="row" id="row" ng-hide="minimized">
       <!-- Column 1 -->
-      <div class="col-md-4 col-xs-4"><div id="column1" class="column" ng-controller="ColCtrl1">
-        <div class="wrapper">
-          <div class='col-md-8 col-xs-8 bucketname'>Bucket 1</div>
-          <div class='col-md-1 col-xs-1 btn massdelete'><span class="glyphicon glyphicon-remove" aria-hidden="true"></div>
-          <div class='col-md-1 col-xs-1 btn save'><span class="glyphicon glyphicon-camera" aria-hidden="true"></div>
-          <div class='col-md-1 col-xs-1 btn search'><span class="glyphicon glyphicon-search" aria-hidden="true"></span></div>
-          <div class='col-md-1 col-xs-1 btn share'><span class="glyphicon glyphicon-share" aria-hidden="true"></div>
-        </div>
+      <div class="col-md-4 col-xs-4"><div id="column1" class="column">
         <ul class="draglist">
-          <li ng-repeat="obj in draggableObjects" class="ng-scope maindrop" ng-drop="true" ng-drop-success="onDropComplete($index,$data,$event)">
+          <li ng-repeat="obj in pages" class="ng-scope maindrop" ng-drop="true" ng-drop-success="onDropComplete($index,$data,$event)">
             <div ng-drag="true" ng-drag-data="obj" ng-class="obj.name" class="maindrag"  ng-drag-success="onDragComplete($data,$event)">{{obj.name}}</div>
           </li>
         </ul>
@@ -43,23 +45,16 @@
 
       <!-- Column 2 -->
       <div class="col-md-4 col-xs-4"><div id="column2" class="column" ng-controller="ColCtrl2">
-        <div class="wrapper">
-          <div class='col-md-8 col-xs-8 bucketname'>Bucket 2</div>
-          <div class='col-md-1 col-xs-1 btn massdelete'><span class="glyphicon glyphicon-remove" aria-hidden="true"></div>
-          <div class='col-md-1 col-xs-1 btn save'><span class="glyphicon glyphicon-camera" aria-hidden="true"></div>
-          <div class='col-md-1 col-xs-1 btn search'><span class="glyphicon glyphicon-search" aria-hidden="true"></span></div>
-          <div class='col-md-1 col-xs-1 btn share'><span class="glyphicon glyphicon-share" aria-hidden="true"></div>
-        </div>
         <ul class="draglist">
-          <li ng-repeat="obj in draggableObjects" class="ng-scope maindrop" ng-drop="true" ng-drop-success="onDropComplete($index,$data,$event)">
+          <li ng-repeat="obj in pages" class="ng-scope maindrop" ng-drop="true" ng-drop-success="onGridDropComplete($index,$data,$event)">
             <div ng-drag="true" ng-drag-data="obj" ng-class="obj.name" class="maindrag"  ng-drag-success="onDragComplete($data,$event)">{{obj.name}}</div>
           </li>
         </ul>
       </div></div> 
 
       <!-- Column 3 -->
-      <div class="col-md-4 col-xs-4"><div id="column3" class="column">
-        <textarea id="textbox">Annotate Here. (Tip: Use &#8984;+Period to hide.)</textarea>
+      <div class="col-md-4 col-xs-4"><div id="column3" class="column ng-scope" ng-controller="AnnotationCtrl">
+          <textarea id="textbox">{{task.annotation}}</textarea>
       </div></div>
 
     </div>

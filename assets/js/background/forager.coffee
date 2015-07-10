@@ -2,6 +2,8 @@
 	Background page for the Forager part of the extension 
 ###
 
+chrome.storage.sync.set({bottom: true})
+
 chrome.commands.onCommand.addListener (command) ->
   # Call 'update' with an empty properties object to get access to the current
   # tab (given to us in the callback function).
@@ -59,6 +61,14 @@ chrome.contextMenus.create({contexts: ['browser_action'], title: "Remove this si
 })
 
 chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
+  # Check if bar is set to top or bottom
+  chrome.storage.sync.get('bottom', (items) ->
+    chrome.tabs.query({active: true, currentWindow: true}, (tabs) ->
+      if !items.bottom
+        chrome.tabs.sendMessage(tabs[0].id, {tOp: true})
+    )
+  )
+
   # Check if page is on blacklist
   chrome.storage.sync.get "blacklist", (items) ->
     return if typeof items.blacklist == 'undefined'
@@ -84,6 +94,14 @@ chrome.tabs.onCreated.addListener (tabId, changeInfo, tab) ->
 #      alert 'Too many tabs! ' + tab.id
 #      chrome.tabs.remove tab.id
 
+  # Check if bar is set to top or bottom
+  chrome.storage.sync.get('bottom', (items) ->
+    chrome.tabs.query({active: true, currentWindow: true}, (tabs) ->
+      if !items.bottom
+        chrome.tabs.sendMessage(tabs[0].id, {tOp: true})
+    )
+  )
+
   # Check if page is on blacklist
   chrome.storage.sync.get "blacklist", (items) ->
     console.log items
@@ -92,7 +110,7 @@ chrome.tabs.onCreated.addListener (tabId, changeInfo, tab) ->
     for item in items.blacklist
       if tab.url.includes(item)
         # race condition?
-        chrome.tabs.executeScript(tabId, {code: "$('#injectedsidebar').hide(); delete injected", runAt: "document_start"})
+        chrome.tabs.executeScript(tabId, {code: "$('#injectedsidebar').hide(); $('body').css('margin-top', '0px'); $('#viewport').css('top','0'); $('body').css('padding-bottom',0); delete injected", runAt: "document_start"})
 
   # Make bar full size if in fullscreen mode
   chrome.windows.getCurrent({}, (window) ->
@@ -100,15 +118,22 @@ chrome.tabs.onCreated.addListener (tabId, changeInfo, tab) ->
     if window.state == 'fullscreen'
       chrome.tabs.query {currentWindow:true, active:true}, (tabs) ->
         chrome.tabs.sendMessage tabs[0].id, {changeSize: true}
-
-      #shift page's content down further
-      
   )
 
 
 adjustHeight = (height, tabId) ->
   chrome.tabs.executeScript(tabId, {code: "$('#injectedsidebar').height(#{height}); $('body').css('padding-bottom', #{height} + $('body').css('padding-bottom'));", runAt: "document_start"})
-  chrome.tabs.executeScript(tabId, {code: "$('body').css('margin-top', '#{height}px'); $('#viewport').css('top','#{height}px');", runAt: "document_start"})
+
+  # Check if bar is set to top or bottom
+  chrome.storage.sync.get('bottom', (items) ->
+    chrome.tabs.query({active: true, currentWindow: true}, (tabs) ->
+      if items.bottom
+        chrome.tabs.executeScript(tabId, {code: "$('body').css('padding-bottom',#{height})", runAt: "document_start"})
+      else
+        chrome.tabs.executeScript(tabId, {code: "$('body').css('margin-top', '#{height}px'); $('#viewport').css('top','#{height}px');", runAt: "document_start"})
+    )
+  )
+
 
 # Message passing from content scripts and new tab page
 chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
@@ -118,10 +143,25 @@ chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
     console.log "blacklisted " + sender.tab.url
   else if request.removeSidebar
     chrome.tabs.executeScript(sender.tab.id, {code: "$('#injectedsidebar').hide(); delete injected", runAt: "document_start"})
+    chrome.tabs.executeScript(sender.tab.id, {code: "$('body').css('margin-top', '0px'); $('#viewport').css('top','0'); $('body').css('padding-bottom',0)", runAt: "document_start"})
   else if request.minimize
     adjustHeight(28, sender.tab.id)
   else if request.maximize
-    adjustHeight(153, sender.tab.id)
+    adjustHeight(129, sender.tab.id)
+  else if request.changeLocation
+    # Check if bar is set to top or bottom
+    chrome.storage.sync.get('bottom', (items) ->
+      console.log items.bottom
+      chrome.storage.sync.set(
+        {'bottom': !items.bottom}
+      )
+      chrome.tabs.query({active: true, currentWindow: true}, (tabs) ->
+        if !items.bottom # do opposite
+          chrome.tabs.sendMessage(tabs[0].id, {bottom: true})
+        else
+          chrome.tabs.sendMessage(tabs[0].id, {tOp: true})
+      )
+    )
   else if request.getCurrentTab
     chrome.tabs.query({active: true, currentWindow: true}, (tabs) ->
       sendResponse(tabs)
