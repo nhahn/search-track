@@ -75,7 +75,7 @@ db_changes = chrome.runtime.connect {name: 'db_changes'}
 window.db = new Dexie('searchTrack')
 db.version(1).stores({
   Search: '$$id,&name,*tabs,task' #Searches from Google we are tracking
-  Task: '$$id,name' #table of tasks
+  Task: '$$id,name,dateCreated' #table of tasks
   Page: '$$id,url' #Pages we are keeping info on
   PageVisit: '$$id,tab,task,page,referrer' #Visits to individual pages
   PageEvent: '$$id,pageVisit,type,time' #Events for a specific visit to a page

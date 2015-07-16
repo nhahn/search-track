@@ -10,6 +10,7 @@ class Task extends Base
       isSearch: false           #Whether the task spawned from a search or not
       parent: ''                #The parent task for this task
       level: 1                  #The nested "level" of the task (1 being the child of the tree)
+      annotation: "Annotate Here. (Tip: Use Command+Period to minimize)"
     }, params)
     @name = properties.name
     @dateCreated = properties.dateCreated
@@ -18,7 +19,17 @@ class Task extends Base
     @isSearch = properties.isSearch
     @parent = properties.parent
     @level = properties.level
+    @annotation = properties.annotation
 
+  # Doesn't work
+  changeName: (name) ->
+    console.log name
+    console.log @name
+    console.log this
+    console.log this.table
+    @name = name
+    return db.Task.put(this).then (id) =>
+      return this
 
   #TODO have more complex heuristics, etc for getting an existing task
   ###
@@ -31,10 +42,10 @@ class Task extends Base
     if page and page.isSearch
       return db.Task.where('name').equals(page.query).first().then (task) ->
         return task if task
-        task = new Task({name: page.query, hidden: false, isSearch: true})
+        task = new Task({name: page.query, hidden: false, isSearch: true, annotation:"Annotate Here. (Tip: Use Command+Period to minimize)"})
         return task.save()
     else if force or !tab or !tab.task
-      task = new Task({name: 'Unknown'+Math.random()*10000, hidden: true})
+      task = new Task({name: 'Unknown'+Math.floor(Math.random()*10000), hidden: true, annotation:"Annotate Here. (Tip: Use Command+Period to minimize)"})
       return task.save()
     else
       return Task.find(tab.task)
