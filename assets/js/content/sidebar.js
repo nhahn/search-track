@@ -60,19 +60,9 @@ listApp.controller('MinimizedCtrl', function ($scope, $dexieBind) {
     }), $scope).then(function(tab) {
       var watch;
       $scope.tab = tab;
-      watch = function(newTab, oldTab) {
-        if (newTab.task === oldTab.task) {
-          return;
-        }
-        if ($scope.curTask) {
-          $scope.curTask.$unbind();
-        }
-        return $dexieBind.bind(db, db.Task.where('id').equals(newTab.task), $scope).then(function(task) {
-          return $scope.task = task;
-        });
-      };
-      $scope.$watchCollection('tab[0]', watch);
-      return watch($scope.tab[0], {});
+      return $scope.tab.$join(db.Task, 'task', 'id');
+    }).then(function(tasks) {
+      $scope.tasks = tasks;
     });
   });
   

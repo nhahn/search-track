@@ -48,7 +48,7 @@
       windowId: chromeTab.windowId
       position: chromeTab.index
     })
-    resolve.push Task.generateTask(tab, page, true).then (task) ->
+    resolve.push Task.generateBaseTask(tab, page, true).then (task) ->
       return task.id
 
     Promise.all(resolve).spread (task) ->

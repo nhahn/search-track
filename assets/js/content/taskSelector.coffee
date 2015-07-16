@@ -6,15 +6,13 @@ listApp.controller 'RootCtrl', ($scope, $dexieBind) ->
     $scope.tasks = data
   
   chrome.runtime.sendMessage { getCurrentTab: true }, (msg) ->
+    
     $dexieBind.bind(db, db.Tab.where('tab').equals(msg[0].id).and((val) -> val.status is 'active'), $scope).then (tab) ->
       $scope.tab = tab
-      watch = (newTab, oldTab) ->
-        return if newTab.task == oldTab.task
-        $scope.curTask.$unbind() if $scope.curTask
-        $dexieBind.bind(db, db.Task.where('id').equals(newTab.task), $scope).then (task) ->
-          $scope.curTask = task
-      $scope.$watchCollection 'tab[0]', watch
-      watch($scope.tab[0], {})
+      return $scope.tab.$join(db.Task, 'task', 'id')
+    .then (tasks) ->
+      $scope.curTask = tasks
+
   
   $scope.createTask = () ->
     task = new Task({name: $scope.newTask})

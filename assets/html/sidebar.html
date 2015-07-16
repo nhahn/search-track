@@ -16,7 +16,7 @@
       </ul>
       
       <div class="minimized" ng-hide="!minimized" ng-controller="MinimizedCtrl">
-        <span class="label label-primary" ng-click="changeTask()">{{task[0].name}}</span>
+        <span class="label label-primary" ng-click="changeTask()">{{tasks[tab[0].task].name}}</span>
       </div>
 
     </div>
@@ -29,10 +29,10 @@
       <div class="col-md-4 col-xs-4"><div id="column1" class="column" ng-controller="ColCtrl1">
         <div class="wrapper">
           <div class='col-md-8 col-xs-8 bucketname'>Bucket 1</div>
-          <div class='col-md-1 col-xs-1 btn massdelete'><span class="glyphicon glyphicon-remove" aria-hidden="true"></div>
-          <div class='col-md-1 col-xs-1 btn save'><span class="glyphicon glyphicon-camera" aria-hidden="true"></div>
+          <div class='col-md-1 col-xs-1 btn massdelete'><span class="glyphicon glyphicon-remove" aria-hidden="true"/></div>
+          <div class='col-md-1 col-xs-1 btn save'><span class="glyphicon glyphicon-camera" aria-hidden="true"/></div>
           <div class='col-md-1 col-xs-1 btn search'><span class="glyphicon glyphicon-search" aria-hidden="true"></span></div>
-          <div class='col-md-1 col-xs-1 btn share'><span class="glyphicon glyphicon-share" aria-hidden="true"></div>
+          <div class='col-md-1 col-xs-1 btn share'><span class="glyphicon glyphicon-share" aria-hidden="true"/></div>
         </div>
         <ul class="draglist">
           <li ng-repeat="obj in draggableObjects" class="ng-scope maindrop" ng-drop="true" ng-drop-success="onDropComplete($index,$data,$event)">
@@ -45,10 +45,10 @@
       <div class="col-md-4 col-xs-4"><div id="column2" class="column" ng-controller="ColCtrl2">
         <div class="wrapper">
           <div class='col-md-8 col-xs-8 bucketname'>Bucket 2</div>
-          <div class='col-md-1 col-xs-1 btn massdelete'><span class="glyphicon glyphicon-remove" aria-hidden="true"></div>
-          <div class='col-md-1 col-xs-1 btn save'><span class="glyphicon glyphicon-camera" aria-hidden="true"></div>
+          <div class='col-md-1 col-xs-1 btn massdelete'><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></div>
+            <div class='col-md-1 col-xs-1 btn save'><span class="glyphicon glyphicon-camera" aria-hidden="true"></span></div>
           <div class='col-md-1 col-xs-1 btn search'><span class="glyphicon glyphicon-search" aria-hidden="true"></span></div>
-          <div class='col-md-1 col-xs-1 btn share'><span class="glyphicon glyphicon-share" aria-hidden="true"></div>
+          <div class='col-md-1 col-xs-1 btn share'><span class="glyphicon glyphicon-share" aria-hidden="true"></span></div>
         </div>
         <ul class="draglist">
           <li ng-repeat="obj in draggableObjects" class="ng-scope maindrop" ng-drop="true" ng-drop-success="onDropComplete($index,$data,$event)">

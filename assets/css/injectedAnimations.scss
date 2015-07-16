@@ -1,5 +1,6 @@
 #injectedTaskSelector {
   height: 0px;
+  display: none;
   position:fixed;
   z-index:2147483645;
   width:260px;
@@ -20,6 +21,7 @@
   
   &.slideTasksFrameUp {
     height: 300px;
+    display: block;
     -webkit-animation-name: slideup;
     -webkit-animation-duration: 1s; 
   }

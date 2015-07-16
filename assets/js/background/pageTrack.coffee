@@ -7,7 +7,7 @@
 getContentAndTokenize = (tabId, page) ->
   chrome.tabs.get tabId, (tab) ->
     Logger.debug "TOK:\n" + tab.url
-    chrome.tabs.executeScript tabId, {code: 'window.document.documentElement.innerHTML'}, (results) ->
+    chrome.tabs.executeScriptAsync(tabId, {code: 'window.document.documentElement.innerHTML'}).then (results) ->
       html = results[0]
       if html? and html.length > 10
         $.ajax(
@@ -24,6 +24,8 @@ getContentAndTokenize = (tabId, page) ->
             Logger.error err
         ).fail (a, t, e) ->
           Logger.debug "fail tokenize\n" + t
+    .catch (err) ->
+      Logger.info("Tokenize error!")
 
 ###
 # Extract the redirect URL from google results
@@ -88,7 +90,7 @@ chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
       [tab, page] = args
       throw new RecordMissingError("Can't find Tab record for id #{tabId}") if !tab
       #Assume navigation and referrer, and correct it if we are wrong
-      return Dexie.Promise.all([Task.generateTask(tab, page), tab, page])
+      return Dexie.Promise.all([Task.generateBaseTask(tab, page), tab, page])
     .then (args) ->
       [task, tab, page] = args
       pageVisit = new PageVisit({page: page.id, tab: tab.id, task: task.id, type: 'navigation'})
@@ -168,14 +170,14 @@ addDetails = (details) ->
           when "typed" # If this was type, generate a new task
             pageVisit.type = "typed"
             pageVisit.referrer = ''
-            return Task.generateTask(tab, page, true).then (task) ->
+            return Task.generateBaseTask(tab, page, true).then (task) ->
               pageVisit.task = task.id
               return Dexie.Promise.all([tab, pageVisit.save()])
             #TODO -- we could possible infer that the user opened this up from their history?? IDK
           when "auto_bookmark"
             pageVisit.type = "bookmark"
             pageVisit.referrer = ''
-            return Task.generateTask(tab, page, true).then (task) ->
+            return Task.generateBaseTask(tab, page, true).then (task) ->
               pageVisit.task = task.id
               return Dexie.Promise.all([tab, pageVisit.save()])
           when "reload" #We really don't want to record this in this instance -- find the last page visit and record it
@@ -193,7 +195,7 @@ addDetails = (details) ->
           when "generated" # in this case the user is probably typing in what they want? Close to a task
             pageVisit.type = "typed"
             pageVisit.referrer = ''
-            return Task.generateTask(tab, page, true).then (task) ->
+            return Task.generateBaseTask(tab, page, true).then (task) ->
               pageVisit.task = task.id
               return Dexie.Promise.all([tab, pageVisit.save()])          
           else
@@ -227,8 +229,9 @@ chrome.webNavigation.onTabReplaced.addListener (details) ->
       [newTab, replacedTab, pageVisit, page] = args
       replacedTab.tab = newTab.tab
       pageVisit.tab = replacedTab.id
+      # TODO look at this a little more deeply to check the logic
       if !newTab.task
-        return Task.generateTask(tab, page, true).then (task) ->
+        return Task.generateBaseTask(newTab, page, true).then (task) ->
           pageVisit.task = task.id
           replacedTab.task = task.id
           Dexie.Promise.all([replacedTab.save(), pageVisit.save(), newTab])

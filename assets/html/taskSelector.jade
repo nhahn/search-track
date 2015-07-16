@@ -5,8 +5,8 @@ body.no-print(ng-app='listApp', ng-controller='RootCtrl')
       span.glyphicon.glyphicon-remove.pull-right(title="Close Tasks" ng-click='close()')
   #taskContainer
     ul#tasks
-      li(ng-repeat="task in tasks | orderBy:'-dateCreated'", ng-class="{selected: (curTask[0].id == task.id)}", ng-click="taskSelect(task)") 
-        span.glyphicon.glyphicon-ok(ng-if="curTask[0].id == task.id")
+      li(ng-repeat="task in tasks | orderBy:'-dateCreated'", ng-class="{selected: (curTask[tab[0].task].id == task.id)}", ng-click="taskSelect(task)") 
+        span.glyphicon.glyphicon-ok(ng-if="curTask[tab[0].task].id == task.id")
         div {{task.name}}
   form#addTask.form-inline(ng-submit="createTask()")
     .form-group

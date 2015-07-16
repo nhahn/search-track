@@ -321,36 +321,22 @@ class TabEvent extends Base
 class Task extends Base
   constructor: (params) ->
     properties = _.extend({
-      name: ''
-      dateCreated: Date.now()
-      order: 999
-      hidden: false
-      isSearch: false
+      name: ''                  #Task name
+      dateCreated: Date.now()   #Date task was created
+      order: 999                #Order of the task?
+      hidden: false             #Whether the task is visible or not to the user
+      isSearch: false           #Whether the task spawned from a search or not
+      parent: ''                #The parent task for this task
+      level: 1                  #The nested "level" of the task (1 being the child of the tree)
     }, params)
     @name = properties.name
     @dateCreated = properties.dateCreated
     @order = properties.order
     @hidden = properties.hidden
     @isSearch = properties.isSearch
+    @parent = properties.parent
+    @level = properties.level
 
-
-  ###
-  # Removes a page from this task. 
-  ###
-  addPage: (page_id) ->
-    pos = @pages.indexOf(page_id)
-    return false if pos < 0
-    @pages.splice(pos, 1)
-    return db.Task.put(this).then (id) =>
-      return this
-
-  ###
-  # Adds a page to this task
-  ###
-  removePage: (page_id) ->
-    @pages.push(page_id)
-    return db.Task.put(this).then (id) =>
-      return this
 
   #TODO have more complex heuristics, etc for getting an existing task
   ###
@@ -359,7 +345,7 @@ class Task extends Base
   # param page - the Page object we want to find / or create a task for
   # param foce - Forcible generate a new task for the page and tab
   ###
-  @generateTask: (tab, page, force) ->
+  @generateBaseTask: (tab, page, force) ->
     if page and page.isSearch
       return db.Task.where('name').equals(page.query).first().then (task) ->
         return task if task
@@ -370,6 +356,9 @@ class Task extends Base
       return task.save()
     else
       return Task.find(tab.task)
+      
+  @generateParentTask: () ->
+    #TODO
 
   cleanUp: () ->
     chrome.windows.getCurrentAsync({populate: true}).then (window) =>
@@ -384,7 +373,11 @@ class Task extends Base
         else
           return tab.store()
       
-  
+  getChildren: () ->
+    db.Task.where('parent').equals(@id)
+    
+  @getTopLevelTasks: () ->
+    db.Task.where('parent').equals('')
 #####
 #
 # Theses are shortcut scopes for managing tables
