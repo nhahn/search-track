@@ -8,12 +8,12 @@
 
 class Page extends Base
   constructor: (params) ->
-    properties = _.extend({
+    super {
       favicon: ''
       isSearch: false
       blacklisted: false
       query: ''
-      url: ''
+      url: undefined
       domain: ''
       fragmentless: ''
       time: Date.now()
@@ -27,25 +27,7 @@ class Page extends Base
       depth: 0
       height: 0 # for the drag-and-drop list (could be adapted for 2D manipulation)
       favorite: false   # will be able to "favorite" tabs
-    }, params)
-    @favicon = properties.favicon
-    @isSearch = properties.isSearch
-    @blacklisted = properties.blacklisted
-    @query = properties.query
-    @url = properties.url
-    @domain = properties.domain
-    @fragmentless = properties.fragmentless
-    @time = properties.time
-    @title = properties.title
-    @vector = properties.vector
-    @topics = properties.topics
-    @topic_vector = properties.topic_vector
-    @size = properties.size
-    @notes = properties.notes
-    @color = properties.color
-    @depth = properties.depth
-    @height = properties.height
-    @favorite = properties.favorite
+    }, params
 
   @generatePage: (url) ->
     uri = new URI(url)

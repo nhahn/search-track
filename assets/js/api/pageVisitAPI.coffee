@@ -7,20 +7,14 @@
 
 class PageVisit extends Base
   constructor: (params) ->
-    properties = _.extend({
-      page: '' # The page visited
-      tab: '' # The tab this page was visited from
+    super {
+      page: undefined # The page visited
+      tab: undefined # The tab this page was visited from
       task: '' #The "task" this particular visit was associated with. A page could be associated with different tasks!!
       referrer: '' #If a another page "referred" us here, we record the previous pageEvent that did so (so we keep track of tasks)
       type: '' #Enum of navigation ['forward', 'back', 'link', 'typed', 'navigation']
       time: Date.now() #When this visit occured
-    }, params)
-    @page = properties.page
-    @tab = properties.tab
-    @task = properties.task
-    @referrer = properties.referrer
-    @type = properties.type
-    @time = properties.time
+    }, params
     
   @forPage: (pageId) ->
     db.PageVisit.where('page').equals(pageId)

@@ -6,13 +6,9 @@
 
 class PageEvent extends Base
   constructor: (params) ->
-    properties = _.extend({
+    super {
       type: 'scrollPostion' # Enum of ['scrollPosition']
-      pageVisit: '' # The particular visit to a page we are recording events for 
+      pageVisit: undefined # The particular visit to a page we are recording events for 
       data: '' #Field depends on the above type
       time: Date.now()
-    }, params)
-    @type = properties.type
-    @pageVisit = properties.pageVisit
-    @data = properties.data
-    @time = properties.time
+    }, params

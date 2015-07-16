@@ -1,9 +1,8 @@
-#closes other tasks open in the current window, drags the tabs from other windows into this one, 
-
 class Task extends Base
+  #jQuery-esque constructor (you only speciy the parameters in a hash that you don't want to be default / are required
   constructor: (params) ->
-    properties = _.extend({
-      name: ''                  #Task name
+    super {
+      name: undefined                  #Task name (required)
       dateCreated: Date.now()   #Date task was created
       order: 999                #Order of the task?
       hidden: false             #Whether the task is visible or not to the user
@@ -11,15 +10,7 @@ class Task extends Base
       parent: ''                #The parent task for this task
       level: 1                  #The nested "level" of the task (1 being the child of the tree)
       annotation: "Annotate Here. (Tip: Use Command+Period to minimize)"
-    }, params)
-    @name = properties.name
-    @dateCreated = properties.dateCreated
-    @order = properties.order
-    @hidden = properties.hidden
-    @isSearch = properties.isSearch
-    @parent = properties.parent
-    @level = properties.level
-    @annotation = properties.annotation
+    }, params 
 
   # Doesn't work
   changeName: (name) ->
@@ -42,10 +33,10 @@ class Task extends Base
     if page and page.isSearch
       return db.Task.where('name').equals(page.query).first().then (task) ->
         return task if task
-        task = new Task({name: page.query, hidden: false, isSearch: true, annotation:"Annotate Here. (Tip: Use Command+Period to minimize)"})
+        task = new Task({name: page.query, hidden: false, isSearch: true})
         return task.save()
     else if force or !tab or !tab.task
-      task = new Task({name: 'Unknown'+Math.floor(Math.random()*10000), hidden: true, annotation:"Annotate Here. (Tip: Use Command+Period to minimize)"})
+      task = new Task({name: 'Unknown'+Math.floor(Math.random()*10000), hidden: true})
       return task.save()
     else
       return Task.find(tab.task)

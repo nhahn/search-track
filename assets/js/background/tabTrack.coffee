@@ -118,7 +118,7 @@ chrome.tabs.onCreated.addListener (chromeTab) ->
         tab.openerTab = existingTab.id
         return existingTab.task
     else
-      task = Task.generateTask().then (task) ->
+      task = Task.generateBaseTask().then (task) ->
         return task.id
 
     task.then (task) ->

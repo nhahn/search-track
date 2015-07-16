@@ -11,6 +11,16 @@
 ###
 
 class Base
+
+  constructor: (paramsList, params) ->
+    #Default properties for our object
+    filtered = _.pick(params, _.keys(paramsList))
+    _.extendOwn(paramsList, filtered)
+      
+    for own param, val of paramsList
+      throw new TypeError("Missing required property #{param}") if val == undefined
+      this[param] = val
+
   table: () ->
     db[this.constructor.name]
   @table: () ->
@@ -55,12 +65,12 @@ class Base
 
 class Page extends Base
   constructor: (params) ->
-    properties = _.extend({
+    super {
       favicon: ''
       isSearch: false
       blacklisted: false
       query: ''
-      url: ''
+      url: undefined
       domain: ''
       fragmentless: ''
       time: Date.now()
@@ -74,25 +84,7 @@ class Page extends Base
       depth: 0
       height: 0 # for the drag-and-drop list (could be adapted for 2D manipulation)
       favorite: false   # will be able to "favorite" tabs
-    }, params)
-    @favicon = properties.favicon
-    @isSearch = properties.isSearch
-    @blacklisted = properties.blacklisted
-    @query = properties.query
-    @url = properties.url
-    @domain = properties.domain
-    @fragmentless = properties.fragmentless
-    @time = properties.time
-    @title = properties.title
-    @vector = properties.vector
-    @topics = properties.topics
-    @topic_vector = properties.topic_vector
-    @size = properties.size
-    @notes = properties.notes
-    @color = properties.color
-    @depth = properties.depth
-    @height = properties.height
-    @favorite = properties.favorite
+    }, params
 
   @generatePage: (url) ->
     uri = new URI(url)
@@ -115,16 +107,12 @@ class Page extends Base
 
 class PageEvent extends Base
   constructor: (params) ->
-    properties = _.extend({
+    super {
       type: 'scrollPostion' # Enum of ['scrollPosition']
-      pageVisit: '' # The particular visit to a page we are recording events for 
+      pageVisit: undefined # The particular visit to a page we are recording events for 
       data: '' #Field depends on the above type
       time: Date.now()
-    }, params)
-    @type = properties.type
-    @pageVisit = properties.pageVisit
-    @data = properties.data
-    @time = properties.time
+    }, params
 ###
 #
 # Table individual web-page visits. This is created whenever someone visits a page by navigating to its URL
@@ -134,20 +122,14 @@ class PageEvent extends Base
 
 class PageVisit extends Base
   constructor: (params) ->
-    properties = _.extend({
-      page: '' # The page visited
-      tab: '' # The tab this page was visited from
+    super {
+      page: undefined # The page visited
+      tab: undefined # The tab this page was visited from
       task: '' #The "task" this particular visit was associated with. A page could be associated with different tasks!!
       referrer: '' #If a another page "referred" us here, we record the previous pageEvent that did so (so we keep track of tasks)
       type: '' #Enum of navigation ['forward', 'back', 'link', 'typed', 'navigation']
       time: Date.now() #When this visit occured
-    }, params)
-    @page = properties.page
-    @tab = properties.tab
-    @task = properties.task
-    @referrer = properties.referrer
-    @type = properties.type
-    @time = properties.time
+    }, params
     
   @forPage: (pageId) ->
     db.PageVisit.where('page').equals(pageId)
@@ -261,8 +243,8 @@ AppSettings.on 'logLevel', 'ready', (settings) ->
 
 class Tab extends Base
   constructor: (params) ->
-    properties = _.extend({
-      tab: -1
+    super {
+      tab: undefined
       windowId: -1
       openerTab: -1
       position: 0
@@ -271,15 +253,7 @@ class Tab extends Base
       status: 'active' # This is an enum: ['active', 'stored', 'closed', 'temp']
       task: '' #The ID of the task this tab is associated with (TODO blank is newTab page i guess??)
       date: Date.now()
-    }, params)
-    @tab = properties.tab
-    @windowId = properties.windowId
-    @openerTabId = properties.openerTabId
-    @position = properties.position
-    @session = properties.session
-    @pageVisit = properties.pageVisit
-    @status = properties.status
-    @date = properties.date
+    }, params
     
   store: () ->
     chrome.tabs.removeAsync(@tab).then () =>
@@ -303,25 +277,19 @@ class Tab extends Base
 
 class TabEvent extends Base
   constructor: (params) ->
-    properties = _.extend({
+    super {
       type: 'updated' # Enum of ['windowFocus', 'tabFocus', 'moved', 'removed', 'attached', 'updated']
-      tab: '' # Tab this is associated with
+      tab: undefined # Tab this is associated with
       from: '' #Field depends on the above type
       to: '' #Field depends on the above type
       time: Date.now()
-    }, params)
-    @type = properties.type
-    @tab = properties.tab
-    @from = properties.from
-    @to = properties.to
-    @time = properties.time
-
-#closes other tasks open in the current window, drags the tabs from other windows into this one, 
+    }, params
 
 class Task extends Base
+  #jQuery-esque constructor (you only speciy the parameters in a hash that you don't want to be default / are required
   constructor: (params) ->
-    properties = _.extend({
-      name: ''                  #Task name
+    super {
+      name: undefined                  #Task name (required)
       dateCreated: Date.now()   #Date task was created
       order: 999                #Order of the task?
       hidden: false             #Whether the task is visible or not to the user
@@ -329,15 +297,7 @@ class Task extends Base
       parent: ''                #The parent task for this task
       level: 1                  #The nested "level" of the task (1 being the child of the tree)
       annotation: "Annotate Here. (Tip: Use Command+Period to minimize)"
-    }, params)
-    @name = properties.name
-    @dateCreated = properties.dateCreated
-    @order = properties.order
-    @hidden = properties.hidden
-    @isSearch = properties.isSearch
-    @parent = properties.parent
-    @level = properties.level
-    @annotation = properties.annotation
+    }, params 
 
   # Doesn't work
   changeName: (name) ->
@@ -360,10 +320,10 @@ class Task extends Base
     if page and page.isSearch
       return db.Task.where('name').equals(page.query).first().then (task) ->
         return task if task
-        task = new Task({name: page.query, hidden: false, isSearch: true, annotation:"Annotate Here. (Tip: Use Command+Period to minimize)"})
+        task = new Task({name: page.query, hidden: false, isSearch: true})
         return task.save()
     else if force or !tab or !tab.task
-      task = new Task({name: 'Unknown'+Math.floor(Math.random()*10000), hidden: true, annotation:"Annotate Here. (Tip: Use Command+Period to minimize)"})
+      task = new Task({name: 'Unknown'+Math.floor(Math.random()*10000), hidden: true})
       return task.save()
     else
       return Task.find(tab.task)

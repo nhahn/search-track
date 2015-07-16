@@ -5,6 +5,16 @@
 ###
 
 class Base
+
+  constructor: (paramsList, params) ->
+    #Default properties for our object
+    filtered = _.pick(params, _.keys(paramsList))
+    _.extendOwn(paramsList, filtered)
+      
+    for own param, val of paramsList
+      throw new TypeError("Missing required property #{param}") if val == undefined
+      this[param] = val
+
   table: () ->
     db[this.constructor.name]
   @table: () ->

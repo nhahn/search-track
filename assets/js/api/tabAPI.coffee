@@ -6,8 +6,8 @@
 
 class Tab extends Base
   constructor: (params) ->
-    properties = _.extend({
-      tab: -1
+    super {
+      tab: undefined
       windowId: -1
       openerTab: -1
       position: 0
@@ -16,15 +16,7 @@ class Tab extends Base
       status: 'active' # This is an enum: ['active', 'stored', 'closed', 'temp']
       task: '' #The ID of the task this tab is associated with (TODO blank is newTab page i guess??)
       date: Date.now()
-    }, params)
-    @tab = properties.tab
-    @windowId = properties.windowId
-    @openerTabId = properties.openerTabId
-    @position = properties.position
-    @session = properties.session
-    @pageVisit = properties.pageVisit
-    @status = properties.status
-    @date = properties.date
+    }, params
     
   store: () ->
     chrome.tabs.removeAsync(@tab).then () =>
