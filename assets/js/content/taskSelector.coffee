@@ -12,7 +12,6 @@ listApp.controller 'RootCtrl', ($scope, $dexieBind) ->
       return $scope.tab.$join(db.Task, 'task', 'id')
     .then (tasks) ->
       $scope.curTask = tasks
-
   
   $scope.createTask = () ->
     task = new Task({name: $scope.newTask})

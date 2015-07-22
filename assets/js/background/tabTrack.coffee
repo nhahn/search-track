@@ -51,13 +51,31 @@ chrome.tabs.onMoved.addListener (tabId, moveInfo) ->
     Logger.error(err)
 
 chrome.tabs.onRemoved.addListener (tabId, removeInfo) ->
-  db.transaction 'rw', db.Tab, () ->
-    Tab.findByTabId(tabId).then (tab) ->
-      throw new RecordMissingError("Can't find tab for id #{tabId}") if !tab
-      tab.status = 'closed'
-      tab.save()
-  .then (tab) ->
-    recordAction(tab, 'removed', tab.tab, -1)
+  #Check if we just closed a tab, or if we closed an entire window
+  chrome.sessions.getRecentlyClosedAsync().then (sessions) ->
+    if removeInfo.isWindowClosing
+      return sessions[0].window.tabs
+    else
+      return [sessions[0].tab]
+  .then (session_tabs) ->
+    db.transaction 'rw', db.Tab, () ->
+      if removeInfo.isWindowClosing
+        return Tab.filter((val) -> val.windowId is removeInfo.windowId).and((val) -> val.status is 'active').toArray().then (res) ->
+          save = []
+          for tab in res
+            tab.session = session_tabs[tab.position].sessionId
+            tab.status = 'closed'
+            save.push(tab)
+          Dexie.Promise.all(save)
+      else
+        return Tab.findByTabId(tabId).then (tab) ->
+          throw new RecordMissingError("Can't find tab for id #{tabId}") if !tab
+          tab.status = 'closed'
+          tab.session = session_tabs[0].sessionId
+          Dexie.Promise.all([tab.save()])
+    .then (tabs) ->
+      for tab in tabs
+        recordAction(tab, 'removed', tab.tab, -1)
   .catch RecordMissingError, (err) ->
     Logger.warn(err)
   .catch (err) ->
@@ -66,7 +84,7 @@ chrome.tabs.onRemoved.addListener (tabId, removeInfo) ->
 chrome.tabs.onActivated.addListener (activeInfo) ->
   Promise.all([
     Tab.findByTabId(activeInfo.tabId)
-    db.TabEvent.orderBy('time').reverse().and((val) -> val.type == 'tabFocus').first()
+    db.TabEvent.where('type').equals('tabFocus').mostRecent()
   ]).spread (newTab, oldTab) ->
     throw new RecordMissingError("Can't find tab for id #{activeInfo.tabId}") if !newTab
     oldTab = {to: -1} if !oldTab
@@ -91,7 +109,7 @@ chrome.windows.onFocusChanged.addListener (windowId) ->
     chrome.tabs.queryAsync({active: true, windowId: windowId, currentWindow: true}).then (tabs) ->
       if tabs.length > 0
         Promise.all([
-          db.TabEvent.orderBy('time').reverse().and((val) -> val.type == 'windowFocus').first()
+          db.TabEvent.where('type').equals('windowFocus').mostRecent()
           Tab.findByTabId(tabs[0].id)
         ]).spread (oldFocus, tab) ->
           throw new RecordMissingError("Can't find tab for id #{tabs[0].id}") if !tab
@@ -104,6 +122,10 @@ chrome.windows.onFocusChanged.addListener (windowId) ->
       Logger.error(err)
 
 chrome.tabs.onCreated.addListener (chromeTab) ->
+  ###
+  # OpernerTabId is undefined for a new window. It is defined if you created a new tab (either from a link
+  # manual new tab). 
+  ###
   resolve = []
   tab = new Tab({
     tab: chromeTab.id
@@ -111,18 +133,20 @@ chrome.tabs.onCreated.addListener (chromeTab) ->
     position: chromeTab.index
   })
   db.transaction 'rw', db.Tab, db.Task, () ->
-    task = ''
-    if (chromeTab.openerTabId > 0)
-      task = Tab.findByTabId(chromeTab.openerTabId).then (existingTab) ->
-        throw new RecordMissingError("Can't find tab for id #{chromeTab.openerTabId}") if !existingTab
-        tab.openerTab = existingTab.id
-        return existingTab.task
-    else
-      task = Task.generateBaseTask().then (task) ->
-        return task.id
-
-    task.then (task) ->
-      tab.task = task
+    Tab.findByTabId(chromeTab.openerTabId).then (oldTab) ->
+      #Whoops -- we can't find the original tab (or something like that XD) ... temp task time
+      throw new RecordMissingError("Can't find tab for id #{chromeTab.openerTabId}") if !oldTab or oldTab.windowId != tab.windowId
+      return db.Task.get(oldTab.task)
+    .then (oldTask) ->
+      #copy the parent task in this case, and use a temporary base task
+      Task.generateNewTabTemp(oldTask.parent)                
+    .catch RecordMissingError, (err) ->
+      #We want to get them to define the task they are working on -- otherwise (for now) give 
+      #them a temporary parent task
+      Task.generateParentTemp().then (parent) ->
+        Task.generateNewTabTemp(parent.id)
+    .then (task) ->
+      tab.task = task.id
       tab.save()
   .then (tab) ->
     recordAction(tab, 'created', tab.openerTab, tab.id)

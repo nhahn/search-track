@@ -45,21 +45,26 @@ domInfo = (url, tab) ->
       chrome.tabs.getAsync tab.tab
       chrome.tabs.executeScriptAsync tab.tab, {code: 'window.scrollY'}
       chrome.tabs.executeScriptAsync tab.tab, {code: 'window.innerHeight'}
-  ]).spread (tab, depth, height) ->
-    db.transaction 'rw', db.Page, () ->
+  ]).spread (chromeTab, depth, height) ->
+    db.transaction 'rw', db.Page, db.Task, () ->
       db.Page.where('url').equals(url).first().then (page) ->
         throw new RecordMissingError("Can't find page for url #{url}") if !page
         return page
       .then (page) ->
         #Update our page b/c we might have new information
-        page.favicon = tab.favIconUrl
+        page.favicon = chromeTab.favIconUrl
         page.depth = depth
         page.height = height
-        page.title = tab.title
+        page.title = chromeTab.title
         page.save()
-  .delay(500).then (page) ->
-    if page.time > Date.now() - 3600000 #Dont bother getting the content if we have done this in the past hour
-      getContentAndTokenize(tab.tab, page)
+      .then (page) ->
+        if tab.task
+          db.Task.get(tab.task).then (task) ->
+            task.nameTempTask(page.title)
+        return page
+    .then (page) ->
+      if page.time > Date.now() - 3600000 #Dont bother getting the content if we have done this in the past hour
+        getContentAndTokenize(tab.tab, page)
     
 ###
 # When a page is "loaded" enough, we can then perform any processing on it's content
@@ -94,13 +99,8 @@ chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
     .then (args) ->
       [task, tab, page] = args
       pageVisit = new PageVisit({page: page.id, tab: tab.id, task: task.id, type: 'navigation'})
-      if !tab.pageVisit and tab.openerTab
-        return PageVisit.forTab(tab.openerTab).mostRecent().then (link) ->
-          pageVisit.referrer = link.id
-          return Dexie.Promise.all([tab, pageVisit.save()])
-      else
-        pageVisit.referrer = tab.pageVisit
-        return Dexie.Promise.all([tab, pageVisit.save()])
+      pageVisit.referrer = tab.pageVisit
+      return Dexie.Promise.all([tab, pageVisit.save()])
     .then (args) ->
       [tab, pageVisit] = args
       tab.pageVisit = pageVisit.id
@@ -229,18 +229,16 @@ chrome.webNavigation.onTabReplaced.addListener (details) ->
       [newTab, replacedTab, pageVisit, page] = args
       replacedTab.tab = newTab.tab
       pageVisit.tab = replacedTab.id
-      # TODO look at this a little more deeply to check the logic
-      if !newTab.task
-        return Task.generateBaseTask(newTab, page, true).then (task) ->
-          pageVisit.task = task.id
+      if pageVisit.type != "link" #In this case we would have had to generate a new task -- just update the parent
+        return Dexie.Promise.all([db.Task.get(newTab.task), db.Task.get(replacedTab.task)]).then (args) ->
+          [newTask, oldTask] = args
+          oldParent = newTask.parent
+          newTask.parent = oldTask.parent
           replacedTab.task = task.id
-          Dexie.Promise.all([replacedTab.save(), pageVisit.save(), newTab])
-      if pageVisit.type == "link"
-        pageVisit.task = newTab.task
-        replacedTab.task = newTab.task
-      else
+          return Dexie.Promise.all([replacedTab.save(), pageVisit.save(), newTab, db.Task.delete(oldParent)])     
+      else #OK - we didn't generate a task -- we should only have to just replace it one for the "generated" tab
         pageVisit.task = replacedTab.task
-      Dexie.Promise.all([replacedTab.save(), pageVisit.save(), newTab])
+        return Dexie.Promise.all([replacedTab.save(), pageVisit.save(), newTab])
     .then (args) ->
       [replacedTab, pageVisit, newTab] = args
       return Dexie.Promise.all([newTab.delete(), Page.find(pageVisit.page), replacedTab])
@@ -252,3 +250,24 @@ chrome.webNavigation.onTabReplaced.addListener (details) ->
   .catch (err) ->
     Logger.error(err)
     
+###
+# We're opening a link in a new tab / window. We will just set the new tab to have a similar
+# "view" as the source tab
+###
+chrome.webNavigation.onCreatedNavigationTarget.addListener (details) ->
+  Logger.debug "creating new tab/window navigation from link"
+  db.transaction 'rw', db.Tab, db.Task, () ->
+    Dexie.Promise.all([
+      Tab.findByTabId(details.tabId)
+      Tab.findByTabId(details.sourceTabId)
+    ]).then (args) ->
+      [newTab, sourceTab] = args
+      oldTask = newTab.task
+      newTab.openerTab = sourceTab.id
+      newTab.pageVisit = sourceTab.pageVisit
+      newTab.task = sourceTab.task
+      return db.Task.get(oldTask.id)
+  .then (oldTask) ->
+    if oldTask.isTemp #We shouldn't have to do any backtracking of the task here
+      oldTask.removeTempTask()
+   

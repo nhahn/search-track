@@ -145,6 +145,15 @@ body {
 .border span {
   margin-right: 5px;
   line-height: inherit;
+  
+  .label {
+    font-size: 14px; 
+  }
+  
+  .glyphicon {
+    font-size: 18px; 
+  }
+  
 }
 
 .semitrans {
@@ -209,7 +218,11 @@ body {
 }
 #topleft {
   margin-left: 6px;
-  padding-top: 5px;
+  padding-top: 2px;
   color: rgb(90,89,90);
   position: absolute;
+}
+
+.topRight {
+  padding-top: 4px; 
 }

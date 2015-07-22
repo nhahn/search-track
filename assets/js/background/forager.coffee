@@ -80,7 +80,6 @@ chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
 
   # Make bar full size if in fullscreen mode
   chrome.windows.getCurrent({}, (window) ->
-    console.log window.state
     if window.state == 'fullscreen'
       chrome.tabs.query {currentWindow:true, active:true}, (tabs) ->
         # TODO this is too slow!
@@ -104,7 +103,6 @@ chrome.tabs.onCreated.addListener (tabId, changeInfo, tab) ->
 
   # Check if page is on blacklist
   chrome.storage.sync.get "blacklist", (items) ->
-    console.log items
 
     return if typeof items.blacklist == 'undefined'
     for item in items.blacklist
@@ -114,7 +112,6 @@ chrome.tabs.onCreated.addListener (tabId, changeInfo, tab) ->
 
   # Make bar full size if in fullscreen mode
   chrome.windows.getCurrent({}, (window) ->
-    console.log window.state
     if window.state == 'fullscreen'
       chrome.tabs.query {currentWindow:true, active:true}, (tabs) ->
         chrome.tabs.sendMessage tabs[0].id, {changeSize: true}
