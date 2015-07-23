@@ -1,9 +1,14 @@
 listApp = angular.module 'listApp', ['ngDraggable', 'ngDexieBind']
 
-listApp.controller 'RootCtrl', ($scope, $dexieBind) ->
+listApp.controller 'RootCtrl', ($scope, $dexieBind, $location, $q) ->
+  getTasksUpTo = (level, tasks) ->
+    return tasks if tasks[tasks.length-1].level <= level
+    return tasks[tasks.length-1].$join(db.Task, 'parent', 'id').then (res) ->
+      tasks.push(res)
+      return getTaskUpTo(level, tasks)
+    
   $scope.tasks = []
-  $dexieBind.bind(db,db.Task.filter((val) -> val.hidden == false), $scope).then (data) ->
-    $scope.tasks = data
+  $scope.level = $location.search().level
   
   chrome.runtime.sendMessage { getCurrentTab: true }, (msg) ->
     
@@ -11,7 +16,12 @@ listApp.controller 'RootCtrl', ($scope, $dexieBind) ->
       $scope.tab = tab
       return $scope.tab.$join(db.Task, 'task', 'id')
     .then (tasks) ->
-      $scope.curTask = tasks
+      getTasksUpTo($scope.level, [tasks])
+    .then (tasks) ->
+      $scope.curTasks = tasks
+      $dexieBind.bind(db,db.Task.filter((val) -> val.hidden == false), $scope)
+    .then (tasks) ->
+      $scope.tasks = tasks
   
   $scope.createTask = () ->
     task = new Task({name: $scope.newTask})

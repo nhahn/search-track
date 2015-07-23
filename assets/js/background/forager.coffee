@@ -164,7 +164,9 @@ chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
       sendResponse(tabs)
     return true
   else if request.toggleTasks
-    chrome.tabs.executeScript(sender.tab.id, {file:"/js/content/injectTaskSelector.js", runAt: "document_start"})
+    chrome.tabs.executeScript sender.tab.id, {file:"/js/content/injectTaskSelector.js", runAt: "document_start"}, () ->
+      chrome.tabs.sendMessage(sender.tab.id, {openForLevel: request.level});
+    
   else if request.removeTasksBar
     chrome.tabs.executeScript(sender.tab.id, {code: "$('#injectedTaskSelector').hide(); delete injectedTaskSelector", runAt: "document_start"})
  

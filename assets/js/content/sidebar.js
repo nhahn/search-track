@@ -136,11 +136,14 @@ listApp.controller('MinimizedCtrl', function ($scope, $dexieBind) {
       return $scope.tab.$join(db.Task, 'task', 'id');
     }).then(function(tasks) {
       $scope.curTask = tasks;
+      return $scope.curTask.$join(db.Task, 'parent', 'id')
+    }).then(function(parentTask) {
+      $scope.parentTask = parentTask;
     });
   });
   
-  $scope.changeTask = function () {
-    chrome.runtime.sendMessage({toggleTasks:true});  
+  $scope.changeTask = function (task) {
+    chrome.runtime.sendMessage({toggleTasks:true, level: task.level});  
   }
 });
 

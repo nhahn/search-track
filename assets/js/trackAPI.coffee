@@ -326,8 +326,13 @@ class Task extends Base
         task = new Task({name: page.query, hidden: false, isSearch: true, parent: curTask.parent}) #We haven't done this before -- assign it to our current parent
         return task.save()
     else if force or !tab.task
-      return db.PageVisit.where('page').equals(page.id).mostRecent().then (pageVisit) ->
-        if pageVisit
+      #Try and find a previous PageVisit (ignore the one already added!)
+      return Dexie.Promise.all([
+        db.PageVisit.where('page').equals(page.id).and((val) -> val.id != tab.pageVisit).mostRecent()
+        db.Task.get(tab.task)
+      ]).then (args) ->
+        [pageVisit, curTask] = args
+        if pageVisit and pageVisit.task
           return Task.find(pageVisit.task) #We will, by default, try and use the most recent task for this page (child and parent)
         else
           if tab.task
@@ -335,7 +340,7 @@ class Task extends Base
               Task.generateNewTabTemp(curTask.parent)
           else
             return Task.generateParentTemp().then (par) ->
-              Task.generateNewTabTemp(par)
+              Task.generateNewTabTemp(par.id)
     else
       return Task.find(tab.task)
       
@@ -344,7 +349,7 @@ class Task extends Base
   # param parent - The parent task we want to generate a base task for
   ###
   @generateNewTabTemp: (parent) ->
-    task = new Task({name: "Temp"+Math.floor(Math.random()*10000), parent: parent.id, level: 1, isTemp: true})
+    task = new Task({name: "Temp"+Math.floor(Math.random()*10000), parent: parent, level: 1, isTemp: true})
     task.save()
     
   ###
@@ -354,25 +359,27 @@ class Task extends Base
     task = new Task({name: "Temp"+Math.floor(Math.random()*10000), level: 2, isTemp: true})
     task.save()
     
-  removeTempTask: () ->
-    if @isTemp and @parent
-      return @delete().then () =>
-        db.Task.get(@parent)
+  removeTempTask: (replacedTask) ->
+    self = this
+    if @isTemp and @parent and @parent != replacedTask.parent
+      return @delete().then () ->
+        db.Task.get(self.parent)
       .then (parent) ->
-        if parent.isTemp
+        if parent and parent.isTemp 
           parent.removeTempTask()
     else
       return @delete()
       
   #Renames temporary base tasks, and collapses those tasks that
   #have the same titles into each other (within the same detected task)
-  nameTempTask: (name) ->
+  nameTempTask: (page) ->
     return this if !@isTemp
+    return this if page.url.match(/^chrome/) or page.url.match(/https:\/\/google.com/)
     self = this
     db.transaction 'rw!', db.Task, db.Tab, db.PageVisit, () ->
       #Loopup other tasks that might have the same name
       Dexie.Promise.all([
-        db.Task.where('name').equals(name).toArray()
+        db.Task.where('name').equals(page.title).toArray()
         db.Task.get(self.parent)
       ]).then (args) ->
         [res, parent] = args
@@ -400,7 +407,7 @@ class Task extends Base
         return existingTask
       .catch RecordMissingError, (err) ->
         Logger.debug(err)
-        self.name = name
+        self.name = page.title
         self.isTemp = false
         self.save()
   

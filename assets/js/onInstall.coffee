@@ -89,7 +89,7 @@
       if tab.task
         db.transaction 'rw', db.Task, () ->
           db.Task.get(tab.task).then (task) ->
-            task.nameTempTask(page.title)
+            task.nameTempTask(page)
       page.save().then (page) ->
         if html? and html.length > 10
           $.ajax(

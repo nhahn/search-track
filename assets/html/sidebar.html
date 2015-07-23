@@ -27,7 +27,8 @@
       </ul>
       
       <div class="topRight minimized" ng-hide="!minimized" ng-controller="MinimizedCtrl">
-        <span class="label label-primary" ng-click="changeTask()">{{curTask[tab[0].task].name}}</span>
+        <span class="label label-info" ng-click="changeTask(parentTask[curTask[tab[0].task].parent])">{{parentTask[curTask[tab[0].task].parent].name}}</span>
+        <span class="label label-primary" ng-click="changeTask(curTask[tab[0].task])">{{curTask[tab[0].task].name}}</span>
       </div>
 
     </div>

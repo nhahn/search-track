@@ -3,11 +3,17 @@
  */
 
 if (typeof injectedTaskSelector === 'undefined') {
-  // Inject HTML for sidebar if it hasn't been injected already
-  var $app = $('<!-- INJECTED SELECTOR --> <iframe id="injectedTaskSelector" sandbox="allow-same-origin allow-scripts allow-popups" src="' + chrome.extension.getURL('/html/taskSelector.html') + '"></iframe> <!-- END SELECTOR-->').appendTo('html');
-	injectedTaskSelector = true;
-  
-  $('#injectedTaskSelector').toggleClass('slideTasksFrameUp');
-} else {
-  $('#injectedTaskSelector').toggleClass('slideTasksFrameUp');
+  injectedTaskSelector = {};
+  chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+      // Handle message.
+      // In this example, message === 'whatever value; String, object, whatever'
+    if message.openForLevel
+      if !injectedTaskSelector[message.openForLevel] {
+        var $app = $('<!-- INJECTED SELECTOR --> <iframe id="injectedTaskSelector'+message.openForLevel+'" sandbox="allow-same-origin allow-scripts allow-popups" src="' + chrome.extension.getURL('/html/taskSelector.html')+"?level=" + message.openForLevel + '"></iframe> <!-- END SELECTOR-->').appendTo('html');
+        injectedTaskSelector[message.openForLevel] = true;
+        $('#injectedTaskSelector'+message.openForLevel).toggleClass('slideTasksFrameUp');
+      } else {
+        $('#injectedTaskSelector'+message.openForLevel).toggleClass('slideTasksFrameUp');
+      }
+  });
 }

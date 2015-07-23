@@ -21,7 +21,8 @@ getContentAndTokenize = (tabId, page) ->
           page = _.extend(page,{vector: results['vector'], topics: results['topics'], topic_vector: results['topic_vector'], size: results['size']})
           page.time = Date.now()
           page.save().catch (err) ->
-            Logger.error err
+            Logger.info "Tokenize error on obj"
+            Logger.info page
         ).fail (a, t, e) ->
           Logger.debug "fail tokenize\n" + t
     .catch (err) ->
@@ -60,7 +61,7 @@ domInfo = (url, tab) ->
       .then (page) ->
         if tab.task
           db.Task.get(tab.task).then (task) ->
-            task.nameTempTask(page.title)
+            task.nameTempTask(page)
         return page
     .then (page) ->
       if page.time > Date.now() - 3600000 #Dont bother getting the content if we have done this in the past hour
@@ -205,12 +206,10 @@ addDetails = (details) ->
       [tab, pageVisit] = args
       tab.task = pageVisit.task
       tab.save()
-  .catch Promise.CancellationError, (err) ->
-    Logger.info "#{err}"
-  .catch RecordMissingError, (err) ->
-    Logger.info(err)
   .catch (err) ->
     Logger.error(err)
+  .catch RecordMissingError, (err) ->
+    Logger.info(err)
     
 ####
 # Fill in any information when an instant tab replaces and exisiting tab
@@ -234,28 +233,28 @@ chrome.webNavigation.onTabReplaced.addListener (details) ->
           [newTask, oldTask] = args
           oldParent = newTask.parent
           newTask.parent = oldTask.parent
-          replacedTab.task = task.id
-          return Dexie.Promise.all([replacedTab.save(), pageVisit.save(), newTab, db.Task.delete(oldParent)])     
+          replacedTab.task = newTask.id
+          return Dexie.Promise.all([replacedTab.save(), pageVisit.save(), newTab, db.Task.delete(oldParent), newTask.save()])     
       else #OK - we didn't generate a task -- we should only have to just replace it one for the "generated" tab
         pageVisit.task = replacedTab.task
         return Dexie.Promise.all([replacedTab.save(), pageVisit.save(), newTab])
     .then (args) ->
       [replacedTab, pageVisit, newTab] = args
       return Dexie.Promise.all([newTab.delete(), Page.find(pageVisit.page), replacedTab])
+  .catch RecordMissingError, (err) ->
+    Logger.error(err)
+  .catch (err) ->
+    Logger.error(err)
   .then (args) ->
     [oldTab, page, curTab] = args
     domInfo(page.url, curTab)
-  .catch Promise.CancellationError, (err) ->
-    Logger.warn "#{err}"
-  .catch (err) ->
-    Logger.error(err)
     
 ###
 # We're opening a link in a new tab / window. We will just set the new tab to have a similar
 # "view" as the source tab
 ###
 chrome.webNavigation.onCreatedNavigationTarget.addListener (details) ->
-  Logger.debug "creating new tab/window navigation from link"
+  Logger.debug "creating new tab/window navigation from link #{details.sourceTabId} -> #{details.tabId}"
   db.transaction 'rw', db.Tab, db.Task, () ->
     Dexie.Promise.all([
       Tab.findByTabId(details.tabId)
@@ -266,8 +265,11 @@ chrome.webNavigation.onCreatedNavigationTarget.addListener (details) ->
       newTab.openerTab = sourceTab.id
       newTab.pageVisit = sourceTab.pageVisit
       newTab.task = sourceTab.task
-      return db.Task.get(oldTask.id)
-  .then (oldTask) ->
+      return Dexie.Promise.all([newTab.save(), db.Task.get(oldTask), db.Task.get(newTab.task)])
+  .then (args) ->
+    [newTab, oldTask, newTask] = args
     if oldTask.isTemp #We shouldn't have to do any backtracking of the task here
-      oldTask.removeTempTask()
+      oldTask.removeTempTask(newTask)
+  .catch (err) ->
+    Logger.error(err)
    

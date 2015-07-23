@@ -127,7 +127,7 @@ body {
   font-size: 12px;
   text-align: right;
   padding: 0 ;
-  font-size:1.1vw;
+  font-size: 18px;
   color: black ;
   overflow: hidden;
   
@@ -146,11 +146,11 @@ body {
   margin-right: 5px;
   line-height: inherit;
   
-  .label {
+  &.label {
     font-size: 14px; 
   }
   
-  .glyphicon {
+  &.glyphicon {
     font-size: 18px; 
   }
   
@@ -221,8 +221,4 @@ body {
   padding-top: 2px;
   color: rgb(90,89,90);
   position: absolute;
-}
-
-.topRight {
-  padding-top: 4px; 
 }
