@@ -143,7 +143,7 @@ chrome.tabs.onCreated.addListener (chromeTab) ->
         return db.Task.get(oldTab.task)
       .then (oldTask) ->
         #copy the parent task in this case, and use a temporary base task
-        Task.generateNewTabTemp(oldTask.parent)                
+        Task.generateNewTabTemp(oldTask.parent)
       .catch RecordMissingError, (err) ->
         #We want to get them to define the task they are working on -- otherwise (for now) give 
         #them a temporary parent task

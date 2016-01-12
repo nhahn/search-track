@@ -27,7 +27,7 @@
         ]).spread (page, existingTab) ->
           return Promise.resolve(if existingTab then existingTab else createTabEntry(tab, page)).then (tab) ->
             if page.url.match(/^chrome/) then Logger.debug("Chrome internal page -- ignorning") else getContentAndTokenize(tab, page)
-            checkPageVisit(tab, page) 
+            checkPageVisit(tab, page)
       .then (tabs) ->
         #Do something with the newly created tabs here
         
