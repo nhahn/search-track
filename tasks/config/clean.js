@@ -13,7 +13,7 @@ module.exports = function(grunt) {
 
 	grunt.config.set('clean', {
 		dev: ['dist/**'],
-		build: ['www']
+		build: ['dist/**', 'build/**']
 	});
 
 	grunt.loadNpmTasks('grunt-contrib-clean');

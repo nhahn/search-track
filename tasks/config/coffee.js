@@ -25,6 +25,19 @@ module.exports = function(grunt) {
 				dest: 'dist/js/',
 				ext: '.js'
 			}]
+		},
+		build: {
+			options: {
+				bare: true,
+				sourceMap: false
+			},
+			files: [{
+				expand: true,
+				cwd: 'assets/js/',
+				src: ['**/*.coffee'],
+				dest: 'dist/js/',
+				ext: '.js'
+			}]
 		}
 	});
 

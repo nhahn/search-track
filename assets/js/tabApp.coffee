@@ -57,8 +57,8 @@ app.controller 'MainCtrl', ($scope, $rootScope, $state) ->
 app.controller 'removeModal', ($scope, $modalInstance) ->
   
   $scope.ok = () ->
-    db.PageInfo.clear()
-    db.SearchInfo.clear()
+    db.Page.clear()
+    db.Search.clear()
     $modalInstance.close('cleared')
     
   $scope.cancel = () ->

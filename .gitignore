@@ -37,6 +37,8 @@ node_modules/
 #dev folders
 vendor/
 dist/
+build/
 
 #private key
 *.pem
+=======
