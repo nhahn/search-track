@@ -21,12 +21,6 @@ class Page extends Base
       vector: {}
       topics: ''
       topic_vector: []
-      size: 0
-      notes: ''
-      color: 'rgba(219,217,219,1)'
-      depth: 0
-      height: 0 # for the drag-and-drop list (could be adapted for 2D manipulation)
-      favorite: false   # will be able to "favorite" tabs
     }, params
 
   @generatePage: (url) ->

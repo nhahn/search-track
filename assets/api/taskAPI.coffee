@@ -2,23 +2,16 @@ class Task extends Base
   #jQuery-esque constructor (you only speciy the parameters in a hash that you don't want to be default / are required
   constructor: (params) ->
     super {
-      name: undefined                  #Task name (required)
+      name: undefined           #Task name (required)
       dateCreated: Date.now()   #Date task was created
-      order: 999                #Order of the task?
       isTemp: false             #Are we using a temporary name? try and fill it in if we are
       hidden: false             #Whether the task is visible or not to the user TODO get rid of me??
       isSearch: false           #Whether the task spawned from a search or not
       parent: ''                #The parent task for this task
       level: 1                  #The nested "level" of the task (1 being the child of the tree)
-      annotation: "Annotate Here. (Tip: Use Command+Period to minimize)"
-    }, params 
+    }, params
 
-  # Doesn't work
   changeName: (name) ->
-    console.log name
-    console.log @name
-    console.log this
-    console.log this.table()
     @name = name
     return db.Task.put(this).then (id) =>
       return this

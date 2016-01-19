@@ -1,0 +1,16 @@
+doctype html
+html(ng-csp)
+  head
+    // The dependency scripts we need
+    script(src='/vendor.js')
+    //Our DB APIs we use
+    script(src='/trackAPI.js')
+    //The background event / behavior tracking scripts
+    script(src='/background/tabTrack.js')
+    script(src='/background/pageTrack.js')
+    script(src='/background/behaviorTrack.js')
+    //script(src='/js/visual.js') TODO fix me
+    //Finally, the script we want to execute on startup of the extension
+    script(src='/js/onInstall.js')
+    
+  body

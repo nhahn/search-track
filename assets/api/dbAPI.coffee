@@ -10,7 +10,7 @@
 # Optional (not currently used) methods to persist DB info to file
 #
 ###
-dbMethods = (() -> 
+dbMethods = (() ->
   obj = {}
   obj.generateUUID = ->
     d = (new Date).getTime()

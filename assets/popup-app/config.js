@@ -1,0 +1,3 @@
+module.exports = {
+  extensionKey: 'lfibnfjfehjegclcnncbeiheedgcmbjj' 
+};
