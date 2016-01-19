@@ -1,17 +1,16 @@
-# Search Track
-Helps you track, manage, and learn from your web searches
+# Search Track React Base
+This serves as a react-based foundation for the search tracker APIs that we implimented. You can create react-based Chrome extensions using the search tracking database that serves as the core of this library.
 
 Dependencies
 ------------
 
-This project uses [Node.js](http://node.js) and [Grunt](http://gruntjs.com) for dependency compilation. These will need to be installed on your machine to compile and install the extension. Node.js can be installed using the various package installers on their website, and the Grunt command line can be installed using `npm`. 
+This project uses [Node.js](http://node.js) and [Gulp](http://gulpjs.com/) for dependency compilation. These will need to be installed on your machine to compile and install the extension. Node.js can be installed using the various package installers on their website, and the Gulp command line can be installed using `npm`. 
 
 ```bash
-npm install -g grunt
-npm install -g grunt-cli
+npm install -g gulp
 ```
 
-Additionally, install the various Grunt compilers used in the project
+Additionally, install the various Gulp compilers used in the project
 ```bash
 npm install
 ```
@@ -22,9 +21,9 @@ npm install -g bower
 bower install
 ```
 
-Lastly (and this is the only command you really need to run while developing) you just need to run Grunt
+Lastly (and this is the only command you really need to run while developing) you just need to run Gulp
 ```bash
-grunt
+gulp
 ```
 This will copy, compile, etc. everything, and watch for any changes in the `assets` folder. To stop it from watching, just hit `CTRL+C`.
 
@@ -36,7 +35,7 @@ To run the extension, you will need to complete the above steps in order to prop
 Development
 -------------
 
-All external packages are downloaded and placed in the `vendor` directory using bower. Any assets in the `assets` directory are compiled (if they are less/sass/coffee script) and synced to the dist directory along with the vendor files using Grunt. Please only develop this extension using the files in the `assets` directory rather than the `dist` directory. If you need to add an external javascript file / module, please find the appropriate package in Bower. 
+All external packages are downloaded and placed in the `vendor` directory using bower. Any assets in the `assets` directory are compiled (if they are less/sass/coffee script) and synced to the dist directory along with the vendor files using Gulp. Please only develop this extension using the files in the `assets` directory rather than the `dist` directory. If you need to add an external javascript file / module, please find the appropriate package in Bower. 
 
 ### Style
 
