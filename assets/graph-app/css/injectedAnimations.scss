@@ -1,0 +1,48 @@
+#injectedTaskSelector {
+  height: 0px;
+  display: none;
+  position:fixed;
+  z-index:2147483645;
+  width:260px;
+  bottom:28px;
+  right:8px;
+  font-family:arial;
+  padding:0;
+  background-color:rgba(221,219,221,0.9);
+  border-top: 1px solid rgba(221,219,221,0.9);
+  border-left: 1px solid rgba(221,219,221,0.9);
+  border-right: 1px solid rgba(221,219,221,0.9);
+  border-bottom: none;
+  border-top-left-radius:3px;
+  border-top-right-radius:3px;
+   
+  -webkit-animation-name: slideDown;
+  -webkit-animation-duration: 1s; 
+  
+  &.slideTasksFrameUp {
+    height: 300px;
+    display: block;
+    -webkit-animation-name: slideup;
+    -webkit-animation-duration: 1s; 
+  }
+
+}
+
+@-webkit-keyframes slideup {
+  from {
+    height: 0px;
+  }
+
+  to {
+    height: 300px;
+  }
+}
+
+@-webkit-keyframes slideDown {
+  from {
+    height: 300px;
+  }
+  to {
+    height: 0;
+  }
+}

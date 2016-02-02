@@ -24,15 +24,15 @@ class Base
   associationHash: () ->
     for own prop, val of this
       if _.isObject(val) and val instanceof Base #Check this is a populated value we want to deconstruct
-       {prop: prop, obj: val, table: this.table()}
-       
+        return {prop: prop, obj: val, table: this.table()}
+  
   save: () ->
     this.table().put(this).then (id) =>
       @id = id
       return this
      
   fillAssociation: (name) ->
-   this.table().get(this[name.capitalize()]).then (obj) =>
+    this.table().get(this[name.capitalize()]).then (obj) =>
       this[name] = obj
     .catch (err) =>
       Error.warn(err)

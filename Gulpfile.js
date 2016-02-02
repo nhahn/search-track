@@ -21,7 +21,7 @@ var gulp       = require('gulp'),
     es         = require('event-stream');
     del        = require('del');
 
-var production = process.env.NODE_ENV === 'production';
+var production = process.env.ENV === 'production';
 
 var dependencies = [
   'alt',
@@ -54,9 +54,7 @@ gulp.task('manifest', function() {
 
 gulp.task('api', function() {
   return gulp.src([
-    'assets/api/*.coffee', 
-    '!assets/api/dbAPI.coffee', 
-    '!assets/api/dexieScopes.coffee', 
+    'assets/api/!(dbAPI|dexieScopes)*.coffee', 
     'assets/api/dexieScopes.coffee' ,
     'assets/api/dbAPI.coffee'
   ]).pipe(sourcemaps.init())
@@ -83,6 +81,21 @@ gulp.task('background', function() {
   .pipe(gulp.dest('dist/background'));
 });
 
+gulp.task('background-vendor', function() {
+  return gulp.src([
+    'vendor/jquery/dist/jquery.js',
+    'vendor/uri.js/src/URI.min.js',
+    'vendor/bluebird/js/browser/bluebird.min.js',
+    'vendor/dexie/dist/latest/Dexie.js',
+    'vendor/js-logger/src/logger.min.js',
+    'vendor/underscore/underscore-min.js'
+  ]).pipe(sourcemaps.init())
+  .pipe(concat('vendor.js'))
+  .pipe(gulpif(production, uglify({ mangle: false })))
+  .pipe(sourcemaps.write())
+  .pipe(gulp.dest('dist/background'));
+});
+
 gulp.task('background-html', function() {
   return gulp.src('assets/background/background.jade')
     .pipe(jade())
@@ -97,11 +110,9 @@ gulp.task('background-html', function() {
 gulp.task('vendor', function() {
   return gulp.src([
     'vendor/jquery/dist/jquery.js',
-    '/vendor/uri.js/src/URI.min.js',
-    '/vendor/bluebird/js/browser/bluebird.min.js',
+    'vendor/uri.js/src/URI.min.js',
     'vendor/dexie/dist/latest/Dexie.js',
     'vendor/dexie/addons/Dexie.Observable/Dexie.Observable.js',
-    'vendor/js-logger/src/logger.min.js',
     'vendor/bootstrap/dist/js/bootstrap.js',
     'vendor/magnific-popup/dist/jquery.magnific-popup.js',
     'vendor/toastr/toastr.js',
@@ -229,5 +240,5 @@ gulp.task('watch', function() {
   gulp.watch('assets/manifest.json', ['manifest']).on('change', change);
 });
 
-gulp.task('default', ['api', 'img', 'manifest', 'styles', 'vendor', 'background', 'background-html', 'react-html', 'browserify-watch', 'watch']);
-gulp.task('build', ['api', 'img', 'manifest', 'styles', 'background', 'background-html', 'vendor', 'browserify', 'react-html']);
+gulp.task('default', ['api', 'img', 'manifest', 'styles', 'vendor', 'background', 'background-vendor', 'background-html', 'react-html', 'browserify-watch', 'watch']);
+gulp.task('build', ['api', 'img', 'manifest', 'styles', 'background', 'background-vendor', 'background-html', 'vendor', 'browserify', 'react-html']);

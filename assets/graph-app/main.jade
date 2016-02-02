@@ -1,0 +1,28 @@
+doctype html
+html(lang='en', ng-csp, ng-app='tabApp')
+  head
+    meta(charset='utf-8')
+    meta(http-equiv='X-UA-Compatible', content='IE=edge')
+    meta(name='viewport', content='width=device-width, initial-scale=1')
+    meta(name='description', content='')
+    meta(name='author', content='')
+    //link(rel='icon', href='../../favicon.ico')
+    title Popup Application 
+    // Custom styles for this template
+    link(href='/popup-app/stylesheets/main.css', rel='stylesheet')   
+
+
+  body
+          
+    // Placed at the end of the document so the pages load faster
+    // load all of the dependencies for our application
+    script(src='/vendor.js')
+    script(src='/vendor.bundle.js')
+    script(src='/trackAPI.js')
+    
+    //Finally Load the react applications 
+    script(src='/popup-app/main.js')
+
+
+      
+      

@@ -1,7 +1,9 @@
 ###
 #
 # Tracks a particular page's history depending on the particular tab it comes from. 
-#
+# We use a "lazy" approach in order to add details to a particular tab and perform it's
+# tracking. Details are added the more chrome events fire 
+# 
 ###
 
 getContentAndTokenize = (tabId, page) ->
@@ -90,9 +92,10 @@ chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
   changeInfo.url = extractGoogleRedirectURL(changeInfo.url)
   Logger.debug "Visited #{changeInfo.url} in tab #{tab.id}"
   db.transaction 'rw', db.Tab, db.Page, db.PageVisit, db.Task, () ->
-    db.Page.where('url').equals(changeInfo.url).first().then (page) -> #First we find (or create) the page 
-      Dexie.Promise.all([Tab.findByTabId(tabId), if page then page else Page.generatePage(changeInfo.url)])
-    .then (args) ->
+    Dexie.Promise.all([
+      Page.findOrCreate(changeInfo.url),
+      Tab.findByTabId(tabId)
+    ]).then (args) ->
       [tab, page] = args
       throw new RecordMissingError("Can't find Tab record for id #{tabId}") if !tab
       #Assume navigation and referrer, and correct it if we are wrong
@@ -110,7 +113,7 @@ chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
     Logger.info(err)
   .catch (err) ->
     Logger.error(err)
- 
+
 ###
 # The user has made a navigation that is considered to a particular navigation -- we want to track this transition
 ###
@@ -272,4 +275,3 @@ chrome.webNavigation.onCreatedNavigationTarget.addListener (details) ->
       oldTask.removeTempTask(newTask)
   .catch (err) ->
     Logger.error(err)
-   

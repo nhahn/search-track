@@ -11,61 +11,23 @@
     "history",
     "contextMenus",
     "webNavigation",
-    "sessions",
+    "alarms",
     "<all_urls>",
     "http://*/",
     "https://*/"
   ],
   "background": {
-    "page": "html/background.html",
-    "persistent": true
+    "page": "background/background.html",
+    "persistent": false
   },  
-  "chrome_url_overrides" : {
-    "newtab": "html/newTab.html"
-  },
-  "content_scripts": [{
-    "matches": ["http://*/*", "https://*/*"],
-    "css": ["/css/injectedAnimations.css"],
-    "js": ["/vendor/jquery/dist/jquery.min.js","/js/content/injectsidebar.js"],
-    "run_at": "document_start"
-  }],
-  "web_accessible_resources": ["html/popup.html",
-  "/html/sidebar.html",
-  "/vendor/angular/angular.min.js",
-  "/vendor/jquery/dist/jquery.min.js",
-  "/html/taskSelector.html"],
   "icons": {
     "16": "img/structify_small.png",
     "48": "img/structify_medium.png",
     "128": "img/structify.png"
   },
-  "commands": {
-    "add-importance-1": {
-      "suggested_key": {
-        "default": "Ctrl+J",
-        "mac": "Command+J"
-      },
-      "description": "Saves the current tab to box 1"
-    },
-    "add-importance-2": {
-      "suggested_key": {
-        "default": "Ctrl+K",
-        "mac": "Command+K"
-      },
-      "description": "Saves the current tab to box 2"
-    },
-    "open": {
-      "suggested_key": {
-        "default": "Ctrl+Period",
-        "mac": "Command+Period"
-      },
-			"description": "Opens the sidebar"
-    }
-  },
   "browser_action": {
     "default_icon": "img/structify_medium.png",
-    "default_title": "TabManager",
-    "default_popup": "html/popup.html"
+    "default_title": "TabManager"
   }
 
 }

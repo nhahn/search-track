@@ -32,9 +32,9 @@ chrome.tabs.onAttached.addListener (tabId, attachInfo) ->
   .then (tab) ->
     recordAction(tab, 'attached', oldWindow, attachInfo.newWindowId)
   .catch RecordMissingError, (err) ->
-    Logger.warn(err)
+    console.warn(err)
   .catch (err) ->
-    Logger.error(err)
+    console.error(err)
 
 chrome.tabs.onMoved.addListener (tabId, moveInfo) ->
   db.transaction 'rw', db.Tab, () ->
@@ -44,44 +44,34 @@ chrome.tabs.onMoved.addListener (tabId, moveInfo) ->
       tab.position = moveInfo.toIndex
       tab.save()
   .then (tab) ->
+    console.debug("Moved tab #{tab.tab}")
     recordAction(tab, 'moved', tab.fromIndex, tab.position)
   .catch RecordMissingError, (err) ->
-    Logger.warn(err)
+    console.warn(err)
   .catch (err) ->
-    Logger.error(err)
+    console.error(err)
 
 ##TODO improve this logic / make this more robust
 chrome.tabs.onRemoved.addListener (tabId, removeInfo) ->
-  #Check if we just closed a tab, or if we closed an entire window
-  chrome.sessions.getRecentlyClosedAsync().then (sessions) ->
-    if removeInfo.isWindowClosing and sessions[0].window
-      return sessions[0].window.tabs
+  db.transaction 'rw', db.Tab, db.Branch, () ->
+    console.debug("Removing tab #{tabId}")
+    if removeInfo.isWindowClosing
+      return db.Tab.filter((val) -> val.windowId is removeInfo.windowId).and((val) -> val.status is 'active').toArray().then (res) ->
+        save = []
+        for tab in res
+          save.push(tab.close())
+        Dexie.Promise.all(save)
     else
-      return [sessions[0].tab]
-  .then (session_tabs) ->
-    db.transaction 'rw', db.Tab, () ->
-      Logger.debug("Removing tab #{tabId}")
-      if removeInfo.isWindowClosing
-        return db.Tab.filter((val) -> val.windowId is removeInfo.windowId).and((val) -> val.status is 'active').toArray().then (res) ->
-          save = []
-          for tab in res
-            tab.session = session_tabs[tab.position].sessionId 
-            tab.status = 'closed'
-            save.push(tab)
-          Dexie.Promise.all(save)
-      else
-        return Tab.findByTabId(tabId).then (tab) ->
-          throw new RecordMissingError("Can't find tab for id #{tabId}") if !tab
-          tab.status = 'closed'
-          tab.session = session_tabs[0].sessionId
-          Dexie.Promise.all([tab.save()])
-    .then (tabs) ->
-      for tab in tabs
-        recordAction(tab, 'removed', tab.tab, -1)
+      return Tab.findByTabId(tabId).then (tab) ->
+        throw new RecordMissingError("Can't find tab for id #{tabId}") if !tab
+        Dexie.Promise.all([tab.close()])
+  .then (tabs) ->
+    for tab in tabs
+      recordAction(tab, 'removed', tab.tab, -1)
   .catch RecordMissingError, (err) ->
-    Logger.warn(err)
+    console.warn(err)
   .catch (err) ->
-    Logger.error(err)
+    console.error(err)
 
 chrome.tabs.onActivated.addListener (activeInfo) ->
   Promise.all([
@@ -91,11 +81,12 @@ chrome.tabs.onActivated.addListener (activeInfo) ->
     throw new RecordMissingError("Can't find tab for id #{activeInfo.tabId}") if !newTab
     oldTab = {to: -1} if !oldTab
     if newTab.id != oldTab.to
+      console.debug("Activated tab #{newTab.tab}")
       recordAction(newTab, 'tabFocus', oldTab.to, newTab.id).then () ->
   .catch RecordMissingError, (err) ->
-    Logger.warn(err)
+    console.warn(err)
   .catch (err) ->
-    Logger.error(err)
+    console.error(err)
 
 chrome.windows.onFocusChanged.addListener (windowId) ->
   #Chrome has lost focus -- record that?
@@ -104,9 +95,9 @@ chrome.windows.onFocusChanged.addListener (windowId) ->
       throw new RecordMissingError("No older focus events") if !oldTab
       recordAction({id: -1}, 'windowFocus', oldTab.to, -1)
     .catch RecordMissingError, (err) ->
-      Logger.warn(err)
+      console.warn(err)
     .catch (err) ->
-      Logger.error("Error watching window change #{err}")
+      console.error("Error watching window change #{err}")
   else
     chrome.tabs.queryAsync({active: true, windowId: windowId, currentWindow: true}).then (tabs) ->
       if tabs.length > 0
@@ -119,9 +110,9 @@ chrome.windows.onFocusChanged.addListener (windowId) ->
           return if windowId == oldFocus.to # This happens if we devtools
           recordAction(tab, 'windowFocus', oldFocus.to, windowId)
     .catch RecordMissingError, (err) ->
-      Logger.warn(err)
+      console.warn(err)
     .catch (err) ->
-      Logger.error(err)
+      console.error(err)
 
 chrome.tabs.onCreated.addListener (chromeTab) ->
   ###
@@ -134,36 +125,15 @@ chrome.tabs.onCreated.addListener (chromeTab) ->
     windowId: chromeTab.windowId
     position: chromeTab.index
   })
-  db.transaction 'rw', db.Tab, db.Task, () ->
-    Logger.debug("creating tab for id #{chromeTab.id}")
-    if chromeTab.openerTabId
-      return Tab.findByTabId(chromeTab.openerTabId).then (oldTab) ->
-        #Whoops -- we can't find the original tab (or something like that XD) ... temp task time
-        throw new RecordMissingError("Can't find tab for id #{chromeTab.openerTabId}") if !oldTab or oldTab.windowId != tab.windowId
-        return db.Task.get(oldTab.task)
-      .then (oldTask) ->
-        #copy the parent task in this case, and use a temporary base task
-        Task.generateNewTabTemp(oldTask.parent)
-      .catch RecordMissingError, (err) ->
-        #We want to get them to define the task they are working on -- otherwise (for now) give 
-        #them a temporary parent task
-        Task.generateParentTemp().then (parent) ->
-          Task.generateNewTabTemp(parent.id)
-      .then (task) ->
-        tab.task = task.id
-        tab.save()
-    else
-      return Task.generateParentTemp().then (parent) ->
-        Task.generateNewTabTemp(parent.id)
-      .then (task) ->
-        tab.task = task.id
-        tab.save()
+  db.transaction 'rw', db.Tab, db.Branch, () ->
+    console.debug("creating tab for id #{chromeTab.id}")
+    tab.save()
   .then (tab) ->
     recordAction(tab, 'created', tab.openerTab, tab.id)
   .catch RecordMissingError, (err) ->
-    Logger.warn(err)
+    console.warn(err)
   .catch (err) ->
-    Logger.error(err)
+    console.error(err)
     
 
 
@@ -176,6 +146,6 @@ chrome.tabs.onCreated.addListener (chromeTab) ->
 #  .then (tab) ->
 #    recordAction(tab, 'replaced', removedTabId, addedTabId) #Not sure if we really care about this
 #  .catch RecordMissingError, (err) ->
-#    Logger.warn(err)
+#    console.warn(err)
 #  .catch (err) ->
-#    Logger.error(err)
+#    console.error(err)

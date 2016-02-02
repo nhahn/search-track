@@ -23,7 +23,27 @@ class Page extends Base
       topic_vector: []
     }, params
 
+  ###
+  # Extract the redirect URL from google results
+  ###
+  @extractGoogleRedirectURL: (url) ->
+    matches = url.match(/www\.google\.com\/.*url=(.*?)($|&)/)
+    if matches == null
+      return url
+    url = decodeURIComponent(matches[1].replace(/\+/g, ' '))
+    return url
+
+  @findOrCreate: (url) ->
+    db.transaction 'rw', db.Page, () ->
+      db.Page.where('url').equals(url).first().then (page) ->
+        return if page then page else Page.generatePage(url)
+
+  @findByUrl: (url) ->
+    url = Page.extractGoogleRedirectURL(url)
+    db.Page.where('url').equals(url).first()
+        
   @generatePage: (url) ->
+    url = Page.extractGoogleRedirectURL(url)
     uri = new URI(url)
     fragment = uri.fragment()
     uri.fragment("")
